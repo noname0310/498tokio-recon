@@ -1,0 +1,10 @@
+node_modules/
+/dist/
+/test-results/
+
+# Original media and disposable reconstruction work stay local.
+/res/
+/analysis/
+/tools/
+__pycache__/
+*.pyc

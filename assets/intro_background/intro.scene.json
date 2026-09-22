@@ -1,0 +1,174 @@
+{
+  "schemaVersion"   : 1,
+  "name"            : "Intro Background - Frame 360",
+  "coordinateSystem": {
+    "handedness": "left",
+    "up": "+Y",
+    "forward": "+Z",
+    "rotationOrder": "ZXY",
+    "rotationUnit": "degrees",
+    "referencePixelsPerUnit": 100
+  },
+  "referenceFrame"  : {"width": 640, "height": 360},
+  "presentation"    : {"referenceAspect": false, "toggleKey": "KeyA"},
+  "assets"          : {
+    "background": {
+      "type"         : "Sprite",
+      "file"         : "background.png",
+      "size"         : {"x": 8, "y": 36},
+      "pixelsPerUnit": 10,
+      "pivot"        : {"x": 0, "y": 1},
+      "filter"       : "point"
+    },
+    "moon"      : {
+      "type"         : "Sprite",
+      "file"         : "moon.png",
+      "size"         : {"x": 25, "y": 25},
+      "pixelsPerUnit": 31.989247164335783,
+      "pivot"        : {"x": 0.4994587714888038, "y": 0.5001773701370096},
+      "filter"       : "point"
+    }
+  },
+  "root"            : {
+    "id"        : "intro",
+    "name"      : "Intro",
+    "active"    : true,
+    "transform" : {
+      "localPosition": {"x": 0, "y": 0, "z": 0},
+      "localRotation": {"x": 0, "y": 0, "z": 0},
+      "localScale"   : {"x": 1, "y": 1, "z": 1}
+    },
+    "components": [],
+    "children"  : [
+      {
+        "id"        : "camera",
+        "name"      : "Main Camera",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 0, "y": 0, "z": -10},
+          "localRotation": {"x": 0, "y": 0, "z":   0},
+          "localScale"   : {"x": 1, "y": 1, "z":   1}
+        },
+        "components": [
+          {
+            "type": "Camera",
+            "enabled": true,
+            "projection": "orthographic",
+            "referenceVerticalSize": 3.6,
+            "referenceAspect": 1.7777777777777777,
+            "aspectPolicy": "expandFromReference",
+            "near": 0.1,
+            "far": 100
+          },
+          {
+            "type"          : "Vignette",
+            "enabled"       : true,
+            "centerViewport": {"x": 0.498575030414643, "y": 0.5228881070748209},
+            "quadratic"     : 0.18850102911789426,
+            "quartic"       : 0.4398777133219032,
+            "verticalWeight": 0.6509705029373068
+          }
+        ],
+        "children"  : []
+      },
+      {
+        "id"        : "background",
+        "name"      : "Background",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 0, "y": 0, "z": 1},
+          "localRotation": {"x": 0, "y": 0, "z": 0},
+          "localScale"   : {"x": 1, "y": 1, "z": 1}
+        },
+        "components": [
+          {
+            "type"    : "TiledSpriteRenderer",
+            "enabled" : true,
+            "asset"   : "background",
+            "coverage": "camera",
+            "wrap"    : {"x": "repeat", "y": "clamp"},
+            "origin"  : {"x": -3.2, "y": 1.8}
+          },
+          {
+            "type"      : "GaussianBlur",
+            "enabled"   : true,
+            "sigmaWorld": {"x": 0.003760000339531363, "y": 0.003932800562987737}
+          },
+          {
+            "type"       : "ProceduralNoise",
+            "enabled"    : true,
+            "seed"       : 498360,
+            "textureSize": {"x": 512, "y": 512},
+            "worldSize"  : {"x": 5.12, "y": 5.12},
+            "origin"     : {"x": -3.2, "y": 1.8},
+            "range"      : 0.4,
+            "bands"      : [
+              { "sigmaTexels": {"x": 0.45, "y": 0.7}, "variance": 0.002657221871804711   },
+              { "sigmaTexels": {"x": 0.6,  "y": 1.2}, "variance": 0.00008270916161109224 },
+              { "sigmaTexels": {"x": 0.9,  "y": 1.8}, "variance": 0.0018332838563753103  },
+              { "sigmaTexels": {"x": 1.3,  "y": 3.2}, "variance": 0.0001665519413011803  },
+              { "sigmaTexels": {"x": 2.2,  "y": 5  }, "variance": 0.0002574619006740307  },
+              { "sigmaTexels": {"x": 8,    "y": 8  }, "variance": 0.0004187470462816339  }
+            ]
+          }
+        ],
+        "children"  : []
+      },
+      {
+        "id"        : "moon",
+        "name"      : "Moon",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 0, "y": 0, "z": 0},
+          "localRotation": {"x": 0, "y": 0, "z": 0},
+          "localScale"   : {"x": 1, "y": 1, "z": 1}
+        },
+        "components": [
+          {
+            "type"      : "SpriteRenderer",
+            "enabled"   : true,
+            "asset"     : "moon",
+            "color"     : {"r": 1, "g": 1, "b": 1, "a": 1},
+            "hueDegrees": 0
+          },
+          {
+            "type"       : "ProceduralNoise",
+            "enabled"    : true,
+            "seed"       : 498360,
+            "textureSize": {"x": 512, "y": 512},
+            "worldSize"  : {"x": 5.12, "y": 5.12},
+            "origin"     : {"x": -3.2, "y": 1.8},
+            "range"      : 0.4,
+            "bands"      : [
+              { "sigmaTexels": {"x": 0.45, "y": 0.7}, "variance": 0.002657221871804711   },
+              { "sigmaTexels": {"x": 0.6,  "y": 1.2}, "variance": 0.00008270916161109224 },
+              { "sigmaTexels": {"x": 0.9,  "y": 1.8}, "variance": 0.0018332838563753103  },
+              { "sigmaTexels": {"x": 1.3,  "y": 3.2}, "variance": 0.0001665519413011803  },
+              { "sigmaTexels": {"x": 2.2,  "y": 5  }, "variance": 0.0002574619006740307  },
+              { "sigmaTexels": {"x": 8,    "y": 8  }, "variance": 0.0004187470462816339  }
+            ]
+          },
+          {
+            "type"       : "DropShadow",
+            "enabled"    : true,
+            "offsetWorld": {"x": 0, "y": 0},
+            "sigmaWorld" : 0.054178819152822875,
+            "color"      : {"r": 0, "g": 0, "b": 0, "a": 1},
+            "opacity"    : 1
+          },
+          {
+            "type"      : "Glow",
+            "enabled"   : true,
+            "threshold" : 0.37254901960784315,
+            "softness"  : 0.39215686274509803,
+            "sigmaWorld": 0.056629375563733556,
+            "intensity" : 1.0474519191726852,
+            "color"     : {"r": 1, "g": 0.64, "b": 0.95, "a": 1}
+          }
+        ],
+        "children"  : []
+      }
+    ]
+  },
+  "rendering"       : {"texturePixelsPerUnit": 100}
+}

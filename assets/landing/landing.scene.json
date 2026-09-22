@@ -1,0 +1,294 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Landing Sprites - Asset Review",
+  "referenceFrame": {"width": 640, "height": 360},
+  "presentation"  : {"referenceAspect": false, "toggleKey": "KeyA"},
+  "timeline"      : {"duration": 0.4, "frameRate": 30, "autoplay": true, "loop": true},
+  "assets"        : {
+    "ship"       : {
+      "type"          : "Sprite",
+      "file"          : "ship.png",
+      "size"          : {"x": 78, "y": 30},
+      "pixelsPerUnit" : 39.96155370907029,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "samplingFraction"     : 0.6,
+        "states"               : ["unoccupied"],
+        "notes"                : [
+          "Requested ship at 154 seconds; the same settled ship at frames 4678-4696 exposes the cockpit after its occupant leaves.",
+          "Pilot and background inside the open cockpit are fully transparent.",
+          "Upper canopy highlights and all native outline cells were reviewed individually; no inpainting.",
+          "Manually selected black outlines, antennae and any body/limb cells are pinned to RGB [0, 0, 0] after source sampling; alpha and colored cells are unchanged."
+        ],
+        "manualColorCorrection": {
+          "color"               : {"r": 0, "g": 0, "b": 0},
+          "selectedCellsByFrame": [464],
+          "definition"          : "Explicit reviewed cell spans in the recovery recipe; baked into the native PNG."
+        }
+      }
+    },
+    "pilot_blue" : {
+      "type"          : "Sprite",
+      "file"          : "pilot_atlas_blue.png",
+      "size"          : {"x": 95, "y": 29},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0.5, "y": 0},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 17, "y": 27},
+        "columns"   : 5,
+        "rows"      : 1,
+        "frameCount": 5,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "samplingFraction"     : 0.6,
+        "states"               : ["walk_0", "walk_1", "walk_2", "walk_3", "idle"],
+        "notes"                : [
+          "One shared union bound for four walking poses and one idle pose; the raised head in walk_3 is retained.",
+          "Walking frames repeat every 12 source frames, at 3 source frames per pose.",
+          "Source 4697-4715 is the first idle hold; stable frames 4698-4715 provide its colors.",
+          "Identical helmet cells are pooled across states to reduce compression color flicker.",
+          "Idle opaque height is 26 native cells; atlas union height is 27 cells because the walking head bobs upward.",
+          "Leg and arm cells are selected at the observed intensity gap: foreground cell means below 27, surrounding cells above 43; shadow-colored background cells are excluded.",
+          "Walking color samples start at frame 4674, after the trailing foot clears the ship nose.",
+          "Manually selected black outlines, antennae and any body/limb cells are pinned to RGB [0, 0, 0] after source sampling; alpha and colored cells are unchanged.",
+          "Each atlas cell is mirrored horizontally from the source-facing left pose; normalized asset faces +X. Frame order and RGBA values are preserved."
+        ],
+        "clips"                : {
+          "walk": { "frames": [0, 1, 2, 3], "framesPerSecond": 10, "sourceHoldFrames": 3, "loop": true  },
+          "idle": { "frames": [4         ],                                               "loop": false }
+        },
+        "manualColorCorrection": {
+          "color"               : {"r": 0, "g": 0, "b": 0},
+          "selectedCellsByFrame": [165, 162, 175, 176, 148],
+          "definition"          : "Explicit reviewed cell spans in the recovery recipe; baked into the native PNG."
+        },
+        "facing"               : "+X"
+      }
+    },
+    "pilot_red"  : {
+      "type"          : "Sprite",
+      "file"          : "pilot_atlas_red.png",
+      "size"          : {"x": 95, "y": 29},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0.5, "y": 0},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 17, "y": 27},
+        "columns"   : 5,
+        "rows"      : 1,
+        "frameCount": 5,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "baseAsset"            : "pilot_blue",
+        "samplingFraction"     : 0.6,
+        "states"               : ["walk_0", "walk_1", "walk_2", "walk_3", "idle"],
+        "sampleFrames"         : [3730, 3750],
+        "sampledColorCells"    : 87,
+        "notes"                : [
+          "The red pilot enters from the right near 124 seconds. Frames 3730-3750 (124.333-125.000 seconds) expose the whole helmet.",
+          "Source grid pitch is 2.5 pixels, confirmed by five independent fits. Translation is tracked against the existing reviewed black-ink silhouette.",
+          "Only 87 colored helmet cells are transferred. Outline, antenna, body, arms, legs, alpha and the shared atlas bound come from the approved blue atlas.",
+          "Grass hides the red pilot feet; no grass-covered source cells are sampled. Lower-body motion reuses the blue atlas by user direction.",
+          "The same source palette is placed in all five poses; walk_3 shifts the head upward by one native cell.",
+          "No vignette correction is assumed for this daytime source. Samples use the central 60 percent of each cell and are pooled over 21 frames.",
+          "Four walk poses and one idle pose retain the blue atlas timing: walking at 10 fps. This recipe transfers colors, not a new timing measurement.",
+          "Each atlas cell is mirrored horizontally from the source-facing left pose; normalized asset faces +X. Frame order and RGBA values are preserved."
+        ],
+        "clips"                : {
+          "walk": { "frames": [0, 1, 2, 3], "framesPerSecond": 10, "sourceHoldFrames": 3, "loop": true  },
+          "idle": { "frames": [4         ],                                               "loop": false }
+        },
+        "manualColorCorrection": {
+          "color"               : {"r": 0, "g": 0, "b": 0},
+          "selectedCellsByFrame": [165, 162, 175, 176, 148],
+          "definition"          : "Explicit reviewed cell spans in the recovery recipe; baked into the native PNG."
+        },
+        "facing"               : "+X"
+      }
+    },
+    "helmet"     : {
+      "type"          : "Sprite",
+      "file"          : "helmet.png",
+      "size"          : {"x": 17, "y": 17},
+      "pixelsPerUnit" : 6.189631266839017,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "samplingFraction"     : 0.6,
+        "states"               : ["red_helmet"],
+        "notes"                : [
+          "Red helmet close-up begins near 159.8 seconds; opaque, enlarged frames 4855-4862 provide native colors.",
+          "The darkened scene behind the close-up is excluded.",
+          "Manually selected black outlines, antennae and any body/limb cells are pinned to RGB [0, 0, 0] after source sampling; alpha and colored cells are unchanged."
+        ],
+        "manualColorCorrection": {
+          "color"               : {"r": 0, "g": 0, "b": 0},
+          "selectedCellsByFrame": [146],
+          "definition"          : "Explicit reviewed cell spans in the recovery recipe; baked into the native PNG."
+        }
+      }
+    },
+    "pilot_front": {
+      "type"          : "Sprite",
+      "file"          : "pilot_front.png",
+      "size"          : {"x": 17, "y": 26},
+      "pixelsPerUnit" : 7.65691294467884,
+      "pivot"         : {"x": 0.5, "y": 0},
+      "filter"        : "point",
+      "reconstruction": {
+        "samplingFraction"     : 0.6,
+        "states"               : ["front_idle"],
+        "notes"                : [
+          "Blue front-view close-up is fully visible from about 162.43 seconds.",
+          "The top 24 native rows use observed cells; the last visible row is partially clipped by the source frame.",
+          "Two additional rows complete the 26-cell standing height measured in the side idle sprite. Their straight legs and outward one-cell toes are inferred, not observed.",
+          "Manually selected black outlines, antennae and any body/limb cells are pinned to RGB [0, 0, 0] after source sampling; alpha and colored cells are unchanged."
+        ],
+        "inferredRows"         : [24, 25],
+        "manualColorCorrection": {
+          "color"               : {"r": 0, "g": 0, "b": 0},
+          "selectedCellsByFrame": [173],
+          "definition"          : "Explicit reviewed cell spans in the recovery recipe; baked into the native PNG."
+        }
+      }
+    },
+    "ship_blue"  : {
+      "type"          : "Sprite",
+      "file"          : "ship_blue.png",
+      "size"          : {"x": 78, "y": 30},
+      "pixelsPerUnit" : 39.96155370907029,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "baseAsset"         : "ship",
+        "sampleFrames"      : [
+          [3910, 3934],
+          [6680, 6708]
+        ],
+        "samplingFraction"  : 0.6,
+        "engineColorCells"  : 134,
+        "smallShotOnlyCells": 17,
+        "notes"             : [
+          "The small shot has about 1.19 source pixels per native cell; its thin, otherwise occluded blue strip remains an estimate after MP4 chroma subsampling.",
+          "Geometry, unoccupied cockpit, metal struts and hull shading reuse the approved red ship, as requested. No pilot or plume pixels are added to the asset.",
+          "Only blue-engine RGB cells are changed. Alpha, black outlines, the empty cockpit and all other RGB values match ship.png exactly."
+        ]
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "landing-sprite-review",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"x": 0, "y": 0, "z": -10}
+        },
+        "components": [
+          {
+            "type": "Camera",
+            "referenceVerticalSize": 3.6,
+            "referenceAspect": 1.7777777777777777,
+            "clearColor": {"r": 0.19, "g": 0.22, "b": 0.26, "a": 1}
+          }
+        ]
+      },
+      {
+        "id"        : "unoccupied-ship",
+        "name"      : "Unoccupied Ship",
+        "transform" : {
+          "localPosition": {"x": -1.8,  "y": 1.12, "z": 0   },
+          "localScale"   : {"x":  1.25, "y": 1.25, "z": 1.25}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "ship", "frame": 0}
+        ]
+      },
+      {
+        "id"        : "walking-pilot",
+        "name"      : "Walking Pilot - Blue",
+        "transform" : {
+          "localPosition": {"x": -2.68, "y": -1.47, "z": 0  },
+          "localScale"   : {"x":  2.1,  "y":  2.1,  "z": 2.1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "pilot_blue", "frame": 0},
+          {
+            "type"           : "SpriteAnimator",
+            "frames"         : [0, 1, 2, 3],
+            "framesPerSecond": 10,
+            "loop"           : true,
+            "hideOutside"    : false
+          }
+        ]
+      },
+      {
+        "id"        : "standing-pilot",
+        "name"      : "Standing Pilot - Blue",
+        "transform" : {
+          "localPosition": {"x": -1.63, "y": -1.47, "z": 0  },
+          "localScale"   : {"x":  2.1,  "y":  2.1,  "z": 2.1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "pilot_blue", "frame": 4}
+        ]
+      },
+      {
+        "id"        : "red-helmet",
+        "name"      : "Red Helmet",
+        "transform" : {
+          "localPosition": {"x": 0.7,  "y": 0.98, "z": 0   },
+          "localScale"   : {"x": 0.44, "y": 0.44, "z": 0.44}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "helmet", "frame": 0}
+        ]
+      },
+      {
+        "id"        : "front-pilot",
+        "name"      : "Front Pilot",
+        "transform" : {
+          "localPosition": {"x": 2.23, "y": -1.5,  "z": 0   },
+          "localScale"   : {"x": 0.78, "y":  0.78, "z": 0.78}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "pilot_front", "frame": 0}
+        ]
+      },
+      {
+        "id"        : "walking-pilot-red",
+        "name"      : "Walking Pilot - Red",
+        "transform" : {
+          "localPosition": {"x": -0.58, "y": -1.47, "z": 0  },
+          "localScale"   : {"x":  2.1,  "y":  2.1,  "z": 2.1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "pilot_red", "frame": 0},
+          {
+            "type"           : "SpriteAnimator",
+            "frames"         : [0, 1, 2, 3],
+            "framesPerSecond": 10,
+            "loop"           : true,
+            "hideOutside"    : false
+          }
+        ]
+      },
+      {
+        "id"        : "standing-pilot-red",
+        "name"      : "Standing Pilot - Red",
+        "transform" : {
+          "localPosition": {"x": 0.47, "y": -1.47, "z": 0  },
+          "localScale"   : {"x": 2.1,  "y":  2.1,  "z": 2.1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "pilot_red", "frame": 4}
+        ]
+      }
+    ]
+  },
+  "authoring"     : {"sceneRole": "Asset review layout, not reconstruction of one video frame.", "sourceFrameRate": 30}
+}

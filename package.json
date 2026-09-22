@@ -1,0 +1,54 @@
+{
+  "name": "498-tokio-reconstruction",
+  "version": "0.1.0",
+  "license": "(MIT OR Apache-2.0)",
+  "description": "Pixel-art scene reconstruction with a shared component model and DOM/Babylon renderers",
+  "scripts": {
+    "check": "npm run check:types && npm run build && npm run check:dist && node tests/check-animation.cjs && node tests/check-player.cjs && node tests/check-audio-seek.cjs && node tests/check-runtime.cjs && node tests/check-noise.cjs && npm run check:atlas && node tests/check-particles.cjs && node tests/check-intro.cjs && node tests/check-starfield.cjs && node tests/check-forward.cjs && node tests/check-transitions.cjs && node tests/check-paper.cjs && node tests/check-landscape.cjs && node tests/check-pinwheel.cjs && node tests/check-viewport-frame.cjs && node tests/check-dom-depth.cjs && node tests/check-interior.cjs && node tests/check-perspective.cjs && node tests/check-helmet.cjs && node scripts/format-json.cjs --check",
+    "preview": "node scripts/serve.cjs",
+    "check:runtime": "node tests/check-runtime.cjs",
+    "check:noise": "node tests/check-noise.cjs",
+    "check:atlas": "node tests/check-atlas.cjs && node tests/check-sprite-effects.cjs",
+    "check:sprite-effects": "node tests/check-sprite-effects.cjs",
+    "check:particles": "node tests/check-particles.cjs",
+    "check:intro": "node tests/check-intro.cjs",
+    "check:starfield": "node tests/check-starfield.cjs",
+    "check:forward": "node tests/check-forward.cjs",
+    "check:transitions": "node tests/check-transitions.cjs",
+    "check:paper": "node tests/check-paper.cjs",
+    "check:landscape": "node tests/check-landscape.cjs",
+    "check:frame": "node tests/check-viewport-frame.cjs",
+    "check:interior": "node tests/check-interior.cjs",
+    "check:helmet": "node tests/check-helmet.cjs",
+    "check:perspective": "node tests/check-perspective.cjs",
+    "check:dom-depth": "node tests/check-dom-depth.cjs",
+    "format:json": "node scripts/format-json.cjs",
+    "check:json": "node scripts/format-json.cjs --check",
+    "check:types": "node scripts/check-types.cjs && tsc -p tsconfig.runtime.json --noEmit",
+    "build": "webpack --mode production",
+    "build:watch": "webpack --mode development --watch",
+    "prepreview": "npm run build",
+    "check:animation": "node tests/check-animation.cjs",
+    "check:player": "node tests/check-player.cjs",
+    "check:audio-seek": "node tests/check-audio-seek.cjs",
+    "check:pinwheel": "node tests/check-pinwheel.cjs",
+    "check:dist": "node tests/check-dist.cjs"
+  },
+  "dependencies": {
+    "@babylonjs/core": "9.27.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "copy-webpack-plugin": "14.0.0",
+    "fracturedjsonjs": "5.0.2",
+    "playwright": "1.61.0",
+    "ts-loader": "9.6.2",
+    "typescript": "5.9.3",
+    "webpack": "5.111.1",
+    "webpack-cli": "7.2.3"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

@@ -1,0 +1,312 @@
+{
+  "schemaVersion"   : 1,
+  "name"            : "Gate interior · frame 1943",
+  "referenceFrame"  : {"width": 640, "height": 360},
+  "coordinateSystem": {"referencePixelsPerUnit": 100},
+  "presentation"    : {"activeCamera": "interior-camera"},
+  "assets"          : {
+    "wall_checker_tile" : {
+      "type"          : "Sprite",
+      "file"          : "wall_checker_tile.png",
+      "size"          : {"x": 10, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1815,
+        "nativeCellPixels": 5,
+        "originPixels"    : [53.50341435259322, 50.01490465131435],
+        "repeatNative"    : {"x": 10, "y": 10},
+        "repeatPixels"    : {"x": 50, "y": 50},
+        "samplingFraction": 0.6,
+        "repetitions"     : 27
+      }
+    },
+    "wall_diagonal_tile": {
+      "type"          : "Sprite",
+      "file"          : "wall_diagonal_tile.png",
+      "size"          : {"x": 10, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1837,
+        "nativeCellPixels": 5,
+        "originPixels"    : [39.950821041501854, 50.01715955843504],
+        "repeatNative"    : {"x": 10, "y": 10},
+        "repeatPixels"    : {"x": 50, "y": 50},
+        "samplingFraction": 0.6,
+        "repetitions"     : 27
+      }
+    },
+    "wall_panel_tile"   : {
+      "type"          : "Sprite",
+      "file"          : "wall_panel_tile.png",
+      "size"          : {"x": 20, "y": 20},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1943,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [42.52134645773054, 52.51876786834763],
+        "repeatNative"    : {"x": 20, "y": 20},
+        "repeatPixels"    : {"x": 50, "y": 50},
+        "samplingFraction": 0.6,
+        "repetitions"     : 27
+      }
+    },
+    "chest_atlas"       : {
+      "type"          : "Sprite",
+      "file"          : "chest_atlas.png",
+      "size"          : {"x": 56, "y": 21},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 26, "y": 19},
+        "columns"   : 2,
+        "rows"      : 1,
+        "frameCount": 2,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "referenceFrames" : [1943, 1955],
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [120.79449119184312, 289.44015314812674],
+        "sampleOrigins"   : [
+          [120.79449119184312, 289.44015314812674],
+          [252.46651139491328, 289.4570804759864 ],
+          [384.06552109192745, 289.43446234578477],
+          [515.799084721505,   289.4434603181294 ]
+        ],
+        "states"          : ["closed", "open"],
+        "samplingFraction": 0.6,
+        "samplesPerPose"  : [16, 4]
+      }
+    },
+    "adult"             : {
+      "type"          : "Sprite",
+      "file"          : "../paper_landscape/adult_atlas.png",
+      "size"          : {"x": 150, "y": 23},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 13, "y": 21},
+        "columns"   : 10,
+        "rows"      : 1,
+        "frameCount": 10,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames"    : [1230, 1348],
+        "nativeCellPixels": 2.5,
+        "samplingFraction": 0.6,
+        "states"          : [
+          "run_0",             "run_1",             "run_2",             "run_3",             "idle",
+          "jump",              "look_up",           "raise_hands_up",    "raise_hands_right", "front"
+        ],
+        "facing"          : "+X",
+        "additionalPoses" : [
+          {
+            "name"               : "jump",
+            "frame"              : 5,
+            "referenceFrame"     : 1768,
+            "sampleFrames"       : [1765, 1772],
+            "headAnchorNative"   : [2, 3],
+            "facing"             : "+X",
+            "sourceFacing"       : "-X",
+            "flippedHorizontally": true
+          },
+          {
+            "name"            : "look_up",
+            "frame"           : 6,
+            "referenceFrame"  : 1943,
+            "headAnchorNative": [2, 1],
+            "originPixels"    : [
+              [ 84.63330282306096, 284.63458821025864],
+              [215.64691214776303, 284.63465024131204],
+              [346.6327286077847,  284.62741796462194],
+              [477.619839690521,   284.6332620787479 ]
+            ]
+          },
+          {
+            "name"            : "raise_hands_up",
+            "frame"           : 7,
+            "referenceFrame"  : 2007,
+            "headAnchorNative": [2, 1],
+            "originPixels"    : [
+              [ 84.63330282306096, 284.63458821025864],
+              [215.64691214776303, 284.63465024131204],
+              [346.6327286077847,  284.62741796462194],
+              [477.619839690521,   284.6332620787479 ]
+            ]
+          },
+          {
+            "name"               : "raise_hands_right",
+            "frame"              : 8,
+            "referenceFrame"     : 2010,
+            "headAnchorNative"   : [2, 1],
+            "originPixels"       : [
+              [477.619839690521, 284.6332620787479]
+            ],
+            "sourceFacing"       : "-X",
+            "facing"             : "+X",
+            "flippedHorizontally": true
+          },
+          {
+            "name"            : "front",
+            "frame"           : 9,
+            "referenceFrame"  : 2098,
+            "sampleFrames"    : [2083, 2098],
+            "headAnchorNative": [2, 1],
+            "sampling"        : "The dark frame is normalized by its flat background before pooling with frame 2098."
+          }
+        ],
+        "bodySource"      : {
+          "asset" : "../landing/pilot_atlas_blue.png",
+          "frames": [
+            { "frame": 0, "pilotStartRow": 18, "offsetNative": {"x": -2, "y": -6}, "copiedOpaqueCells": 38 },
+            { "frame": 1, "pilotStartRow": 18, "offsetNative": {"x": -2, "y": -6}, "copiedOpaqueCells": 35 },
+            { "frame": 2, "pilotStartRow": 18, "offsetNative": {"x": -2, "y": -6}, "copiedOpaqueCells": 47 },
+            { "frame": 3, "pilotStartRow": 17, "offsetNative": {"x": -2, "y": -6}, "copiedOpaqueCells": 49 },
+            { "frame": 4, "pilotStartRow": 18, "offsetNative": {"x": -2, "y": -7}, "copiedOpaqueCells": 21 }
+          ]
+        },
+        "notes"           : [
+          "The 9x8 head and wider limbs differ from the young-person atlas.",
+          "The complete body and feet reuse the corresponding pilot poses, as specified by the user.",
+          "Three additional native rows preserve the pilot feet; scene foot positions compensate to retain the measured head grid."
+        ]
+      }
+    }
+  },
+  "root"            : {
+    "id"      : "interior-scene",
+    "children": [
+      {
+        "id"        : "interior-camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777},
+          {
+            "type"       : "ViewportFrame",
+            "insetsWorld": {"left": 0.32, "right": 0.32, "top": 0.23, "bottom": 0.23},
+            "radiusWorld": 0.2,
+            "color"      : {"r": 0, "g": 0, "b": 0, "a": 1},
+            "innerShadow": {
+              "offsetWorld": {"x": -0.08, "y": -0.11},
+              "opacity"    : 0.5076311175745425,
+              "color"      : {"r": 0.12915183453985654, "g": 0.12915183453985654, "b": 0.12915183453985654, "a": 1}
+            }
+          }
+        ]
+      },
+      {
+        "id"        : "interior-wall",
+        "transform" : {
+          "localPosition": {"x": -2.7747865354226944, "y": 1.2748123213165237, "z": 1},
+          "localScale"   : {"x":  2.5,                "y": 2.5,                "z": 1}
+        },
+        "components": [
+          { "type": "TiledSpriteRenderer", "asset": "wall_panel_tile", "wrap": {"x": "repeat", "y": "repeat"} }
+        ]
+      },
+      {
+        "id"      : "interior-objects",
+        "children": [
+          {
+            "id"        : "interior-adult-0",
+            "transform" : {
+              "localPosition": {"x": -2.1911669717693907, "y": -1.5713458821025865, "z": 0},
+              "localScale"   : {"x":  2.5,                "y":  2.5,                "z": 1}
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "adult", "frame": 6}
+            ]
+          },
+          {
+            "id"        : "interior-adult-1",
+            "transform" : {
+              "localPosition": {"x": -0.8810308785223697, "y": -1.5713465024131203, "z": 0},
+              "localScale"   : {"x":  2.5,                "y":  2.5,                "z": 1}
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "adult", "frame": 6}
+            ]
+          },
+          {
+            "id"        : "interior-adult-2",
+            "transform" : {
+              "localPosition": {"x": 0.42882728607784715, "y": -1.5712741796462195, "z": 0},
+              "localScale"   : {"x": 2.5,                 "y":  2.5,                "z": 1}
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "adult", "frame": 6}
+            ]
+          },
+          {
+            "id"        : "interior-adult-3",
+            "transform" : {
+              "localPosition": {"x": 1.73869839690521, "y": -1.5713326207874792, "z": 0},
+              "localScale"   : {"x": 2.5,              "y":  2.5,                "z": 1}
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "adult", "frame": 6}
+            ]
+          },
+          {
+            "id"        : "interior-chest-0",
+            "transform" : {
+              "localPosition": {"x": -1.9920550880815688, "y": -1.0944015314812674, "z": 0.1},
+              "localScale"   : {"x":  2.5,                "y":  2.5,                "z": 1  }
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "chest_atlas", "frame": 0}
+            ]
+          },
+          {
+            "id"        : "interior-chest-1",
+            "transform" : {
+              "localPosition": {"x": -0.6753348860508672, "y": -1.0945708047598641, "z": 0.1},
+              "localScale"   : {"x":  2.5,                "y":  2.5,                "z": 1  }
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "chest_atlas", "frame": 0}
+            ]
+          },
+          {
+            "id"        : "interior-chest-2",
+            "transform" : {
+              "localPosition": {"x": 0.6406552109192745, "y": -1.0943446234578476, "z": 0.1},
+              "localScale"   : {"x": 2.5,                "y":  2.5,                "z": 1  }
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "chest_atlas", "frame": 0}
+            ]
+          },
+          {
+            "id"        : "interior-chest-3",
+            "transform" : {
+              "localPosition": {"x": 1.9579908472150498, "y": -1.094434603181294, "z": 0.1},
+              "localScale"   : {"x": 2.5,                "y":  2.5,               "z": 1  }
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "chest_atlas", "frame": 0}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "reconstruction"  : {
+    "referenceFrame": 1943,
+    "notes"         : [
+      "Static asset and viewport-frame study.",
+      "The rounded border and inset shadow are evaluated at runtime."
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+/* World matrices project each surface; view-depth ranks order alpha/additive composition. */
+.scene-world { position: absolute; inset: 0; transform-style: flat; perspective: none; isolation: isolate; }
+.transition-layer { position: absolute; inset: 0; transform-style: flat; isolation: isolate; }
+.transition-layer[hidden] { display: none; }
+.component { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-origin: 0 0; }
+.component[hidden], .screen-effect[hidden], .noise[hidden] { display: none; }
+.transition-grid[hidden], .transition-grid [hidden] { display: none; }
+.component img { position: absolute; image-rendering: pixelated; image-rendering: crisp-edges; max-width: none; }
+.sprite-surface { position: absolute; }
+.sprite-clip { position: absolute; inset: 0; overflow: hidden; }
+.component[data-component="Glow"] { mix-blend-mode: plus-lighter; }
+.background-surface { position: absolute; isolation: isolate; }
+.pattern, .noise { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pattern, .pattern image { image-rendering: pixelated; image-rendering: crisp-edges; }
+.pattern { overflow: visible; shape-rendering: crispEdges; }
+.noise { background-repeat: repeat; image-rendering: pixelated; image-rendering: crisp-edges; mix-blend-mode: multiply; }
+.screen-effect { position: absolute; inset: 0; pointer-events: none; }
+.filter-definitions { position: absolute; width: 0; height: 0; overflow: hidden; }

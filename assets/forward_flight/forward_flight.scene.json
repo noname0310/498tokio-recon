@@ -1,0 +1,68 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Rear-view ship - stationary sprite",
+  "referenceFrame": {"width": 640, "height": 360},
+  "assets"        : {
+    "ship_rear": {
+      "type"          : "Sprite",
+      "file"          : "ship_rear.png",
+      "size"          : {"x": 73, "y": 28},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames"      : [864, 1109],
+        "nativeOrigin"      : [137.5, 196],
+        "nativeCellPixels"  : 5,
+        "nozzleCenterNative": [36.5, 20.5],
+        "method"            : "Particle-masked central 60% grid means; one warm nozzle-center texel retained",
+        "inferredCells"     : [
+          { "destination": [36, 18], "source": [36, 15] },
+          { "destination": [37, 18], "source": [35, 18] },
+          { "destination": [35, 19], "source": [36, 15] },
+          { "destination": [36, 19], "source": [36, 15] },
+          { "destination": [37, 19], "source": [36, 15] },
+          { "destination": [34, 20], "source": [36, 15] },
+          { "destination": [35, 20], "source": [36, 15] },
+          { "destination": [37, 20], "source": [36, 15] },
+          { "destination": [38, 20], "source": [36, 15] },
+          { "destination": [34, 21], "source": [38, 21] },
+          { "destination": [35, 21], "source": [36, 15] },
+          { "destination": [36, 21], "source": [36, 15] },
+          { "destination": [37, 21], "source": [36, 15] },
+          { "destination": [35, 22], "source": [35, 18] },
+          { "destination": [36, 22], "source": [36, 15] },
+          { "destination": [37, 22], "source": [35, 18] }
+        ],
+        "manualRevision"    : {
+          "addedColumns": {"left": 1, "right": 1},
+          "method": "User-edited outline and nozzle; border-connected white canvas removed; all artwork RGB retained. Native pitch, centered pivot and nozzle attachment unchanged."
+        }
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "rear-study",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"x": 0, "y": 0, "z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6}
+        ]
+      },
+      {
+        "id"        : "ship-rear",
+        "transform" : {
+          "localPosition": {"x": 0, "y": -0.86, "z": 0},
+          "localScale"   : {"x": 5, "y":  5,    "z": 5}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "ship_rear"}
+        ]
+      }
+    ]
+  }
+}

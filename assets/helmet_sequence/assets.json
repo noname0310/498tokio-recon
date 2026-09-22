@@ -1,0 +1,60 @@
+{
+  "assets": {
+    "helmet_blue" : {
+      "type"          : "Sprite",
+      "file"          : "helmet_blue.png",
+      "size"          : {"x": 17, "y": 17},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames"   : [2217],
+        "originPixels"   : [150, -20],
+        "cellPixels"     : 20,
+        "centralFraction": 0.6,
+        "alpha"          : "Approved red helmet silhouette",
+        "outline"        : "Preserved opaque black native cells",
+        "usage"          : "One close-up recovery shared by every blue front helmet."
+      }
+    },
+    "digits_atlas": {
+      "type"          : "Sprite",
+      "file"          : "digits_atlas.png",
+      "size"          : {"x": 264, "y": 24},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [2208, 2209, 2210, 2211, 2212, 2213, 2214, 2215, 2216],
+        "characters": "0123456789%",
+        "inferredDigits": [2, 3, 5, 6],
+        "method": "Native 3x5 digit silhouettes, central cell color, shared 2.5px subgrid; unobserved digits complete the same typeface.",
+        "observedValues": [74, 77, 81, 84, 87, 90, 94, 97, 100]
+      },
+      "atlas"         : {
+        "cellSize"  : {"x": 22, "y": 22},
+        "columns"   : 11,
+        "rows"      : 1,
+        "frameCount": 11,
+        "padding"   : 1
+      }
+    },
+    "bar_tile"    : {
+      "type"          : "Sprite",
+      "file"          : "bar_tile.png",
+      "size"          : {"x": 4, "y": 512},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [2196, 2197, 2198, 2199, 2200, 2201, 2202, 2203, 2204, 2205, 2206, 2207],
+        "method": "One LED column with 3x3 opaque emitters separated by transparent gaps on a 4x4 subgrid. Source cell-centre colors; live Gaussian blur and glow.",
+        "cellWorld": 0.16,
+        "cellTexels": 4,
+        "litTexels": 3,
+        "columnCycle": [4, 4, 3],
+        "unobservedRows": "Continue the last recovered green tone and LED spacing."
+      }
+    }
+  }
+}

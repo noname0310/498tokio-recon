@@ -1,0 +1,124 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Ship exhaust - 28 to 35 seconds",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 7, "frameRate": 30, "autoplay": true, "loop": true},
+  "reconstruction": {
+    "sourceStartTime": 28,
+    "sourceEndTime": 35,
+    "method": "Grid-sampled RGBA atlas; procedural ensemble fit. Individual source particles are not tracked at runtime.",
+    "observations": {
+      "frontNozzlePixels"          : {"x": 320, "y": 299},
+      "sideNozzlePixels"           : {"x": 400, "y": 180},
+      "atlasHoldFrames"            : 2,
+      "screenSpeedPixelsPerSecond" : {"min": 50, "max": 130},
+      "visibleParticlesApproximate": {"min": 10, "max": 18}
+    },
+    "limitations": "Overlaps and MP4 glow obscure some cell colors and lifetime boundaries. Cone, lifetime, growth and transition timing are approximate ensemble parameters. The ship and surrounding streak particles are outside this effect scene."
+  },
+  "assets"        : {
+    "exhaust": {
+      "type"          : "Sprite",
+      "file"          : "exhaust_atlas.png",
+      "size"          : {"x": 32, "y": 8},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 6, "y": 6},
+        "columns"   : 4,
+        "rows"      : 1,
+        "frameCount": 4,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames"    : [978, 979, 980, 981, 982, 983, 984, 985],
+        "samplingFraction": 0.6,
+        "framesPerSecond" : 15,
+        "phases"          : ["ignite", "burn", "contract", "ring"]
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "scene",
+    "name"    : "Exhaust study",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"x": 0, "y": 0, "z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"        : "ship_nozzle",
+        "name"      : "Ship nozzle",
+        "components": [
+          {
+            "type"    : "TransformAnimator",
+            "position": [
+              { "time": 0,   "value": {"x": 0.8, "y":  0,    "z": 0}, "interpolation": "step" },
+              { "time": 0.5, "value": {"x": 0,   "y": -1.19, "z": 0}                          }
+            ],
+            "rotation": [
+              { "time": 0,   "value": {"x": 0, "y": -90, "z": 0}, "interpolation": "step" },
+              { "time": 0.5, "value": {"x": 0, "y":   0, "z": 0}                          }
+            ],
+            "scale"   : [
+              { "time": 0,   "value": {"x": 0.55, "y": 0.55, "z": 0.55}, "interpolation": "step" },
+              { "time": 0.5, "value": {"x": 1,    "y": 1,    "z": 1   }                          }
+            ]
+          }
+        ],
+        "children"  : [
+          {
+            "id"        : "exhaust",
+            "name"      : "Exhaust emitter",
+            "components": [
+              {
+                "type"         : "ParticleEmitter",
+                "asset"        : "exhaust",
+                "seed"         : 28035,
+                "maxParticles" : 96,
+                "rate"         : 23,
+                "prewarm"      : 1,
+                "space"        : "local",
+                "shape"        : {
+                  "type": "ellipse",
+                  "size": {"x": 0.13, "y": 0.1, "z": 0}
+                },
+                "direction"    : {"x": 0, "y": 0, "z": -1},
+                "spreadDegrees": 70,
+                "speed"        : {"min": 1.1, "max": 1.8},
+                "lifetime"     : {"min": 0.6, "max": 0.9},
+                "startSize"    : {"min": 0.055, "max": 0.075},
+                "acceleration" : {"x": 0, "y": -0.15, "z": 0},
+                "sizeOverLife" : [
+                  {"time": 0,   "value": 1  },
+                  {"time": 0.7, "value": 4.3},
+                  {"time": 1,   "value": 5.5}
+                ],
+                "colorOverLife": [
+                  { "time": 0,    "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                  { "time": 0.92, "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                  { "time": 1,    "value": {"r": 1, "g": 1, "b": 1, "a": 0} }
+                ],
+                "animation"    : {"mode": "fps", "framesPerSecond": 15, "loop": true}
+              },
+              {
+                "type"      : "Glow",
+                "threshold" : 0.18,
+                "softness"  : 0.6,
+                "sigmaWorld": 0.008,
+                "intensity" : 0.35,
+                "color"     : {"r": 1, "g": 0.4, "b": 0.08, "a": 1}
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

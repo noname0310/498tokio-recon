@@ -1,0 +1,144 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Thruster flame - 21 to 27 seconds",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 6, "frameRate": 30, "autoplay": true, "loop": true},
+  "assets"        : {
+    "thruster": {
+      "type"          : "Sprite",
+      "file"          : "thruster.png",
+      "size"          : {"x": 15, "y": 7},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "frames"          : [630, 810],
+        "shipNativeOrigin": [68, 14],
+        "litObservations" : 80,
+        "opaqueCells"     : 83,
+        "symmetry"        : "top-bottom",
+        "alphaValues"     : [0, 255]
+      }
+    },
+    "ship"    : {
+      "type"          : "Sprite",
+      "file"          : "../landing/ship_blue.png",
+      "size"          : {"x": 78, "y": 30},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "baseAsset"         : "ship",
+        "sampleFrames"      : [
+          [3910, 3934],
+          [6680, 6708]
+        ],
+        "samplingFraction"  : 0.6,
+        "engineColorCells"  : 134,
+        "smallShotOnlyCells": 17,
+        "notes"             : [
+          "The small shot has about 1.19 source pixels per native cell; its thin, otherwise occluded blue strip remains an estimate after MP4 chroma subsampling.",
+          "Geometry, unoccupied cockpit, metal struts and hull shading reuse the approved red ship, as requested. No pilot or plume pixels are added to the asset.",
+          "Only blue-engine RGB cells are changed. Alpha, black outlines, the empty cockpit and all other RGB values match ship.png exactly."
+        ]
+      }
+    }
+  },
+  "root"          : {
+    "id"        : "thruster-study",
+    "children"  : [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6}
+        ]
+      },
+      {
+        "id"        : "ship",
+        "name"      : "Recovered blue ship with attached flame",
+        "transform" : {
+          "localPosition": {"x": -1.35, "y": 0.05        },
+          "localScale"   : {"x":  3.7,  "y": 3.7,  "z": 1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "ship"}
+        ],
+        "children"  : [
+          {
+            "id"        : "thruster",
+            "name"      : "Periodic thruster",
+            "transform" : {
+              "localPosition": {"x": 0.29, "y": -0.025, "z": 0.02}
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "thruster"},
+              {
+                "type"       : "Flicker",
+                "mode"       : "periodic",
+                "frequency"  : 15,
+                "dutyCycle"  : 0.5,
+                "probability": 0.5,
+                "seed"       : 49821,
+                "phase"      : 0,
+                "start"      : {
+                  "frame": 0,
+                  "rate" : {"numerator": 30, "denominator": 1}
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id"        : "flame-study",
+        "name"      : "Enlarged flame",
+        "transform" : {
+          "localPosition": {"x":  1.1, "y":  0.55        },
+          "localScale"   : {"x": 10,   "y": 10,    "z": 1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "thruster"},
+          {
+            "type"       : "Flicker",
+            "mode"       : "periodic",
+            "frequency"  : 15,
+            "dutyCycle"  : 0.5,
+            "probability": 0.5,
+            "seed"       : 49821,
+            "phase"      : 0,
+            "start"      : {
+              "frame": 0,
+              "rate" : {"numerator": 30, "denominator": 1}
+            }
+          }
+        ]
+      },
+      {
+        "id"        : "flame-static",
+        "name"      : "Complete sprite, held on",
+        "transform" : {
+          "localPosition": {"x":  1.1, "y": -0.9        },
+          "localScale"   : {"x": 10,   "y": 10,   "z": 1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "thruster"}
+        ]
+      }
+    ],
+    "components": []
+  },
+  "reconstruction": {
+    "sourceFrames": [630, 810],
+    "notes"       : [
+      "Asset review layout, not a complete reconstruction of the star-field scene.",
+      "The complete red and yellow sprite is opaque inside its reviewed contour and top-bottom symmetric.",
+      "Central cell means pool accepted observations from 80 lit frames and mirrored cells; particle occlusions are excluded.",
+      "The dominant source flicker is a two-frame cycle at 30 fps.",
+      "Compression obscures the exact original outermost contour; the reviewed binary silhouette records this reconstruction choice.",
+      "The ship uses the existing sprite with a blue-fin preview hue; the pilot and exhaust particles are omitted from this isolated review."
+    ]
+  }
+}

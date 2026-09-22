@@ -1,0 +1,66 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Landscape sky / frame 1227",
+  "referenceFrame": {"width": 640, "height": 360},
+  "assets"        : {
+    "sky": {
+      "type"         : "Sprite",
+      "file"         : "sky.png",
+      "size"         : {"x": 1, "y": 1},
+      "pixelsPerUnit": 100,
+      "pivot"        : {"x": 0, "y": 1},
+      "filter"       : "point"
+    }
+  },
+  "root"          : {
+    "id"      : "root",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6}
+        ]
+      },
+      {
+        "id"        : "sky",
+        "components": [
+          {
+            "type"  : "TiledSpriteRenderer",
+            "asset" : "sky",
+            "origin": {"x": -3.2, "y": 1.8}
+          },
+          {
+            "type"       : "ProceduralNoise",
+            "seed"       : 4981227,
+            "textureSize": {"x": 1024, "y": 512},
+            "worldSize"  : {"x": 10.24, "y": 5.12},
+            "origin"     : {"x": -3.2, "y": 1.8},
+            "range"      : 0.05,
+            "channelGain": {"r": 2.624065667297263, "g": 0.5512604727399197, "b": 0.6772158033659882},
+            "bands"      : [
+              {
+                "sigmaTexels": {"x": 1.852584662887536, "y": 1.6943110367061973},
+                "variance"   : 0.000008837571220996478
+              },
+              {
+                "sigmaTexels": {"x": 7.156287426705121, "y": 5.729292786515615},
+                "variance"   : 0.000030084557984899898
+              },
+              {
+                "sigmaTexels": {"x": 19.98110846501085, "y": 8.139283537984129},
+                "variance"   : 0.000038952749683006865
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "reconstruction": {
+    "referenceFrame": 1227,
+    "noise": "Statistical procedural reconstruction. Seed is authored, not inferred from the MP4. No source noise image is baked."
+  }
+}

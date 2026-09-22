@@ -1,0 +1,360 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Starfield assets - Two star variants, wipe and points",
+  "referenceFrame": {"width": 640, "height": 360},
+  "presentation"  : {"referenceAspect": false, "toggleKey": "KeyA"},
+  "timeline"      : {"duration": 6, "frameRate": 30, "autoplay": true, "loop": true},
+  "reconstruction": {
+    "purpose": "Asset review only; not the reconstructed star distribution or final scene timing.",
+    "starPlayback": "5 fps viewing speed. A source-wide constant animation rate has not been established.",
+    "tinyParticles": "Minimal one-point and two-point topology. Native pitch is uncertain. Pair rotation here is illustrative.",
+    "wipe": "Six observed poses. Clipped cells are symmetry continuations recorded individually in the recipe."
+  },
+  "assets"        : {
+    "star_a"   : {
+      "type"          : "Sprite",
+      "file"          : "star_a_atlas.png",
+      "size"          : {"x": 30, "y": 15},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 13, "y": 13},
+        "columns"   : 2,
+        "rows"      : 1,
+        "frameCount": 2,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "samplingFraction"     : 0.6,
+        "sourceFrames"         : [565, 582, 592, 595],
+        "notes"                : [
+          "One native 13 x 13 grid shared by two poses; masks exclude glow and overlapping objects.",
+          "White RGB is a deliberate neutral tint carrier. Source colors remain per-instance SpriteRenderer color and Glow components.",
+          "Rotation of the sampling grid is measured independently of the changing sprite silhouette."
+        ],
+        "animationRateMeasured": false
+      }
+    },
+    "star_b"   : {
+      "type"          : "Sprite",
+      "file"          : "star_b_atlas.png",
+      "size"          : {"x": 30, "y": 15},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 13, "y": 13},
+        "columns"   : 2,
+        "rows"      : 1,
+        "frameCount": 2,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "samplingFraction"     : 0.6,
+        "sourceFrames"         : [572, 577, 578, 599, 600],
+        "notes"                : [
+          "One native 13 x 13 grid shared by two poses; masks exclude glow and overlapping objects.",
+          "White RGB is a deliberate neutral tint carrier. Source colors remain per-instance SpriteRenderer color and Glow components.",
+          "Rotation of the sampling grid is measured independently of the changing sprite silhouette."
+        ],
+        "animationRateMeasured": false
+      }
+    },
+    "wipe"     : {
+      "type"          : "Sprite",
+      "file"          : "wipe_atlas.png",
+      "size"          : {"x": 72, "y": 12},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 10, "y": 10},
+        "columns"   : 6,
+        "rows"      : 1,
+        "frameCount": 6,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "samplingFraction": 0.6,
+        "sourceFrames": [
+          839, 840, 841, 842, 843, 844, 845, 846, 847, 848, 849, 850, 851, 852, 853, 854, 855, 856, 857, 858, 859, 860
+        ],
+        "notes": [
+          "Independent solid wipe, not a star variant. Six observed rasterized rotation poses.",
+          "The native source grid is approximately 50 screen pixels per cell, with zero grid rotation.",
+          "Top and bottom rows are outside the image. Only unobserved cells are completed by 180/90 degree symmetry; unresolved corners remain transparent.",
+          "The recipe lists every inferred silhouette cell and color copy. Visible raster asymmetry is retained."
+        ],
+        "observedHoldRanges": [
+          [839, 841, 0],
+          [842, 844, 1],
+          [845, 847, 2],
+          [848, 850, 3],
+          [851, 853, 4],
+          [854, 857, 5],
+          [858, 860, 0],
+          [861, 863, 1]
+        ],
+        "estimatedFramesPerSecond": 9.473684210526315
+      }
+    },
+    "point"    : {
+      "type"          : "Sprite",
+      "file"          : "point.png",
+      "size"          : {"x": 1, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "samplingFraction" : 0.6,
+        "sourceFrames"     : [825],
+        "notes"            : [
+          "Isolated one-point topology. Exact native pitch is not recoverable from this compressed, subpixel-sized feature."
+        ],
+        "nativeGridCertain": false
+      }
+    },
+    "dust_pair": {
+      "type"          : "Sprite",
+      "file"          : "dust_pair.png",
+      "size"          : {"x": 1, "y": 3},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "samplingFraction" : 0.6,
+        "sourceFrames"     : [832],
+        "notes"            : [
+          "Two separated luminous points tracked together, approximately 7.3 source pixels apart.",
+          "Minimal 1 x 3 two-point representation; the original cell count/width is ambiguous after downsampling and glow.",
+          "Use a stepped Transform rotation; this PNG does not bake the changing orientation."
+        ],
+        "nativeGridCertain": false
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "scene",
+    "name"    : "Starfield asset review",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"x": 0, "y": 0, "z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"        : "star_a",
+        "name"      : "Star A",
+        "transform" : {
+          "localPosition": {"x": -1.45, "y": 0.8, "z":   0},
+          "localRotation": {"x":  0,    "y": 0,   "z": -37},
+          "localScale"   : {"x":  8,    "y": 8,   "z":   1}
+        },
+        "components": [
+          {
+            "type" : "SpriteRenderer",
+            "asset": "star_a",
+            "color": {"r": 0.28, "g": 1, "b": 0.92, "a": 1}
+          },
+          {
+            "type"           : "SpriteAnimator",
+            "framesPerSecond": 5,
+            "frames"         : [0, 1],
+            "loop"           : true,
+            "start"          : {
+              "frame": 0,
+              "rate" : {"numerator": 30, "denominator": 1}
+            }
+          },
+          {
+            "type"      : "Glow",
+            "threshold" : 0.1,
+            "softness"  : 0.8,
+            "sigmaWorld": 0.004,
+            "intensity" : 0.55,
+            "color"     : {"r": 0.28, "g": 1, "b": 0.92, "a": 1}
+          }
+        ]
+      },
+      {
+        "id"        : "star_b",
+        "name"      : "Star B",
+        "transform" : {
+          "localPosition": {"x": 1.45, "y": 0.8, "z":   0},
+          "localRotation": {"x": 0,    "y": 0,   "z": -37},
+          "localScale"   : {"x": 8,    "y": 8,   "z":   1}
+        },
+        "components": [
+          {
+            "type" : "SpriteRenderer",
+            "asset": "star_b",
+            "color": {"r": 1, "g": 0.33, "b": 0.58, "a": 1}
+          },
+          {
+            "type"           : "SpriteAnimator",
+            "framesPerSecond": 5,
+            "frames"         : [0, 1],
+            "loop"           : true,
+            "start"          : {
+              "frame": 0,
+              "rate" : {"numerator": 30, "denominator": 1}
+            }
+          },
+          {
+            "type"      : "Glow",
+            "threshold" : 0.1,
+            "softness"  : 0.8,
+            "sigmaWorld": 0.004,
+            "intensity" : 0.55,
+            "color"     : {"r": 1, "g": 0.33, "b": 0.58, "a": 1}
+          }
+        ]
+      },
+      {
+        "id"        : "wipe",
+        "name"      : "Wipe",
+        "transform" : {
+          "localPosition": {"x": 0,   "y": -0.8, "z": 0},
+          "localRotation": {"x": 0,   "y":  0,   "z": 0},
+          "localScale"   : {"x": 7.5, "y":  7.5, "z": 1}
+        },
+        "components": [
+          {
+            "type" : "SpriteRenderer",
+            "asset": "wipe",
+            "color": {"r": 1, "g": 1, "b": 1, "a": 1}
+          },
+          {
+            "type"           : "SpriteAnimator",
+            "framesPerSecond": 9.473684210526315,
+            "frames"         : [0, 1, 2, 3, 4, 5],
+            "loop"           : true,
+            "start"          : {
+              "frame": 0,
+              "rate" : {"numerator": 30, "denominator": 1}
+            }
+          }
+        ]
+      },
+      {
+        "id"        : "point",
+        "name"      : "Point",
+        "transform" : {
+          "localPosition": {"x": -2, "y": -0.8, "z": 0},
+          "localRotation": {"x":  0, "y":  0,   "z": 0},
+          "localScale"   : {"x":  4, "y":  4,   "z": 1}
+        },
+        "components": [
+          {
+            "type" : "SpriteRenderer",
+            "asset": "point",
+            "color": {"r": 1, "g": 1, "b": 0.6, "a": 1}
+          },
+          {
+            "type"      : "Glow",
+            "threshold" : 0.1,
+            "softness"  : 0.8,
+            "sigmaWorld": 0.003,
+            "intensity" : 0.55,
+            "color"     : {"r": 1, "g": 1, "b": 0.6, "a": 1}
+          }
+        ]
+      },
+      {
+        "id"        : "dust_pair",
+        "name"      : "Dust Pair",
+        "transform" : {
+          "localPosition": {"x": 2, "y": -0.8, "z": 0},
+          "localRotation": {"x": 0, "y":  0,   "z": 0},
+          "localScale"   : {"x": 4, "y":  4,   "z": 1}
+        },
+        "components": [
+          {
+            "type" : "SpriteRenderer",
+            "asset": "dust_pair",
+            "color": {"r": 0.65, "g": 0.74, "b": 1, "a": 1}
+          },
+          {
+            "type"      : "Glow",
+            "threshold" : 0.1,
+            "softness"  : 0.8,
+            "sigmaWorld": 0.003,
+            "intensity" : 0.55,
+            "color"     : {"r": 0.65, "g": 0.74, "b": 1, "a": 1}
+          },
+          {
+            "type"    : "TransformAnimator",
+            "rotation": [
+              { "time": 0,   "value": {"x": 0, "y": 0, "z":    0}, "interpolation": "step" },
+              { "time": 0.1, "value": {"x": 0, "y": 0, "z":   30}, "interpolation": "step" },
+              { "time": 0.2, "value": {"x": 0, "y": 0, "z":   60}, "interpolation": "step" },
+              { "time": 0.3, "value": {"x": 0, "y": 0, "z":   90}, "interpolation": "step" },
+              { "time": 0.4, "value": {"x": 0, "y": 0, "z":  120}, "interpolation": "step" },
+              { "time": 0.5, "value": {"x": 0, "y": 0, "z":  150}, "interpolation": "step" },
+              { "time": 0.6, "value": {"x": 0, "y": 0, "z":  180}, "interpolation": "step" },
+              { "time": 0.7, "value": {"x": 0, "y": 0, "z":  210}, "interpolation": "step" },
+              { "time": 0.8, "value": {"x": 0, "y": 0, "z":  240}, "interpolation": "step" },
+              { "time": 0.9, "value": {"x": 0, "y": 0, "z":  270}, "interpolation": "step" },
+              { "time": 1,   "value": {"x": 0, "y": 0, "z":  300}, "interpolation": "step" },
+              { "time": 1.1, "value": {"x": 0, "y": 0, "z":  330}, "interpolation": "step" },
+              { "time": 1.2, "value": {"x": 0, "y": 0, "z":  360}, "interpolation": "step" },
+              { "time": 1.3, "value": {"x": 0, "y": 0, "z":  390}, "interpolation": "step" },
+              { "time": 1.4, "value": {"x": 0, "y": 0, "z":  420}, "interpolation": "step" },
+              { "time": 1.5, "value": {"x": 0, "y": 0, "z":  450}, "interpolation": "step" },
+              { "time": 1.6, "value": {"x": 0, "y": 0, "z":  480}, "interpolation": "step" },
+              { "time": 1.7, "value": {"x": 0, "y": 0, "z":  510}, "interpolation": "step" },
+              { "time": 1.8, "value": {"x": 0, "y": 0, "z":  540}, "interpolation": "step" },
+              { "time": 1.9, "value": {"x": 0, "y": 0, "z":  570}, "interpolation": "step" },
+              { "time": 2,   "value": {"x": 0, "y": 0, "z":  600}, "interpolation": "step" },
+              { "time": 2.1, "value": {"x": 0, "y": 0, "z":  630}, "interpolation": "step" },
+              { "time": 2.2, "value": {"x": 0, "y": 0, "z":  660}, "interpolation": "step" },
+              { "time": 2.3, "value": {"x": 0, "y": 0, "z":  690}, "interpolation": "step" },
+              { "time": 2.4, "value": {"x": 0, "y": 0, "z":  720}, "interpolation": "step" },
+              { "time": 2.5, "value": {"x": 0, "y": 0, "z":  750}, "interpolation": "step" },
+              { "time": 2.6, "value": {"x": 0, "y": 0, "z":  780}, "interpolation": "step" },
+              { "time": 2.7, "value": {"x": 0, "y": 0, "z":  810}, "interpolation": "step" },
+              { "time": 2.8, "value": {"x": 0, "y": 0, "z":  840}, "interpolation": "step" },
+              { "time": 2.9, "value": {"x": 0, "y": 0, "z":  870}, "interpolation": "step" },
+              { "time": 3,   "value": {"x": 0, "y": 0, "z":  900}, "interpolation": "step" },
+              { "time": 3.1, "value": {"x": 0, "y": 0, "z":  930}, "interpolation": "step" },
+              { "time": 3.2, "value": {"x": 0, "y": 0, "z":  960}, "interpolation": "step" },
+              { "time": 3.3, "value": {"x": 0, "y": 0, "z":  990}, "interpolation": "step" },
+              { "time": 3.4, "value": {"x": 0, "y": 0, "z": 1020}, "interpolation": "step" },
+              { "time": 3.5, "value": {"x": 0, "y": 0, "z": 1050}, "interpolation": "step" },
+              { "time": 3.6, "value": {"x": 0, "y": 0, "z": 1080}, "interpolation": "step" },
+              { "time": 3.7, "value": {"x": 0, "y": 0, "z": 1110}, "interpolation": "step" },
+              { "time": 3.8, "value": {"x": 0, "y": 0, "z": 1140}, "interpolation": "step" },
+              { "time": 3.9, "value": {"x": 0, "y": 0, "z": 1170}, "interpolation": "step" },
+              { "time": 4,   "value": {"x": 0, "y": 0, "z": 1200}, "interpolation": "step" },
+              { "time": 4.1, "value": {"x": 0, "y": 0, "z": 1230}, "interpolation": "step" },
+              { "time": 4.2, "value": {"x": 0, "y": 0, "z": 1260}, "interpolation": "step" },
+              { "time": 4.3, "value": {"x": 0, "y": 0, "z": 1290}, "interpolation": "step" },
+              { "time": 4.4, "value": {"x": 0, "y": 0, "z": 1320}, "interpolation": "step" },
+              { "time": 4.5, "value": {"x": 0, "y": 0, "z": 1350}, "interpolation": "step" },
+              { "time": 4.6, "value": {"x": 0, "y": 0, "z": 1380}, "interpolation": "step" },
+              { "time": 4.7, "value": {"x": 0, "y": 0, "z": 1410}, "interpolation": "step" },
+              { "time": 4.8, "value": {"x": 0, "y": 0, "z": 1440}, "interpolation": "step" },
+              { "time": 4.9, "value": {"x": 0, "y": 0, "z": 1470}, "interpolation": "step" },
+              { "time": 5,   "value": {"x": 0, "y": 0, "z": 1500}, "interpolation": "step" },
+              { "time": 5.1, "value": {"x": 0, "y": 0, "z": 1530}, "interpolation": "step" },
+              { "time": 5.2, "value": {"x": 0, "y": 0, "z": 1560}, "interpolation": "step" },
+              { "time": 5.3, "value": {"x": 0, "y": 0, "z": 1590}, "interpolation": "step" },
+              { "time": 5.4, "value": {"x": 0, "y": 0, "z": 1620}, "interpolation": "step" },
+              { "time": 5.5, "value": {"x": 0, "y": 0, "z": 1650}, "interpolation": "step" },
+              { "time": 5.6, "value": {"x": 0, "y": 0, "z": 1680}, "interpolation": "step" },
+              { "time": 5.7, "value": {"x": 0, "y": 0, "z": 1710}, "interpolation": "step" },
+              { "time": 5.8, "value": {"x": 0, "y": 0, "z": 1740}, "interpolation": "step" },
+              { "time": 5.9, "value": {"x": 0, "y": 0, "z": 1770}, "interpolation": "step" },
+              { "time": 6,   "value": {"x": 0, "y": 0, "z": 1800}, "interpolation": "step" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Young Person - Asset Review",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 0.4, "frameRate": 30, "autoplay": true, "loop": true},
+  "assets"        : {
+    "young_person": {
+      "type"          : "Sprite",
+      "file"          : "young_person_atlas.png",
+      "size"          : {"x": 70, "y": 15},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0.4375, "y": 0},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 8, "y": 13},
+        "columns"   : 7,
+        "rows"      : 1,
+        "frameCount": 7,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrameRate" : 30,
+        "gridStep"        : 2.5,
+        "samplingFraction": 0.6,
+        "states"          : ["run_0", "run_1", "run_2", "run_3", "idle", "look_up", "raise_hand"],
+        "clips"           : {
+          "run"       : {
+            "frames"          : [0, 1, 2, 3],
+            "framesPerSecond" : 10,
+            "sourceHoldFrames": 3,
+            "sourceCycleStart": 4978,
+            "loop"            : true
+          },
+          "idle"      : {
+            "frames": [4],
+            "loop"  : false
+          },
+          "look_up"   : {
+            "frames": [5],
+            "loop"  : false
+          },
+          "raise_hand": {
+            "frames": [6],
+            "loop"  : false
+          }
+        },
+        "facing"          : "+X",
+        "sourceIntervals" : {
+          "run"       : [4976, 5022],
+          "idle"      : [5023, 5042],
+          "look_up"   : [5043, 5088],
+          "raise_hand": [5515, 5521]
+        },
+        "notes"           : [
+          "Shared union bounds and foot anchor retain the running head bob.",
+          "Black ink and white eyes are normalized to RGB 0 and 255 after grid sampling.",
+          "The arm is observed after paper release; paper and the second person are excluded.",
+          "The raised pose lower three rows are occluded by the other head and reuse the measured idle legs."
+        ]
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "young-person-review",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          { "type": "Camera", "referenceVerticalSize": 3.6, "clearColor": {"r": 0.52, "g": 0.66, "b": 0.72, "a": 1} }
+        ]
+      },
+      {
+        "id"        : "run",
+        "name"      : "Run",
+        "transform" : {
+          "localPosition": {"x": -2.25, "y": -0.65        },
+          "localScale"   : {"x":  4,    "y":  4,    "z": 1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "young_person", "frame": 0},
+          {
+            "type"           : "SpriteAnimator",
+            "frames"         : [0, 1, 2, 3],
+            "framesPerSecond": 10,
+            "loop"           : true,
+            "hideOutside"    : false
+          }
+        ]
+      },
+      {
+        "id"        : "idle",
+        "name"      : "Idle",
+        "transform" : {
+          "localPosition": {"x": -0.75, "y": -0.65        },
+          "localScale"   : {"x":  4,    "y":  4,    "z": 1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "young_person", "frame": 4}
+        ]
+      },
+      {
+        "id"        : "look_up",
+        "name"      : "Look Up",
+        "transform" : {
+          "localPosition": {"x": 0.75, "y": -0.65        },
+          "localScale"   : {"x": 4,    "y":  4,    "z": 1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "young_person", "frame": 5}
+        ]
+      },
+      {
+        "id"        : "raise_hand",
+        "name"      : "Raise Hand",
+        "transform" : {
+          "localPosition": {"x": 2.25, "y": -0.65        },
+          "localScale"   : {"x": 4,    "y":  4,    "z": 1}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "young_person", "frame": 6}
+        ]
+      }
+    ]
+  }
+}

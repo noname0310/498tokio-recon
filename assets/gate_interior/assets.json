@@ -1,0 +1,274 @@
+{
+  "assets": {
+    "wall_checker_tile"   : {
+      "type"          : "Sprite",
+      "file"          : "wall_checker_tile.png",
+      "size"          : {"x": 10, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1815,
+        "nativeCellPixels": 5,
+        "originPixels"    : [53.50341435259322, 50.01490465131435],
+        "repeatNative"    : {"x": 10, "y": 10},
+        "repeatPixels"    : {"x": 50, "y": 50},
+        "samplingFraction": 0.6,
+        "repetitions"     : 27
+      }
+    },
+    "wall_diagonal_tile"  : {
+      "type"          : "Sprite",
+      "file"          : "wall_diagonal_tile.png",
+      "size"          : {"x": 10, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1837,
+        "nativeCellPixels": 5,
+        "originPixels"    : [39.950821041501854, 50.01715955843504],
+        "repeatNative"    : {"x": 10, "y": 10},
+        "repeatPixels"    : {"x": 50, "y": 50},
+        "samplingFraction": 0.6,
+        "repetitions"     : 27
+      }
+    },
+    "wall_panel_tile"     : {
+      "type"          : "Sprite",
+      "file"          : "wall_panel_tile.png",
+      "size"          : {"x": 20, "y": 20},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1943,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [42.52134645773054, 52.51876786834763],
+        "repeatNative"    : {"x": 20, "y": 20},
+        "repeatPixels"    : {"x": 50, "y": 50},
+        "samplingFraction": 0.6,
+        "repetitions"     : 27
+      }
+    },
+    "black_ball"          : {
+      "type"          : "Sprite",
+      "file"          : "black_ball.png",
+      "size"          : {"x": 42, "y": 42},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame": 1857,
+        "nativeCellPixels": 4.2,
+        "originPixels": [379.8667384281417, 166.7819872876523],
+        "generatedRows": [40, 41],
+        "completion": "Only the clipped silhouette rows mirror the top; the upper-left highlight is not mirrored."
+      }
+    },
+    "surprise"            : {
+      "type"          : "Sprite",
+      "file"          : "surprise.png",
+      "size"          : {"x": 13, "y": 12},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1883,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [328.72131320001347, 261.97616251403866],
+        "sampleOrigins"   : [
+          [328.72131320001347, 261.97616251403866],
+          [388.71294458071776, 261.9802422992409 ],
+          [448.7385540929811,  261.9881200832093 ],
+          [508.7344918916574,  261.9726803517775 ]
+        ],
+        "samples"         : 4,
+        "samplingFraction": 0.6
+      }
+    },
+    "question_mark"       : {
+      "type"          : "Sprite",
+      "file"          : "question_mark.png",
+      "size"          : {"x": 5, "y": 6},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 2010,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [462.79005218155777, 266.5243694762631],
+        "samplingFraction": 0.6
+      }
+    },
+    "chest_atlas"         : {
+      "type"          : "Sprite",
+      "file"          : "chest_atlas.png",
+      "size"          : {"x": 56, "y": 21},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 26, "y": 19},
+        "columns"   : 2,
+        "rows"      : 1,
+        "frameCount": 2,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "referenceFrames" : [1943, 1955],
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [120.79449119184312, 289.44015314812674],
+        "sampleOrigins"   : [
+          [120.79449119184312, 289.44015314812674],
+          [252.46651139491328, 289.4570804759864 ],
+          [384.06552109192745, 289.43446234578477],
+          [515.799084721505,   289.4434603181294 ]
+        ],
+        "states"          : ["closed", "open"],
+        "samplingFraction": 0.6,
+        "samplesPerPose"  : [16, 4]
+      }
+    },
+    "sword"               : {
+      "type"          : "Sprite",
+      "file"          : "sword.png",
+      "size"          : {"x": 13, "y": 13},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1996,
+        "sampleFrames"    : [1996, 2022],
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [85.71786251892577, 213.75692359443613],
+        "samplingFraction": 0.6,
+        "samples"         : 27
+      }
+    },
+    "raygun"              : {
+      "type"          : "Sprite",
+      "file"          : "raygun.png",
+      "size"          : {"x": 19, "y": 12},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1996,
+        "sampleFrames"    : [1996, 2022],
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [209.30095082268792, 215.98017555416553],
+        "samplingFraction": 0.6,
+        "samples"         : 27
+      }
+    },
+    "crystal"             : {
+      "type"          : "Sprite",
+      "file"          : "crystal.png",
+      "size"          : {"x": 11, "y": 19},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1996,
+        "sampleFrames"    : [1996, 2022],
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [349.25215334217205, 206.24015300532912],
+        "samplingFraction": 0.6,
+        "samples"         : 27
+      }
+    },
+    "bomb_atlas"          : {
+      "type"          : "Sprite",
+      "file"          : "bomb_atlas.png",
+      "size"          : {"x": 60, "y": 22},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 18, "y": 20},
+        "columns"   : 3,
+        "rows"      : 1,
+        "frameCount": 3,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "referenceFrame"     : 1996,
+        "sampleFrames"       : [1995, 2022],
+        "nativeCellPixels"   : 2.5,
+        "originPixels"       : [473.26860972350835, 200.94938819946088],
+        "samplingFraction"   : 0.6,
+        "samples"            : 28,
+        "states"             : ["fuse_0", "fuse_1", "fuse_2"],
+        "loopSourceFrames"   : 6,
+        "holdSourceFrames"   : 2,
+        "frameRate"          : 15,
+        "phaseReferenceFrame": 1995
+      }
+    },
+    "sparkle_atlas"       : {
+      "type"          : "Sprite",
+      "file"          : "sparkle_atlas.png",
+      "size"          : {"x": 204, "y": 53},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 49, "y": 51},
+        "columns"   : 4,
+        "rows"      : 1,
+        "frameCount": 4,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "referenceFrame"     : 1955,
+        "sampleFrames"       : [1955, 2022],
+        "nativeCellPixels"   : 1.25,
+        "originPixels"       : [68.75, 196.25],
+        "loopSourceFrames"   : 8,
+        "holdSourceFrames"   : 2,
+        "frameRate"          : 15,
+        "phaseReferenceFrame": 1955,
+        "placements"         : "Both sparkles around one item, with their observed relative phase.",
+        "alpha"              : "Background-subtracted yellow coverage, temporally pooled across complete loops."
+      }
+    },
+    "floor_light"         : {
+      "type"          : "Sprite",
+      "file"          : "floor_light.png",
+      "size"          : {"x": 35, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame": 2098,
+        "nativeCellPixels": 10,
+        "originPixels": [145, 177],
+        "lowerHalfRowWidths": [35, 33, 31, 23, 9],
+        "completion": "Upper silhouette mirrors the visible lower half beneath the column; no person or vertical beam is baked.",
+        "suggestedGlow": {
+          "type"      : "Glow",
+          "threshold" : 0.5,
+          "softness"  : 0,
+          "sigmaWorld": 0.14610627428878703,
+          "intensity" : 1.612999362122848,
+          "color"     : {"r": 0.7736219896896588, "g": 0.9209947801210825, "b": 1, "a": 1}
+        },
+        "glowFitRms": 3.025842898214206,
+        "glowFitRegion": "Outside the white core, source y=250..315, x=110..530"
+      }
+    },
+    "black_ball_highlight": {
+      "type"          : "Sprite",
+      "file"          : "black_ball_highlight.png",
+      "size"          : {"x": 42, "y": 42},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "source": "black_ball.png",
+        "method": "White native cells only; local translation is animated separately from the silhouette."
+      }
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "assets": {
+    "ground_tile"      : {
+      "type"          : "Sprite",
+      "file"          : "ground_tile.png",
+      "size"          : {"x": 10, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1227,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [7.5, 288.5],
+        "repeatNative"    : {"x": 10, "y": 10}
+      }
+    },
+    "grass_tile"       : {
+      "type"          : "Sprite",
+      "file"          : "grass_tile.png",
+      "size"          : {"x": 14, "y": 5},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1227,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [20, 278],
+        "repeatNative"    : {"x": 14}
+      }
+    },
+    "cloud_large"      : {
+      "type"          : "Sprite",
+      "file"          : "cloud_large.png",
+      "size"          : {"x": 120, "y": 44},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1227,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [79, 42]
+      }
+    },
+    "cloud_left"       : {
+      "type"          : "Sprite",
+      "file"          : "cloud_left.png",
+      "size"          : {"x": 21, "y": 9},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1227,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [105, 48.75]
+      }
+    },
+    "cloud_right"      : {
+      "type"          : "Sprite",
+      "file"          : "cloud_right.png",
+      "size"          : {"x": 21, "y": 9},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1227,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [457, 97.8]
+      }
+    },
+    "paper_plane_small": {
+      "type"          : "Sprite",
+      "file"          : "paper_plane_small.png",
+      "size"          : {"x": 8, "y": 6},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1227,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [399.741134531009, 200.51031098200002]
+      }
+    },
+    "gate"             : {
+      "type"          : "Sprite",
+      "file"          : "gate.png",
+      "size"          : {"x": 63, "y": 44},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame"  : 1680,
+        "sampleFrames"    : [1659, 1700],
+        "sampleFrameCount": 42,
+        "nativeCellPixels": 2.5,
+        "originPixels"    : [472.60033197389146, 179.31074168309374],
+        "samplingFraction": 0.6,
+        "generatedRows"   : [38, 43],
+        "generatedCells"  : 308,
+        "notes"           : [
+          "The header, doorway, sloped side wall and 498 decoration are one opaque sprite with transparent exterior.",
+          "Passing people and grass are rejected before central cell means; ink and the portal interior are normalized to pure black.",
+          "The grass-occluded foot continues the measured two-row lamp/rod patterns and side-wall slope; its final horizontal rim is inferred."
+        ]
+      }
+    },
+    "adult"            : {
+      "type"          : "Sprite",
+      "file"          : "adult_atlas.png",
+      "size"          : {"x": 150, "y": 23},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 13, "y": 21},
+        "columns"   : 10,
+        "rows"      : 1,
+        "frameCount": 10,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames"    : [1230, 1348],
+        "nativeCellPixels": 2.5,
+        "samplingFraction": 0.6,
+        "states"          : [
+          "run_0",             "run_1",             "run_2",             "run_3",             "idle",
+          "jump",              "look_up",           "raise_hands_up",    "raise_hands_right", "front"
+        ],
+        "facing"          : "+X",
+        "additionalPoses" : [
+          {
+            "name"               : "jump",
+            "frame"              : 5,
+            "referenceFrame"     : 1768,
+            "sampleFrames"       : [1765, 1772],
+            "headAnchorNative"   : [2, 3],
+            "facing"             : "+X",
+            "sourceFacing"       : "-X",
+            "flippedHorizontally": true
+          },
+          {
+            "name"            : "look_up",
+            "frame"           : 6,
+            "referenceFrame"  : 1943,
+            "headAnchorNative": [2, 1],
+            "originPixels"    : [
+              [ 84.63330282306096, 284.63458821025864],
+              [215.64691214776303, 284.63465024131204],
+              [346.6327286077847,  284.62741796462194],
+              [477.619839690521,   284.6332620787479 ]
+            ]
+          },
+          {
+            "name"            : "raise_hands_up",
+            "frame"           : 7,
+            "referenceFrame"  : 2007,
+            "headAnchorNative": [2, 1],
+            "originPixels"    : [
+              [ 84.63330282306096, 284.63458821025864],
+              [215.64691214776303, 284.63465024131204],
+              [346.6327286077847,  284.62741796462194],
+              [477.619839690521,   284.6332620787479 ]
+            ]
+          },
+          {
+            "name"               : "raise_hands_right",
+            "frame"              : 8,
+            "referenceFrame"     : 2010,
+            "headAnchorNative"   : [2, 1],
+            "originPixels"       : [
+              [477.619839690521, 284.6332620787479]
+            ],
+            "sourceFacing"       : "-X",
+            "facing"             : "+X",
+            "flippedHorizontally": true
+          },
+          {
+            "name"            : "front",
+            "frame"           : 9,
+            "referenceFrame"  : 2098,
+            "sampleFrames"    : [2083, 2098],
+            "headAnchorNative": [2, 1],
+            "sampling"        : "The dark frame is normalized by its flat background before pooling with frame 2098."
+          }
+        ],
+        "bodySource"      : {
+          "asset" : "../landing/pilot_atlas_blue.png",
+          "frames": [
+            { "frame": 0, "pilotStartRow": 18, "offsetNative": {"x": -2, "y": -6}, "copiedOpaqueCells": 38 },
+            { "frame": 1, "pilotStartRow": 18, "offsetNative": {"x": -2, "y": -6}, "copiedOpaqueCells": 35 },
+            { "frame": 2, "pilotStartRow": 18, "offsetNative": {"x": -2, "y": -6}, "copiedOpaqueCells": 47 },
+            { "frame": 3, "pilotStartRow": 17, "offsetNative": {"x": -2, "y": -6}, "copiedOpaqueCells": 49 },
+            { "frame": 4, "pilotStartRow": 18, "offsetNative": {"x": -2, "y": -7}, "copiedOpaqueCells": 21 }
+          ]
+        },
+        "notes"           : [
+          "The 9x8 head and wider limbs differ from the young-person atlas.",
+          "The complete body and feet reuse the corresponding pilot poses, as specified by the user.",
+          "Three additional native rows preserve the pilot feet; scene foot positions compensate to retain the measured head grid."
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Intro sparks - Frames 0 to 72",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 2.433333333333333, "frameRate": 30, "autoplay": true, "loop": true},
+  "assets"        : {
+    "burst_a"     : {
+      "type"          : "Sprite",
+      "file"          : "burst_a.png",
+      "size"          : {"x": 120, "y": 15},
+      "pixelsPerUnit" : 16.526847581721935,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 13, "y": 13},
+        "columns"   : 8,
+        "rows"      : 1,
+        "frameCount": 8,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "firstFrame"      : 0,
+        "lastFrame"       : 15,
+        "holdFrames"      : 2,
+        "framesPerSecond" : 15,
+        "grid"            : {
+          "step"  : 6.0507607095376255,
+          "origin": [181.07002743801945, 69.92399961824037]
+        },
+        "samplingFraction": 0.6,
+        "opaqueCells"     : [1, 5, 8, 8, 8, 4, 16, 16],
+        "glowExteriorRmse": 2.856080259429639
+      }
+    },
+    "spark_b"     : {
+      "type"          : "Sprite",
+      "file"          : "spark_b.png",
+      "size"          : {"x": 126, "y": 7},
+      "pixelsPerUnit" : 16.632996128296348,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 5, "y": 5},
+        "columns"   : 18,
+        "rows"      : 1,
+        "frameCount": 18,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "firstFrame"      : 16,
+        "lastFrame"       : 69,
+        "holdFrames"      : 3,
+        "framesPerSecond" : 10,
+        "grid"            : {
+          "step"  : 6.012145931416303,
+          "origin": [235.3371583108032, 269.33492249320506]
+        },
+        "samplingFraction": 0.6,
+        "opaqueCells"     : [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+        "glowExteriorRmse": 1.5812471769688847
+      }
+    },
+    "burst_c"     : {
+      "type"          : "Sprite",
+      "file"          : "burst_c.png",
+      "size"          : {"x": 322, "y": 22},
+      "pixelsPerUnit" : 16.62752398730874,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 21, "y": 20},
+        "columns"   : 14,
+        "rows"      : 1,
+        "frameCount": 14,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "firstFrame"      : 31,
+        "lastFrame"       : 58,
+        "holdFrames"      : 2,
+        "framesPerSecond" : 15,
+        "grid"            : {
+          "step"  : 6.0141245369019956,
+          "origin": [376.8318390191414, 34.6471542621303]
+        },
+        "samplingFraction": 0.6,
+        "opaqueCells"     : [2, 2, 2, 2, 2, 1, 4, 7, 11, 7, 3, 15, 24, 12],
+        "glowExteriorRmse": 2.3492413613571506
+      }
+    },
+    "moon_surface": {
+      "type"          : "Sprite",
+      "file"          : "moon_surface.png",
+      "size"          : {"x": 299, "y": 23},
+      "pixelsPerUnit" : 16.63506920932572,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 21, "y": 21},
+        "columns"   : 13,
+        "rows"      : 1,
+        "frameCount": 13,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "firstFrame"      : 45,
+        "lastFrame"       : 70,
+        "holdFrames"      : 2,
+        "framesPerSecond" : 15,
+        "grid"            : {
+          "step"  : 6.01139669103026,
+          "origin": [256.8953661235411, 116.85659634330166]
+        },
+        "samplingFraction": 0.6,
+        "opaqueCells"     : [3, 13, 19, 21, 27, 29, 44, 29, 27, 21, 19, 13, 3],
+        "glowExteriorRmse": 0.8144117917651469
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "sparks",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"x": 0, "y": 0, "z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"        : "burst_a",
+        "name"      : "First spark",
+        "transform" : {
+          "localPosition": {"x": -0.9960002794998598, "y": 0.7074605576976506, "z": 0}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "burst_a"},
+          {
+            "type"           : "SpriteAnimator",
+            "framesPerSecond": 15,
+            "loop"           : false,
+            "hideOutside"    : true,
+            "start"          : {
+              "frame": 0,
+              "rate" : {"numerator": 30, "denominator": 1}
+            }
+          },
+          {
+            "type"      : "Glow",
+            "sigmaWorld": 0.12330277175354323,
+            "threshold" : 0,
+            "softness"  : 1,
+            "intensity" : 1.7699685317054181,
+            "color"     : {"r": 1, "g": 0.9471864789699641, "b": 0.09835619733967006, "a": 1}
+          }
+        ]
+      },
+      {
+        "id"        : "spark_b",
+        "name"      : "Small spark",
+        "transform" : {
+          "localPosition": {"x": -0.6963247686065602, "y": -1.0436528732174581, "z": 0}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "spark_b"},
+          {
+            "type"           : "SpriteAnimator",
+            "framesPerSecond": 10,
+            "loop"           : false,
+            "hideOutside"    : true,
+            "start"          : {
+              "frame": 16,
+              "rate" : {"numerator": 30, "denominator": 1}
+            }
+          },
+          {
+            "type"      : "Glow",
+            "sigmaWorld": 0.11938616173904668,
+            "threshold" : 0,
+            "softness"  : 1,
+            "intensity" : 0.7907118778745291,
+            "color"     : {"r": 1, "g": 0.918499356977708, "b": 0.14508918643267826, "a": 1}
+          }
+        ]
+      },
+      {
+        "id"        : "burst_c",
+        "name"      : "Upper-right spark",
+        "transform" : {
+          "localPosition": {"x": 1.1998014665661236, "y": 0.8521160036884975, "z": 0}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "burst_c"},
+          {
+            "type"           : "SpriteAnimator",
+            "framesPerSecond": 15,
+            "loop"           : false,
+            "hideOutside"    : true,
+            "start"          : {
+              "frame": 31,
+              "rate" : {"numerator": 30, "denominator": 1}
+            }
+          },
+          {
+            "type"      : "Glow",
+            "sigmaWorld": 0.12434530304315024,
+            "threshold" : 0,
+            "softness"  : 1,
+            "intensity" : 1.8190202521948569,
+            "color"     : {"r": 1, "g": 0.957260014574737, "b": 0.09912095959186995, "a": 1}
+          }
+        ]
+      },
+      {
+        "id"        : "moon_surface",
+        "name"      : "Moon surface flame",
+        "transform" : {
+          "localPosition": {"x": 0.00015031379358845242, "y": 0.00023738400880603196, "z": 0}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "moon_surface"},
+          {
+            "type"           : "SpriteAnimator",
+            "framesPerSecond": 15,
+            "loop"           : false,
+            "hideOutside"    : true,
+            "start"          : {
+              "frame": 45,
+              "rate" : {"numerator": 30, "denominator": 1}
+            }
+          },
+          {
+            "type"      : "Glow",
+            "sigmaWorld": 0.060047582586151976,
+            "threshold" : 0,
+            "softness"  : 1,
+            "intensity" : 0.021045394384282927,
+            "color"     : {"r": 0.8763610834231819, "g": 0.1849905552291866, "b": 1, "a": 1}
+          }
+        ]
+      }
+    ]
+  }
+}
