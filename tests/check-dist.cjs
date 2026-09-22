@@ -31,7 +31,7 @@ async function main() {
       references++;
     }
   }
-  for (const basePath of ['/', '/498tokio_recon/']) {
+  for (const basePath of ['/', '/498tokio-recon/']) {
     const server = makeServer({ basePath });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const base = `http://127.0.0.1:${server.address().port}${basePath}`;
