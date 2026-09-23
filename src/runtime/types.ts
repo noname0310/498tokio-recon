@@ -89,6 +89,9 @@ export type MaskParameters=({type:"Glow"}&Pick<Glow,"sigmaWorld"|"threshold"|"so
 export type TextureJob={kind:"noise";component:ProceduralNoise}|{kind:"tile";source:PixelImage;asset:SpriteAsset;sigmaWorld:Vec2;resolution:number;repeatY?:boolean}|{kind:"mask";source:PixelImage;asset:SpriteAsset;component:MaskParameters;resolution:number};
 export interface RenderObject {id:string;update(scene:import("./scene.js").Scene,view:View):Promise<void>;dispose():void}
 export interface Renderer {
+  readonly kind:"dom"|"babylon";
+  readonly displayName:string;
   objects:RenderObject[];createScene(scene:import("./scene.js").Scene,resources:import("./resources.js").Resources):Promise<void>;
+  prepare?(progress:import("./loading-status.js").LoadingProgress):Promise<void>;
   update(scene:import("./scene.js").Scene,view:View):Promise<void>;disposeScene():void;dispose():void;
 }

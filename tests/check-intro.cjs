@@ -15,8 +15,8 @@ async function main(){
       assert.equal(scene.parents.get(id).id,"moon");
       const m=scene.world.get(id),moon=scene.world.get("moon");assert.equal(Math.hypot(m[0],m[1],m[2]),Math.hypot(moon[0],moon[1],moon[2]),"Flames inherit the moon pixel pitch");
     }
-    if(n===547){assert.equal(scene.active.get("ship"),false);assert.equal(scene.active.get("warp-beam-0"),true);}
-    if(n===558)assert.equal(scene.active.get("warp-beam-0"),false);
+    if(n===547){assert.equal(scene.isActive("ship"),false);assert.equal(scene.isActive("warp-beam-0"),true);}
+    if(n===558)assert.equal(scene.isActive("warp-beam-0"),false);
   }
   assert.equal(scene.parents.get("intro-scenery").id,"intro-root");assert.equal(scene.parents.get("warp-curtain").id,"intro-root");
   for(const [frame,z] of [[480,0],[481,0],[513.5,2],[546,4],[547,4],[558,4]]){
@@ -27,10 +27,10 @@ async function main(){
   }
   for(const n of [192,198,204,300,306]){at(n);const hue=scene.component("moon","SpriteRenderer").hueDegrees;at(n+5);assert.equal(scene.component("moon","SpriteRenderer").hueDegrees,hue,"Hue holds six source frames");at(n+108);assert.equal(scene.component("moon","SpriteRenderer").hueDegrees,hue,"Hue loop is exactly 108 frames");}
   at(481);assert.equal(scene.transformAt("arrival").localPosition.y,0);at(539);assert.equal(scene.transformAt("arrival").localPosition.y,0);
-  at(309);assert.equal(scene.active.get("grass-layers"),false);
+  at(309);assert.equal(scene.isActive("grass-layers"),false);
   let lastY=-Infinity;
   for(const frame of [310,320,330,340,350,360,372]){
-    at(frame);assert.equal(scene.active.get("grass-layers"),true);assert.equal(scene.active.get("ship"),true,"The whole arrival rig enters together");
+    at(frame);assert.equal(scene.isActive("grass-layers"),true);assert.equal(scene.isActive("ship"),true,"The whole arrival rig enters together");
     assert(scene.particleStates("ship-exhaust").length>0,"The exhaust accompanies the early ship entry");
     assert.equal(scene.parents.get("ship").id,scene.parents.get("grass-layers").id,"Ship and grass share the cubic parent motion");
     const y=scene.world.get("grass-layers")[13];assert(y>lastY,"Grass rises monotonically into the existing arrival");lastY=y;
@@ -52,17 +52,17 @@ async function main(){
   if(output)fs.mkdirSync(output,{recursive:true});
   try{for(const renderer of ["dom","babylon"]){
     const page=await browser.newPage({viewport:{width:640,height:360}}),errors=[];page.on("pageerror",e=>errors.push(e.message));page.on("console",m=>{if(m.type()==="error")errors.push(m.text());});
-    if(renderer==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas forbidden in DOM renderer");};window.OffscreenCanvas=class{constructor(){throw new Error("OffscreenCanvas forbidden");}};});
+    if(renderer==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas forbidden in DOM renderer");};});
     await page.goto(`${origin}/index.html?renderer=${renderer}&controls=0`);await page.waitForFunction(()=>window.scenePlayer?.ready);
     // Exact analysis samples bypass media seek quantization while preserving the
     // authored audio clock in the delivered scene.
-    const sample=n=>page.evaluate(async n=>{const {Frame,Time,frameRate}=await import("/runtime/player.js");scenePlayer.pause();scenePlayer.scene.setFrameTime(Time.fromFrame(Frame.from(n)),frameRate(30));scenePlayer.time=n/30;await scenePlayer.update();},n);
-    const capture=name=>page.screenshot(output?{path:path.join(output,`${renderer}_${name}.png`)}:{});
+    const sample=n=>page.evaluate(async n=>{const {Frame,Time,frameRate}=await import("/runtime/player.js");scenePlayer.pause();scenePlayer.scene.setFrameTime(Time.fromFrame(Frame.from(n)),frameRate(30));scenePlayer.time=n/30;await scenePlayer.update();await scenePlayer.whenIdle();},n);
+    const capture=name=>page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",...output?{path:path.join(output,`${renderer}_${name}.png`)}:{}});
     let repeat,repeatState;
     for(const n of [0,76,120,173,300,360,400,450,481,530,540,542,547,550,553,558,173]){
       await sample(n);const bytes=await capture(String(n).padStart(6,"0"));
       if(n===173){
-        const state=await page.evaluate(()=>{const scene=scenePlayer.scene;return {time:scene.time,entities:[...scene.nodes.values()].sort((a,b)=>a.id.localeCompare(b.id)).map(n=>({id:n.id,world:scene.world.get(n.id),active:scene.active.get(n.id),components:n.components.map(c=>scene.component(n.id,c.type))}))};});
+        const state=await page.evaluate(()=>{const scene=scenePlayer.scene;return {time:scene.time,entities:[...scene.nodes.values()].sort((a,b)=>a.id.localeCompare(b.id)).map(n=>({id:n.id,world:scene.world.get(n.id),active:scene.isActive(n.id),components:n.components.map(c=>scene.component(n.id,c.type))}))};});
         if(repeat){
           assert.deepEqual(state,repeatState,"Exact rewind must reproduce all evaluated renderer inputs");
           // Retained SVG filter surfaces can round a few blended channels by
@@ -71,7 +71,7 @@ async function main(){
         }else{repeat=bytes;repeatState=state;}
       }
       if(n===547){const p=png(bytes),i=(23*p.width+112)*p.channels;assert([...p.pixels.subarray(i,i+3)].every(v=>v>248),"Warp beams render in front of the vignette");}
-      if(n===558)assert.equal(await page.evaluate(()=>scenePlayer.scene.active.get("warp-beam-0")),false,"The beam is gone while the next star field remains visible");
+      if(n===558)assert.equal(await page.evaluate(()=>scenePlayer.scene.isActive("warp-beam-0")),false,"The beam is gone while the next star field remains visible");
     }
     assert.equal(await page.evaluate(()=>scenePlayer.audioPlayer.element.preservesPitch),false);
     for(const frame of [500,530,546]){
@@ -90,7 +90,7 @@ async function main(){
         const changed=[];
         for(const frame of [310,341,372]){
           await sample(frame);const visible=await capture(`portrait_grass_${frame}`);
-          await page.evaluate(()=>scenePlayer.setActive("grass-layers",false));const hidden=await page.screenshot();
+          await page.evaluate(()=>scenePlayer.setActive("grass-layers",false));const hidden=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});
           const diff=compare(visible,hidden);changed.push(diff.mae);
           await page.evaluate(()=>scenePlayer.setActive("grass-layers",true));
         }
@@ -99,7 +99,7 @@ async function main(){
       }
     }
     await page.setViewportSize({width:640,height:360});await sample(530);
-    await page.evaluate(async()=>{await scenePlayer.addEntity("final-animation",{id:"blur-study",transform:{localPosition:{z:-7.1}},components:[{type:"TiledSpriteRenderer",asset:"grass",origin:{x:0,y:1.8}},{type:"DirectionalBlur",sigmaWorld:0}]});});
+    await page.evaluate(async()=>{await scenePlayer.addEntity("final-animation",{id:"blur-study",transform:{localPosition:{z:-7.1}},components:[{type:"TiledSpriteRenderer",asset:"grass",origin:{x:0,y:1.8}},{type:"DirectionalBlur",sigmaWorld:0}]});await scenePlayer.whenIdle();});
     const before=await page.evaluate(()=>scenePlayer.resources.jobs.size);
     const sharp=await capture("blur_sharp");
     await page.evaluate(async()=>{await scenePlayer.setComponent("blur-study","DirectionalBlur",{sigmaWorld:.08,angleDegrees:25});});

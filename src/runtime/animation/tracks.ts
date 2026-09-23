@@ -104,6 +104,27 @@ export abstract class AnimationTrack<T extends number|boolean,V extends Values=V
     return weightedBezier(alpha,left.x,start+left.y,1-right.x,end-right.y,start,end);
   }
   abstract evaluate(time:FrameTime,rate?:FrameRate):T|undefined;
+  /** Conservative value bounds, including weighted-curve overshoot between keys.
+   * A Bezier segment stays inside its control polygon, even with crossed time handles. */
+  valueBounds(rate:FrameRate):{min:number;max:number}|undefined {
+    if(!this.value.length&&this.defaultValue===undefined)return undefined;
+    let min=this.defaultValue===undefined?Infinity:Number(this.defaultValue),max=this.defaultValue===undefined?-Infinity:Number(this.defaultValue);
+    for(const value of this.value){min=Math.min(min,value);max=Math.max(max,value);}
+    for(let i=0;i<this.frameNumber.length-1;i++){
+      const bits=this.interpolation[i*2],out=(bits>>>2)&3,incoming=this.interpolation[(i+1)*2]&3;
+      if(out===Interpolation.Step||incoming===Interpolation.Step)continue;
+      const dt=this.frameNumber[i+1]-this.frameNumber[i],seconds=dt*rate.denominator/rate.numerator;
+      for(const [mode,index,value,sign] of [[out,this.interpolation[i*2+1]+((bits&3)===Interpolation.FCurve?2:0),this.value[i],1],[incoming,this.interpolation[(i+1)*2+1],this.value[i+1],-1]]){
+        if(mode!==Interpolation.FCurve)continue;
+        const slope=this.interpolationParameters[index]*rate.numerator/rate.denominator,weight=this.interpolationParameters[index+1];
+        const dy=weight<0?slope*seconds/3:weight*slope/Math.hypot(1,slope),control=value+sign*dy;
+        min=Math.min(min,control);max=Math.max(max,control);
+      }
+    }
+    if(this.type==="AnimationTrackInt32"){min=Math.floor(min);max=Math.ceil(max);}
+    if(this.type==="AnimationTrackFloat32"){min=Math.min(min,Math.fround(min));max=Math.max(max,Math.fround(max));}
+    return {min,max};
+  }
   toJSON():TrackData{return {type:this.type,frameNumber:Array.from(this.frameNumber),value:Array.from(this.value),interpolation:Array.from(this.interpolation),interpolationParameters:Array.from(this.interpolationParameters),...(this.defaultValue===undefined?{}:{defaultValue:Number(this.defaultValue)})};}
 }
 export class AnimationTrackFloat32 extends AnimationTrack<number,Float32Array> {

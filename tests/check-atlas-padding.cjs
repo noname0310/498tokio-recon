@@ -64,7 +64,7 @@ async function check(){
               await scenePlayer.setTransform("art",{localPosition:{x:.0013,y:.0071,z:0},localScale:{x:scale,y:scale,z:1},localRotation:{z:angle}});
               await scenePlayer.whenIdle();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
             },{frame,particle});
-            const im=png(await page.screenshot());let bright=0;
+            const im=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));let bright=0;
             for(let i=0;i<im.width*im.height;i++){
               const rgb=[0,1,2].map(c=>im.pixels[i*im.channels+c]),level=Math.max(...rgb);if(level>16)bright++;
               for(let c=0;c<3;c++)assert(Math.abs(rgb[c]-colors[frame][c]*level)<=2,`${name} ${particle?"particle":"sprite"} frame ${frame}: neighboring frame leaked at pixel ${i}`);
@@ -74,13 +74,13 @@ async function check(){
         }
         await page.setViewportSize({width:1366,height:768});
         for(const particle of [false,true]){
-          await page.evaluate(data=>scenePlayer.loadScene(data),alignmentFixture(particle));await page.evaluate(()=>scenePlayer.seek(.1));
+          await page.evaluate(data=>scenePlayer.loadScene(data),alignmentFixture(particle));await page.evaluate(async()=>{await scenePlayer.seek(.1);await scenePlayer.whenIdle();});
           const caches=await page.evaluate(()=>({frames:scenePlayer.resources.atlasFrames.size,urls:scenePlayer.resources.urls.size,jobs:scenePlayer.resources.jobs.size}));
           for(const angle of [0,37.2]){
             await page.evaluate(angle=>scenePlayer.setTransform("art",{localRotation:{z:angle}}),angle);let reference;
             for(const frame of [0,1,2,3,4,1,0]){
               await page.evaluate(async({frame,particle})=>{await scenePlayer.setComponent("art",particle?"ParticleEmitter":"SpriteRenderer",particle?{animation:{frame}}:{frame});await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));},{frame,particle});
-              const shot=await page.screenshot();
+              const shot=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});
               if(reference)assert.deepEqual(compare(shot,reference),{max:0,mae:0},`${name}: identical native content cannot shift with atlas frame (${particle?"particle":"sprite"}, ${angle} degrees, ${frame})`);
               else reference=shot;
             }
@@ -88,15 +88,15 @@ async function check(){
           assert.deepEqual(await page.evaluate(()=>({frames:scenePlayer.resources.atlasFrames.size,urls:scenePlayer.resources.urls.size,jobs:scenePlayer.resources.jobs.size})),caches,"Playback reuses all prepared cell images");
           await page.evaluate(()=>scenePlayer.setComponent("art","Flicker",{enabled:true,frequency:15,dutyCycle:.5}));
           for(const frame of [0,1,2,7,0]){
-            const active=await page.evaluate(async frame=>{scenePlayer.pause();const {Frame,frameRate}=await import("/runtime/player.js");await scenePlayer.seekFrame(Frame.from(frame),frameRate(30));return scenePlayer.scene.active.get("art");},frame);
+            const active=await page.evaluate(async frame=>{scenePlayer.pause();const {Frame,frameRate}=await import("/runtime/player.js");await scenePlayer.seekFrame(Frame.from(frame),frameRate(30));return scenePlayer.scene.isActive("art");},frame);
             assert.equal(active,frame%2===0);
-            const im=png(await page.screenshot()),visible=im.pixels.some((v,i)=>i%im.channels<3&&v>32);assert.equal(visible,active,`${name}: Flicker gates the rendered ${particle?"particle":"sprite"}`);
+            const im=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})),visible=im.pixels.some((v,i)=>i%im.channels<3&&v>32);assert.equal(visible,active,`${name}: Flicker gates the rendered ${particle?"particle":"sprite"}`);
           }
-          const atlasImage=await page.screenshot(),standalone=alignmentFixture(particle);
+          const atlasImage=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),standalone=alignmentFixture(particle);
           standalone.assets.art.file="/tests/fixtures/atlas_alignment_cell.png";standalone.assets.art.size={x:17,y:27};delete standalone.assets.art.atlas;
           standalone.root.children[1].transform.localRotation={z:37.2};
-          await page.evaluate(async data=>{await scenePlayer.loadScene(data);await scenePlayer.seek(0);},standalone);
-          assert.deepEqual(compare(atlasImage,await page.screenshot()),{max:0,mae:0},`${name}: atlas content matches the standalone PNG at the same pose`);
+          await page.evaluate(async data=>{await scenePlayer.loadScene(data);await scenePlayer.seek(0);await scenePlayer.whenIdle();},standalone);
+          assert.deepEqual(compare(atlasImage,await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})),{max:0,mae:0},`${name}: atlas content matches the standalone PNG at the same pose`);
         }
         assert.deepEqual(errors,[]);console.log(`${name}: multi-row selection, no neighboring colors, identical content stays pixel-identical across frames at fractional scale and rotation; cached images reused.`);
       }finally{await browser.close();}

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" data-renderer="babylon">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scene Player</title>
+  <style><%= require("./styles/viewport.css?source") %></style>
+  <style><%= require("./styles/controls.css?source") %></style>
+</head>
+<body>
+  <main id="viewport">
+    <p id="status" role="status">Loading runtime…</p>
+  </main>
+  <pre hidden id="license-notices"><%- require("../../LICENSE?source") %>
+<%- require("../../LICENSE-MIT?source") %>
+<%- require("../../LICENSE-APACHE?source") %>
+<%- require("@babylonjs/core/NOTICE.md?source") %>
+<%- require("worker-rspack-loader/LICENSE?source") %></pre>
+</body>
+</html>

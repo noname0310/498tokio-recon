@@ -1,5 +1,8 @@
 import { Scene } from "./scene.js";
 import { Resources } from "./resources.js";
+import type {TextureWorkerFactory} from "./texture-processor.js";
+import {LoadingProgress,LoadingStatus} from "./loading-status.js";
+import {loadSceneJSON} from "./scene-loader.js";
 
 import { Frame, Time, frameRate, type FrameNumber, type FrameTime, type FrameRate } from "./animation/time.js";
 import { PerformanceClock, type AnimationClock, type ClockEvent } from "./animation/clock.js";
@@ -9,9 +12,13 @@ import { DOMSync } from "./dom-sync.js";
 import type { Renderer, View, Transform, EntityInput, Entity, ComponentMap, ComponentType, DeepPartial, SceneData } from "./types.js";
 
 export class Engine {
+  readonly loadingProgress=new LoadingProgress();private readonly loadingStatus=new LoadingStatus(this.loadingProgress);
   readonly viewport:HTMLElement;readonly renderer:Renderer;scene!:Scene;resources!:Resources;view!:View;
   ready=false;revision=0;pending:Promise<void>=Promise.resolve();listeners=new Set<(error:unknown)=>void>();disposed=false;time=0;loading=false;
   private loadTicket=0;private updateTicket=0;private animationFrame:number|null=null;private animationKey="";
+  private resourceFrame:number|null=null;private resourceDirty=false;
+  private preparation:Promise<void>=Promise.resolve();
+  private sceneRequest?:AbortController;
   private readonly stateListeners=new Set<()=>void>();
   private transport?:AnimationClock;private unsubscribeClock?:()=>void;private readingClock=false;
   readonly audioPlayers=new Map<string,AudioPlayer>();
@@ -19,36 +26,69 @@ export class Engine {
   private readonly viewportSync=new DOMSync();private viewKey="";
   private availableWidth=document.documentElement.clientWidth;private availableHeight=window.innerHeight;
   readonly onResize:()=>void;readonly onKey:(event:KeyboardEvent)=>void;readonly observer:ResizeObserver;generationMs=0;
-  constructor({viewport,renderer,controls=true}:{viewport:HTMLElement;renderer:Renderer;controls?:boolean}){
+  constructor({viewport,renderer,controls=true,resolveAsset,textureWorkerFactory}:{viewport:HTMLElement;renderer:Renderer;controls?:boolean;resolveAsset?:(url:string)=>string;textureWorkerFactory?:TextureWorkerFactory}){
     this.viewport=viewport;this.renderer=renderer;this.controlsEnabled=controls;
+    this.resolveAsset=resolveAsset;this.textureWorkerFactory=textureWorkerFactory;
     this.onResize=()=>{this.availableWidth=document.documentElement.clientWidth;this.availableHeight=window.innerHeight;if(this.scene&&!this.loading)this.update();};
     this.onKey=e=>{if(!this.scene||e.code!==this.scene.data.presentation.toggleKey||e.repeat||e.altKey||e.ctrlKey||e.metaKey||(e.target instanceof HTMLElement&&(e.target.isContentEditable||/TEXTAREA|SELECT/.test(e.target.tagName)||e.target instanceof HTMLInputElement&&e.target.type!=="range")))return;e.preventDefault();this.setReferenceAspect(!this.scene.data.presentation.referenceAspect);};
     window.addEventListener("resize",this.onResize);window.addEventListener("keydown",this.onKey);
     this.observer=new ResizeObserver(this.onResize);this.observer.observe(document.documentElement);
   }
+  private readonly resolveAsset?:((url:string)=>string);private readonly textureWorkerFactory?:TextureWorkerFactory;
   async loadScene(input:unknown,{baseURL}:{baseURL?:string}={}){
     if(this.disposed)throw new Error("This engine has been disposed.");
     const ticket=this.loadTicket=(this.loadTicket||0)+1;
+    this.sceneRequest?.abort();this.sceneRequest=undefined;
     let data=input;
     if(typeof input==="string"){
       const url=new URL(input,document.baseURI);
-      const response=await fetch(url,{cache:"no-store"});if(!response.ok)throw new Error(`Could not load scene (${response.status}): ${url}`);
-      data=await response.json();baseURL=response.url||url.href;
+      this.loadingProgress.reset();
+      const source=url.protocol==="data:"?"Data URL":url.protocol==="blob:"?"Blob URL":url.origin===location.origin?url.pathname:url.origin+url.pathname;
+      this.loadingStatus.setContext(url.pathname.split("/").at(-1)||"Scene",[["Source",source],["Renderer",this.renderer.displayName]]);
+      const request=this.sceneRequest=new AbortController();
+      try{const loaded=await loadSceneJSON(url,this.loadingProgress,request.signal);data=loaded.data;baseURL=loaded.baseURL;}
+      catch(error){if(ticket!==this.loadTicket||this.disposed)return;throw error;}
+      finally{if(this.sceneRequest===request)this.sceneRequest=undefined;}
     }
-    const scene=new Scene(data,baseURL||this.scene?.baseURL||document.baseURI);
+    const scene=new Scene(data,baseURL||this.scene?.baseURL||document.baseURI,this.resolveAsset);
     if(ticket!==this.loadTicket||this.disposed)return;
-    this.releaseControls();this.releaseClock();this.time=0;this.revision++;this.ready=false;this.loading=true;this.renderer.disposeScene();this.resources?.dispose();this.resources=new Resources();this.scene=scene;
+    if(typeof input!=="string")this.loadingProgress.reset();
+    this.releaseControls();this.releaseClock();this.time=0;this.revision++;this.ready=false;this.loading=true;this.renderer.disposeScene();this.resources?.dispose();this.resources=new Resources(this.textureWorkerFactory,this.loadingProgress,()=>this.requestResourceUpdate());this.scene=scene;
+    const name=scene.data.name||scene.data.root.name,assets=Object.values(scene.data.assets),rate=scene.sequence?.displayRate;
+    const fps=rate?(rate.denominator===1?String(rate.numerator):`${rate.numerator}/${rate.denominator}`):String(scene.data.timeline.frameRate);
+    const source=new URL(scene.baseURL),sourceLabel=typeof input!=="string"?"Inline scene data":source.protocol==="data:"?"Data URL":source.protocol==="blob:"?"Blob URL":source.origin===location.origin?source.pathname:source.origin+source.pathname;
+    this.loadingStatus.setContext(name,[
+      ["Scene",name],["Source",sourceLabel],["Renderer",this.renderer.displayName],
+      ["Assets",`${assets.filter(asset=>asset.type==="Sprite").length} sprites · ${assets.filter(asset=>asset.type==="Audio").length} audio`],
+      ["Timeline",`${fps} fps reference`]
+    ]);
     const current=this.revision;
+    const images=this.resources.preload(scene,this.renderer.kind==="dom");
+    // Start immediately but report through the complete preparation chain below.
+    void images.catch(()=>{});
     try{
+      const audioReady:Promise<void>[]=[];
       for(const node of scene.authoredNodes.values()){
-        const c=scene.component(node.id,"AudioPlayer");if(c?.enabled&&scene.active.get(node.id))this.audioPlayers.set(node.id,new AudioPlayer(node.id,scene.source(c.asset),c,this.viewport));
+        const c=scene.component(node.id,"AudioPlayer");if(!c?.enabled||!scene.active.get(node.id))continue;
+        const audio=new AudioPlayer(node.id,scene.source(c.asset),c,this.viewport);this.audioPlayers.set(node.id,audio);
+        const file=scene.audioAsset(c.asset).file,finish=this.loadingProgress.begin("Audio",file.startsWith("data:")?c.asset:file.split("/").at(-1)||c.asset);
+        audioReady.push(audio.ready.finally(finish));
       }
       const reference=scene.animationPlayer?.clock;
       if(reference){const audio=this.audioPlayers.get(reference.entity);if(!audio)throw new Error(`Animation clock must be an active AudioPlayer: ${reference.entity}`);this.transport=audio;}
       else {const sequence=scene.sequence,rate=sequence?.tickResolution||frameRate(1),duration=sequence?Time.fromFrame(Frame.subtract(sequence.master.end,sequence.master.start)):Time.fromSeconds(scene.data.timeline.duration,rate);this.transport=new PerformanceClock(duration,rate,scene.data.timeline.loop);}
       this.unsubscribeClock=this.transport.subscribe(event=>this.clockChanged(event));
-      await Promise.all([this.renderer.createScene(scene,this.resources),...this.audioPlayers.values()].map(value=>value instanceof AudioPlayer?value.ready:value));if(current!==this.revision)return;
-      await this.update();if(current!==this.revision)return;this.loading=false;this.ready=true;
+      const rendererReady=this.renderer.createScene(scene,this.resources);
+      this.preparation=Promise.all([Promise.all([images,rendererReady]).then(async()=>{
+        if(current===this.revision&&ticket===this.loadTicket&&!this.disposed)await this.renderer.prepare?.(this.loadingProgress);
+      }),...audioReady]).then(()=>{
+        if(current===this.revision&&ticket===this.loadTicket&&!this.disposed)this.loadingProgress.complete();
+      });
+      void this.preparation.catch(error=>{if(current===this.revision&&ticket===this.loadTicket&&!this.disposed)this.reportError(error);});
+      await rendererReady;if(current!==this.revision||ticket!==this.loadTicket||this.disposed)return;
+      // UI/transport readiness does not wait for media metadata or texture jobs.
+      this.update(false);this.loading=false;this.ready=true;
+      if(this.resourceDirty)this.requestResourceUpdate();
       this.syncControls();
       this.audioPlayer?.activateMediaSession();
       if(scene.data.timeline.autoplay)void this.play().catch(error=>{if(current===this.revision&&!(error instanceof DOMException&&error.name==="NotAllowedError"))this.reportError(error);});
@@ -83,11 +123,19 @@ export class Engine {
   get playerControls():PlayerControls|undefined{return this.controlsInstance;}
   get audioPlayer():AudioPlayer|undefined{return this.transport instanceof AudioPlayer?this.transport:undefined;}
   get playing():boolean{return this.transport?.playing??false;}
-  get duration():number{return this.transport?.duration??this.scene?.data.timeline.duration??0;}
+  get duration():number {
+    const clock=this.transport;
+    return !clock||clock instanceof AudioPlayer&&clock.element.readyState<HTMLMediaElement.HAVE_METADATA?this.scene?.data.timeline.duration??0:clock.duration;
+  }
   get playbackRate():number {return this.transport?.playbackRate??1;}
   get loop():boolean{return this.transport?.loop??false;}
   setLoop(enabled:boolean):void {this.scene.data.timeline.loop=enabled;this.transport?.setLoop(enabled);this.notifyState();}
-  whenIdle(){return this.pending;}
+  /** Explicit callers may await completion; interactive playback never does. */
+  async whenIdle(){await this.preparation;if(this.resourceDirty&&!this.loading){this.resourceDirty=false;if(this.resourceFrame!==null)cancelAnimationFrame(this.resourceFrame);this.resourceFrame=null;this.update(false);}await this.pending;}
+  private requestResourceUpdate():void {
+    this.resourceDirty=true;if(this.loading||this.disposed||this.resourceFrame!==null)return;
+    this.resourceFrame=requestAnimationFrame(()=>{this.resourceFrame=null;if(this.disposed||this.loading||!this.resourceDirty)return;this.resourceDirty=false;this.update(false);});
+  }
   seek(time:number):Promise<void>{
     if(!Number.isFinite(time)||time<0)throw new Error("Timeline time must be finite and nonnegative.");
     const rate=this.scene.sequence?.tickResolution||frameRate(1);return this.seekFrame(Time.fromSeconds(time,rate),rate);
@@ -102,20 +150,22 @@ export class Engine {
   play():Promise<void> {
     if(this.disposed||!this.transport)return Promise.resolve();this.scene.animationEnabled=true;return this.transport.play();
   }
-  pause():void {this.transport?.pause();this.cancelTick();if(this.audioPlayer)this.readClock();this.notifyState();}
+  pause():void {if(this.transport){this.transport.pauseOffsetHint=this.scene.timelineTime;this.transport.pause();}this.cancelTick();if(this.audioPlayer)this.readClock();this.notifyState();}
   async stop():Promise<void>{this.pause();await this.seek(0);this.scene.animationEnabled=false;await this.update();}
   private reportError(error:unknown):void {for(const fn of this.listeners)fn(error);}
   private readClock(now?:number):void {
     if(!this.transport||this.readingClock||this.loading||this.disposed)return;
     this.readingClock=true;
-    try{const wasPlaying=this.playing,rate=this.scene.sequence?.tickResolution||frameRate(this.scene.data.timeline.frameRate);this.scene.setFrameTime(this.transport.sample(rate,now),rate);this.time=this.scene.time;
+    try{const wasPlaying=this.playing,rate=this.scene.sequence?.tickResolution||frameRate(this.scene.data.timeline.frameRate);this.scene.setFrameTime(this.transport.sample(rate,now),rate);this.time=this.scene.time;this.transport.pauseOffsetHint=this.scene.timelineTime;
       if(this.animationKey!==this.scene.animationSignature())this.update(false);
       if(wasPlaying!==this.playing)this.notifyState();
     }finally{this.readingClock=false;}
   }
   private clockChanged(event:ClockEvent):void {
     if(this.disposed||this.loading)return;
+    if(this.playing)this.loadingStatus.playbackStarted();
     if(event.type==="error"){this.reportError(event.error);return;}
+    if(event.type==="duration")this.syncControls();
     // RAF samples moving time. Native timeupdate is not a UI state change.
     if(event.type==="time"&&!event.discontinuity&&this.playing)return;
     if(event.type==="time"&&event.discontinuity||this.playing)this.scene.animationEnabled=true;
@@ -162,5 +212,5 @@ export class Engine {
   addComponent(id:string,component:EntityInput["components"] extends (infer C)[]|undefined?C:never){this.find(id);return this.editScene(data=>{const visit=(n:Entity)=>{if(n.id===id)n.components.push(structuredClone(component) as ComponentMap[ComponentType]);n.children.forEach(visit);};visit(data.root);});}
   removeComponent(id:string,type:ComponentType){this.find(id);return this.editScene(data=>{const visit=(n:Entity)=>{if(n.id===id)n.components=n.components.filter(c=>c.type!==type);n.children.forEach(visit);};visit(data.root);});}
   reset(){return this.loadScene(this.scene.original,{baseURL:this.scene.baseURL});}
-  dispose(){if(this.disposed)return;this.releaseControls();this.releaseClock();this.disposed=true;this.notifyState();this.stateListeners.clear();this.revision++;this.observer.disconnect();window.removeEventListener("resize",this.onResize);window.removeEventListener("keydown",this.onKey);this.renderer.dispose();this.resources?.dispose();}
+  dispose(){if(this.disposed)return;this.sceneRequest?.abort();this.sceneRequest=undefined;this.releaseControls();this.releaseClock();this.disposed=true;if(this.resourceFrame!==null)cancelAnimationFrame(this.resourceFrame);this.notifyState();this.stateListeners.clear();this.revision++;this.observer.disconnect();window.removeEventListener("resize",this.onResize);window.removeEventListener("keydown",this.onKey);this.renderer.dispose();this.resources?.dispose();this.loadingStatus.dispose();}
 }

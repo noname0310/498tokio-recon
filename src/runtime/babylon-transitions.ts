@@ -1,14 +1,22 @@
 import type * as Babylon from "@babylonjs/core/pure";
-import type {BabylonRenderer} from "./babylon.js";
+import type {BabylonSceneContext} from "./babylon-context.js";
 import type {TransitionGroup} from "./transitions.js";
 import {Math3D as M} from "./math.js";
 import {BabylonTransitionUniforms,transitionUniformNames} from "./babylon-transition-uniforms.js";
 interface MaskGroup {mesh:Babylon.Mesh;material:Babylon.ShaderMaterial;uniforms:BabylonTransitionUniforms}
 
+export function createTransitionMask(r:BabylonSceneContext,id:string):MaskGroup {
+  const B=r.B,material=new B.ShaderMaterial(`${id}/stencil`,r.scene,{vertex:"sceneEntity",fragment:"sceneSolid"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint",...transitionUniformNames],needAlphaBlending:true});
+  material.backFaceCulling=false;material.disableDepthWrite=true;material.disableColorWrite=true;material.depthFunction=B.Engine.ALWAYS;
+  material.stencil.enabled=true;material.stencil.func=B.Engine.ALWAYS;material.stencil.funcRef=1;material.stencil.opStencilDepthPass=B.Engine.REPLACE;
+  material.stencil.opStencilFail=B.Engine.KEEP;material.stencil.opDepthFail=B.Engine.KEEP;
+  return {mesh:r.quad(`${id}/stencil`,id,material),material,uniforms:new BabylonTransitionUniforms()};
+}
+
 export class BabylonTransitions {
   private readonly groups=new Map<string,MaskGroup>();
   private applied=false;
-  constructor(private readonly renderer:BabylonRenderer){}
+  constructor(private readonly renderer:BabylonSceneContext){}
   update(groups:TransitionGroup[]):void {
     if(!groups.length&&!this.applied)return;
     this.applied=groups.length>0;
@@ -17,11 +25,7 @@ export class BabylonTransitions {
     groups.forEach((group,index)=>{
       let record=this.groups.get(group.id);
       if(!record){
-        const material=new B.ShaderMaterial(`${group.id}/stencil`,r.scene,{vertex:"sceneEntity",fragment:"sceneSolid"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint",...transitionUniformNames],needAlphaBlending:true});
-        material.backFaceCulling=false;material.disableDepthWrite=true;material.disableColorWrite=true;material.depthFunction=B.Engine.ALWAYS;
-        material.stencil.enabled=true;material.stencil.func=B.Engine.ALWAYS;material.stencil.funcRef=1;material.stencil.opStencilDepthPass=B.Engine.REPLACE;
-        material.stencil.opStencilFail=B.Engine.KEEP;material.stencil.opDepthFail=B.Engine.KEEP;
-        const mesh=r.quad(`${group.id}/stencil`,group.id,material);record={mesh,material,uniforms:new BabylonTransitionUniforms()};this.groups.set(group.id,record);
+        record=createTransitionMask(r,group.id);this.groups.set(group.id,record);
       }
       const {mesh,material}=record,{component:c,bounds,frameBounds}=group,masked=c.enabled&&c.progress<1;
       mesh.renderingGroupId=index*3+1;mesh.setEnabled(masked&&!!bounds&&!!frameBounds);

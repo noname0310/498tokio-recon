@@ -26,9 +26,10 @@ async function main(){
   const {Scene,Frame,Time,frameRate}=await import(pathToFileURL(path.join(root,'dist/runtime/player.js')));
   const data=read('assets/final_animation.scene.json');
   const scene=new Scene(data,pathToFileURL(path.join(root,'assets/final_animation.scene.json')).href);
+  scene.setFrameTime(Time.fromFrame(Frame.from(1706)),frameRate(30));scene.updateWorld();
   const authored=scene.component('landscape-pinwheel','Transition');
   const at=n=>{scene.setFrameTime(Time.fromFrame(Frame.from(n)),frameRate(30));scene.updateWorld();return scene.component('landscape-pinwheel','Transition').progress;};
-  at(1706);assert.equal(scene.active.get('landscape-pinwheel'),false);assert.equal(at(1721),1);at(1707);assert.equal(scene.active.get('landscape-pinwheel'),true);
+  at(1706);assert.equal(scene.isActive('landscape-pinwheel'),false);assert.equal(at(1721),1);at(1707);assert.equal(scene.isActive('landscape-pinwheel'),true);
   const frames=Array.from({length:21},(_,i)=>1706+i),evidence=new Map();
   const camera={id:'camera',transform:{localPosition:{z:-10}},components:[{type:'Camera',referenceVerticalSize:3.6}]};
   const plane={type:'PlaneRenderer',coverage:'camera',color:{r:.2,g:.8,b:.4,a:.5}};
@@ -46,7 +47,7 @@ async function main(){
       let baseline;
       for(const n of [1706,1707,1709,1710,1713,1715,1718,1719,1721,1726,1713]){
         await page.evaluate(async n=>{const {Frame}=await import('/runtime/player.js');await scenePlayer.seekFrame(Frame.from(n));await scenePlayer.whenIdle();},n);
-        const shot=await page.screenshot({path:path.join(output,`${name}_${n}.png`)});
+        const shot=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(output,`${name}_${n}.png`)});
         if(n===1713){if(baseline)assert(compare(baseline,shot).mae<.001,'Reverse seek retains the exact frame');else baseline=shot;}
         if(n>=1721){const im=png(shot);assert(im.pixels.every((v,i)=>i%im.channels===3||v===0),'Completed scene is black');}
       }
@@ -54,14 +55,14 @@ async function main(){
       let cells=0;
       for(const n of frames){
         await page.evaluate(async progress=>{await scenePlayer.setComponent('wipe','Transition',{progress});await scenePlayer.whenIdle();},at(n));
-        const shot=await page.screenshot();if(name==='dom')evidence.set(n,shot);else assert(compare(shot,evidence.get(n)).mae<1,'Transition masks agree across renderers');cells++;
+        const shot=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});if(name==='dom')evidence.set(n,shot);else assert(compare(shot,evidence.get(n)).mae<1,'Transition masks agree across renderers');cells++;
       }
       const progress=at(1715);
       for(const viewport of [{width:641,height:359},{width:390,height:844},{width:1600,height:360}]){
         await page.setViewportSize(viewport);await page.waitForFunction(v=>scenePlayer.view.width===v.width&&scenePlayer.view.height===v.height,viewport);
         for(const p of [progress,1]){
           const view=await page.evaluate(async progress=>{await scenePlayer.setComponent('wipe','Transition',{progress});await scenePlayer.whenIdle();return scenePlayer.view;},p);
-          checkJoins(await page.screenshot({path:path.join(output,`${name}_${viewport.width}_${p===1?'complete':'extended'}.png`)}),view,p===1);
+          checkJoins(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(output,`${name}_${viewport.width}_${p===1?'complete':'extended'}.png`)}),view,p===1);
         }
       }
       if(renderer==='dom'){
@@ -77,7 +78,7 @@ async function main(){
       targeted.root.children.push({id:'incoming',children:[{id:'incoming-plane',components:[plane]}]});
       await page.setViewportSize({width:640,height:360});await page.waitForFunction(()=>scenePlayer.view.width===640&&scenePlayer.view.height===360);
       await page.evaluate(async data=>{await scenePlayer.loadScene(data);await scenePlayer.whenIdle();},targeted);
-      assert(compare(await page.screenshot(),evidence.get(1715)).mae<1,'Target-subtree mask matches direct plane coverage');
+      assert(compare(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),evidence.get(1715)).mae<1,'Target-subtree mask matches direct plane coverage');
       assert.deepEqual(errors,[]);console.log(`${name}: ${cells} mask phases; 20 Hz phases, reverse seek, aspect extension, opacity/joins, blackout and target-subtree masking passed.`);
     }finally{await browser.close();}
   }}finally{await new Promise(r=>server.close(r));}

@@ -20,7 +20,7 @@ async function main(){
       const mat=new DOMMatrix(s.cssMatrix('plane',v));
       return {view:v,points:[[-1.2,-.8],[1.2,-.8],[1.2,.8],[-1.2,.8]].map(([x,y])=>{const p=mat.transformPoint(new DOMPoint(x*v.pixelsPerUnit,-y*v.pixelsPerUnit,0));return [v.width/2+p.x/p.w,v.height/2+p.y/p.w];})};
     });
-    const shot=png(await page.locator('#viewport').screenshot());let checked=0,bad=0,filled=0;
+    const shot=png(await page.locator('#viewport').screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));let checked=0,bad=0,filled=0;
     for(let y=1;y<shot.height;y+=3)for(let x=1;x<shot.width;x+=3){
       const sides=points.map((a,i)=>{const b=points[(i+1)%4],dx=b[0]-a[0],dy=b[1]-a[1];return ((x+.5-a[0])*dy-(y+.5-a[1])*dx)/Math.hypot(dx,dy);});
       if(Math.min(...sides.map(Math.abs))<2)continue;const inside=sides.every(v=>v>=0)||sides.every(v=>v<=0),at=(y*shot.width+x)*shot.channels,expected=inside?[255,51,26]:[0,0,0];checked++;filled+=inside;

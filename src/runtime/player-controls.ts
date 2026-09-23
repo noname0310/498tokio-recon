@@ -155,7 +155,7 @@ export class PlayerControls {
   }
   private toggleMute():void {const audio=this.engine.audioPlayer;if(audio){audio.setMuted(!audio.muted);this.show();}}
   private async fullscreen():Promise<void> {try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch(error){this.failure(error);}}
-  private failure(error:unknown):void {if(this.disposed)return;this.feedback.textContent=error instanceof DOMException&&error.name==="NotAllowedError"?"Press play to start audio.":error instanceof Error?error.message:String(error);this.feedback.hidden=false;clearTimeout(this.feedbackTimer);this.feedbackTimer=window.setTimeout(()=>{this.feedback.hidden=true;},3500);this.show();}
+  private failure(error:unknown):void {if(this.disposed||error instanceof DOMException&&error.name==="AbortError")return;this.feedback.textContent=error instanceof DOMException&&error.name==="NotAllowedError"?"Press play to start audio.":error instanceof Error?error.message:String(error);this.feedback.hidden=false;clearTimeout(this.feedbackTimer);this.feedbackTimer=window.setTimeout(()=>{this.feedback.hidden=true;},3500);this.show();}
   private keydown(event:KeyboardEvent):void {
     if(event.altKey||event.ctrlKey||event.metaKey)return;
     const target=event.target;if(target instanceof HTMLElement&&(target.isContentEditable||/TEXTAREA|SELECT/.test(target.tagName)||target instanceof HTMLInputElement&&target.type!=="range"))return;

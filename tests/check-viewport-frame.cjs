@@ -42,7 +42,7 @@ async function main(){
       await page.evaluate(async input=>scenePlayer.loadScene(input),fixture());await settled(page);
       for(const size of [{width:640,height:360},{width:390,height:844},{width:1280,height:320}]){
         await page.setViewportSize(size);await page.waitForFunction(s=>scenePlayer.view.width===s.width&&scenePlayer.view.height===s.height,size);await settled(page);
-        const view=await page.evaluate(()=>scenePlayer.view);verify(await page.locator('#viewport').screenshot(),view,component);
+        const view=await page.evaluate(()=>scenePlayer.view);verify(await page.locator('#viewport').screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),view,component);
       }
       await page.setViewportSize({width:640,height:360});await page.waitForFunction(()=>scenePlayer.view.width===640);await settled(page);
       if(renderer==='dom'){
@@ -51,15 +51,15 @@ async function main(){
         assert.equal(mutations,0,'Unchanged geometry retains the same SVG nodes without mutations');
       }
       const view=await page.evaluate(()=>scenePlayer.view);
-      await page.evaluate(async()=>{await scenePlayer.setTransform('framed',{localPosition:{x:3,y:2},localRotation:{z:17}});});await settled(page);verify(await page.locator('#viewport').screenshot(),view,component);
+      await page.evaluate(async()=>{await scenePlayer.setTransform('framed',{localPosition:{x:3,y:2},localRotation:{z:17}});});await settled(page);verify(await page.locator('#viewport').screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),view,component);
       for(const camera of ['plain','framed','plain','framed']){
-        await page.evaluate(async id=>scenePlayer.setCamera(id),camera);await settled(page);verify(await page.locator('#viewport').screenshot(),view,component,camera==='framed');
+        await page.evaluate(async id=>scenePlayer.setCamera(id),camera);await settled(page);verify(await page.locator('#viewport').screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),view,component,camera==='framed');
       }
       for(const enabled of [false,true]){
-        await page.evaluate(async enabled=>scenePlayer.setComponent('framed','ViewportFrame',{enabled}),enabled);await settled(page);verify(await page.locator('#viewport').screenshot(),view,component,enabled);
+        await page.evaluate(async enabled=>scenePlayer.setComponent('framed','ViewportFrame',{enabled}),enabled);await settled(page);verify(await page.locator('#viewport').screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),view,component,enabled);
       }
       const collapsed={...component,insetsWorld:{left:4,right:4,top:2,bottom:2}};
-      await page.evaluate(async insetsWorld=>scenePlayer.setComponent('framed','ViewportFrame',{insetsWorld}),collapsed.insetsWorld);await settled(page);verify(await page.locator('#viewport').screenshot(),view,collapsed);
+      await page.evaluate(async insetsWorld=>scenePlayer.setComponent('framed','ViewportFrame',{insetsWorld}),collapsed.insetsWorld);await settled(page);verify(await page.locator('#viewport').screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),view,collapsed);
       assert.deepEqual(errors,[]);console.log(`${label}: measured geometry, shadow compositing, portrait/ultrawide resize, camera cuts, enable/disable and collapsed aperture passed.`);
     }finally{await browser.close();}
   }}finally{await new Promise(r=>server.close(r));}

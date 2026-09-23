@@ -4,4 +4,17 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
 #viewport { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; isolation: isolate; background: #080b13; }
 #status { position: absolute; inset: 0; z-index: 100; display: grid; place-content: center; margin: 0; padding: 24px; color: #b8c2d9; font: 14px/1.7 system-ui,sans-serif; text-align: center; background: #080b13; }
 #status[hidden] { display: none; }
+.runtime-loading-status { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1000; width: 80ch; min-width: min(80ch, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100dvh - 120px); overflow-y: auto; scrollbar-width: none; color: #edf0f4; font: 12px/1.65 ui-monospace,Consolas,monospace; text-shadow: 0 1px 3px #000,0 0 8px #000; }
+.runtime-loading-status::-webkit-scrollbar { display: none; }
+.loading-context { margin-bottom: .75em; }
+.loading-context:empty { display: none; }
+.loading-context .loading-stage { color: #83cfff; }
+.loading-line { display: flex; white-space: pre; }
+.loading-stage { flex: 0 0 9ch; text-align: right; font-weight: 700; color: #8bd584; }
+.loading-count { flex: none; color: #b3bdca; }
+.loading-detail { overflow: hidden; text-overflow: ellipsis; }
+.loading-line[data-state="complete"] .loading-detail { color: #a3acb8; }
+.loading-line[data-state="active"] .loading-stage { color: #83cfff; }
+.runtime-loading-status[hidden] { display: none; }
+body:has(#status[role="alert"]:not([hidden])) .runtime-loading-status { display: none; }
 #scene { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }

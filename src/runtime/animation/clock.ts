@@ -4,6 +4,8 @@ export type ClockEvent={type:"state"|"duration"|"volume"}|{type:"time";discontin
 /** Transport owns time. A renderer samples it; it never advances it independently. */
 export interface AnimationClock {
   readonly kind:"performance"|"audio";
+  /** Last evaluated offset in rational seconds (rate 1), relative to transport start. */
+  pauseOffsetHint:FrameTime|undefined;
   readonly currentTime:number;readonly duration:number;readonly playing:boolean;
   readonly playbackRate:number;readonly loop:boolean;readonly seeking:boolean;readonly buffering:boolean;
   sample(rate:FrameRate,now?:number):FrameTime;
@@ -13,6 +15,7 @@ export interface AnimationClock {
   subscribe(listener:(event:ClockEvent)=>void):()=>void;dispose():void;
 }
 export abstract class ObservableClock {
+  pauseOffsetHint:FrameTime|undefined;
   private readonly listeners=new Set<(event:ClockEvent)=>void>();
   subscribe(listener:(event:ClockEvent)=>void):()=>void {this.listeners.add(listener);return()=>{this.listeners.delete(listener);};}
   protected emit(event:ClockEvent):void {for(const listener of this.listeners)listener(event);}
@@ -58,17 +61,17 @@ export class PerformanceClock extends ObservableClock implements AnimationClock 
   }
   seek(time:FrameTime,rate:FrameRate):Promise<void> {
     const position=Time.convert(time,rate,secondsRate);if(Time.compare(position,zero)<0)throw new Error("Clock time must be nonnegative.");
-    this.position=position;this.reanchor();this.emit({type:"time",discontinuity:true});return Promise.resolve();
+    this.pauseOffsetHint=undefined;this.position=position;this.reanchor();this.emit({type:"time",discontinuity:true});return Promise.resolve();
   }
   play():Promise<void> {
     if(!this.disposed&&!this.running&&this.duration>0){
-      if(this.speed.numerator<0n&&Time.compare(this.position,zero)<=0)this.position=this.end;
-      else if(this.speed.numerator>=0n&&Time.compare(this.position,this.end)>=0)this.position=zero;
+      if(this.speed.numerator<0n&&Time.compare(this.position,zero)<=0){this.position=this.end;this.pauseOffsetHint=undefined;}
+      else if(this.speed.numerator>=0n&&Time.compare(this.position,this.end)>=0){this.position=zero;this.pauseOffsetHint=undefined;}
       this.running=true;this.reanchor();this.emit({type:"state"});
     }
     return Promise.resolve();
   }
-  pause():void {if(this.running){this.running=false;this.emit({type:"state"});}}
+  pause():void {if(this.running){this.position=this.pauseOffsetHint??this.position;this.running=false;this.emit({type:"state"});}}
   setPlaybackRate(numerator:number,denominator=1):void {this.speed=playbackRatio(numerator,denominator);this.reanchor();this.emit({type:"state"});}
   setLoop(enabled:boolean):void {this.looping=enabled;this.emit({type:"state"});}
   dispose():void {this.pause();this.disposed=true;this.clearListeners();}

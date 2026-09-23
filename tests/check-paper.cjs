@@ -28,9 +28,9 @@ async function main(){
   const {Scene,Frame,Time,frameRate}=await import(pathToFileURL(path.join(root,'dist/runtime/player.js')));
   const file=path.join(root,'assets/final_animation.scene.json'),data=JSON.parse(fs.readFileSync(file)),scene=new Scene(data,pathToFileURL(file).href);
   const at=n=>{scene.setFrameTime(Time.fromFrame(Frame.from(n)),frameRate(30));scene.updateWorld();};
-  for(const n of [1144,1145,1146,1158,1145,1146,1219,1220]){at(n);assert.equal(scene.active.get('paper-scene'),scene.active.get('forward-grid-wipe'),'Incoming root and mask share one exact activation track');assert.equal(scene.active.get('paper-plane'),n>=1146&&n<1220);}
+  for(const n of [1144,1145,1146,1158,1145,1146,1219,1220]){at(n);assert.equal(scene.isActive('paper-scene'),scene.isActive('forward-grid-wipe'),'Incoming root and mask share one exact activation track');assert.equal(scene.isActive('paper-plane'),n>=1146&&n<1220);}
   at(1158);const x=scene.world.get('paper-plane')[12];at(1218);assert(Math.abs((scene.world.get('paper-plane')[12]-x)*100-(-.3561977827667422)*60)<.001);
-  const authored=data.root.children.find(n=>n.id==='forward-grid-wipe').components.find(c=>c.type==='Transition'),grid=authored.grid;
+  const authored=scene.component('forward-grid-wipe','Transition'),grid=authored.grid;
   const fixture={schemaVersion:1,timeline:{duration:4},assets:{paper:{...data.assets.paper_plane,file:'/assets/paper_flight/paper_plane.png'},sky:{...data.assets.paper_sky,file:'/assets/paper_flight/sky.png'}},root:{id:'root',children:[
     {id:'camera',transform:{localPosition:{z:-10}},components:[{type:'Camera',referenceVerticalSize:3.6}]},
     {id:'old',transform:{localPosition:{z:0}},components:[{type:'TiledSpriteRenderer',asset:'sky',color:{r:.4,g:.1,b:.4,a:1}}]},
@@ -52,18 +52,18 @@ async function main(){
       let first;
       for(const n of [1145,1146,1151,1158,1219,1220,1151,1145]){
         await page.evaluate(async n=>{const {Frame}=await import('/runtime/player.js');await scenePlayer.seekFrame(Frame.from(n));await scenePlayer.whenIdle();},n);
-        const shot=await page.screenshot({path:path.join(output,`${label}_${n}.png`)});
-        if(n===1145){if(first){assert(compare(first,shot).mae<.02,'Rewind does not expose incoming paper');}else first=shot;assert.equal(await page.evaluate(()=>scenePlayer.scene.active.get('paper-scene')),false);}
+        const shot=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(output,`${label}_${n}.png`)});
+        if(n===1145){if(first){assert(compare(first,shot).mae<.02,'Rewind does not expose incoming paper');}else first=shot;assert.equal(await page.evaluate(()=>scenePlayer.scene.isActive('paper-scene')),false);}
       }
       await page.evaluate(async fixture=>{await scenePlayer.loadScene(fixture);await scenePlayer.seek(0);},fixture);
       for(const viewport of [{width:640,height:360},{width:375,height:812},{width:1001,height:563}]){
         await page.setViewportSize(viewport);await page.waitForFunction(v=>scenePlayer.view.width===v.width&&scenePlayer.view.height===v.height,viewport);
         for(const px of [-1.25,-.73]){
           await page.evaluate(async x=>{await scenePlayer.setTransform('paper',{localPosition:{x}});await scenePlayer.setComponent('mask','Transition',{progress:0});await scenePlayer.whenIdle();},px);
-          const off=await page.screenshot();await page.evaluate(()=>scenePlayer.setComponent('mask','Transition',{progress:1}));const on=await page.screenshot();
+          const off=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});await page.evaluate(()=>scenePlayer.setComponent('mask','Transition',{progress:1}));const on=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});
           const view=await page.evaluate(async()=>{await scenePlayer.setComponent('mask','Transition',{progress:.6});await scenePlayer.whenIdle();return scenePlayer.view;});
-          checkMask(await page.screenshot(),off,on,view,grid,.6,`${label}/${viewport.width}/${px}`);
-          await page.evaluate(()=>scenePlayer.setComponent('mask','Transition',{progress:0}));assert(compare(off,await page.screenshot()).mae<.02,'Zero mask after full reveal never leaks the incoming group');
+          checkMask(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),off,on,view,grid,.6,`${label}/${viewport.width}/${px}`);
+          await page.evaluate(()=>scenePlayer.setComponent('mask','Transition',{progress:0}));assert(compare(off,await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})).mae<.02,'Zero mask after full reveal never leaks the incoming group');
         }
       }
       if(renderer==='dom'){

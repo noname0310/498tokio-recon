@@ -20,7 +20,7 @@ for(const [id,a] of Object.entries(scene.assets)){
     for(const mode of ["dom","babylon"]){
       const page=await browser.newPage({viewport:{width:640,height:360}}),errors=[];
       page.on("pageerror",e=>errors.push(e.message));page.on("response",r=>{if(r.status()>=400)errors.push(r.url());});
-      if(mode==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas is forbidden");};window.OffscreenCanvas=class{constructor(){throw new Error("OffscreenCanvas is forbidden");}};});
+      if(mode==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas is forbidden");};});
       await page.goto(`http://127.0.0.1:${server.address().port}/index.html?scene=${sourceURL}&renderer=${mode}&time=0&controls=0`);await page.waitForFunction(()=>window.scenePlayer?.ready);
       await page.evaluate(async()=>{scenePlayer.pause();for(const node of scenePlayer.scene.nodes.values())if(scenePlayer.scene.component(node.id,"Glow"))await scenePlayer.setComponent(node.id,"Glow",{enabled:false});});
       let checks=0;
@@ -28,7 +28,7 @@ for(const [id,a] of Object.entries(scene.assets)){
         const states=await page.evaluate(async n=>{const {Frame,frameRate}=await import("/runtime/player.js");await scenePlayer.seekFrame(Frame.from(n),frameRate(30));await scenePlayer.whenIdle();return Object.fromEntries([...scenePlayer.scene.nodes.values()].filter(node=>scenePlayer.scene.component(node.id,"SpriteRenderer")).map(node=>[node.id,scenePlayer.scene.spriteState(node.id)]));},n);
         for(const [id,[first,last,hold]] of Object.entries(ranges)){assert.equal(states[id].visible,n>=first&&n<=last,`${mode}/${id} visibility at frame ${n}`);if(states[id].visible)assert.equal(states[id].frame,Math.floor((n-first)/hold));}
         if([0,14,16,40,55,57,69,70,71].includes(n)){
-          const capture=png(await page.screenshot());
+          const capture=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));
           if(n===71){assert(capture.pixels.every((v,i)=>i%capture.channels===3||v===0),"No effect survives past frame 70");continue;}
           for(const [id,state] of Object.entries(states))if(state.visible){
             const a=scene.assets[id],im=images[id],{origin,step}=a.reconstruction.grid,w=a.atlas.cellSize.x,h=a.atlas.cellSize.y;
@@ -42,7 +42,7 @@ for(const [id,a] of Object.entries(scene.assets)){
         }
       }
       await page.evaluate(async()=>{const {Frame,frameRate}=await import("/runtime/player.js");await scenePlayer.seekFrame(Frame.from(57),frameRate(30));await scenePlayer.setComponent("moon_surface","Glow",{enabled:true});});
-      const glow=await page.screenshot();await page.evaluate(()=>scenePlayer.setComponent("moon_surface","Glow",{enabled:false}));assert(!glow.equals(await page.screenshot()),"Atlas glow must use the selected frame");
+      const glow=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});await page.evaluate(()=>scenePlayer.setComponent("moon_surface","Glow",{enabled:false}));assert(!glow.equals(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})),"Atlas glow must use the selected frame");
       await page.evaluate(()=>{scenePlayer.seek(0);scenePlayer.play();});await page.waitForTimeout(140);assert(await page.evaluate(()=>scenePlayer.time>0),JSON.stringify({state:await page.evaluate(()=>({time:scenePlayer.time,playing:scenePlayer.playing})),errors}));await page.evaluate(()=>scenePlayer.pause());
       const time=await page.evaluate(()=>scenePlayer.time);await page.waitForTimeout(80);assert.equal(await page.evaluate(()=>scenePlayer.time),time);
       assert.deepEqual(errors,[]);if(mode==="dom")assert.equal(await page.locator("canvas").count(),0);

@@ -59,12 +59,12 @@ async function browserChecks(){
     const atlas=png(fs.readFileSync(path.join(root,"assets/exhaust/exhaust_atlas.png"))),padding=asset.atlas.padding||0,stride=6+2*padding;assert.equal(atlas.channels,4);assert.equal(atlas.width,asset.size.x);assert.equal(atlas.height,asset.size.y);
     for(const mode of ["dom","babylon"]){
       const page=await browser.newPage({viewport:{width:640,height:360}}),errors=[];page.on("pageerror",e=>errors.push(e.message));
-      if(mode==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas is forbidden");};window.OffscreenCanvas=class{constructor(){throw new Error("OffscreenCanvas is forbidden");}};});
+      if(mode==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas is forbidden");};});
       await page.goto(`${url}/index.html?scene=assets/exhaust/exhaust.scene.json&renderer=${mode}&time=4.5&controls=0`);await page.waitForFunction(()=>window.scenePlayer?.ready);
       await page.evaluate(()=>scenePlayer.whenIdle());
       const state=await page.evaluate(()=>JSON.stringify(scenePlayer.scene.particleStates("exhaust")));if(baseline)assert.equal(state,baseline,"Backends must share exactly the same particle states");else baseline=state;
-      const before=await page.screenshot();await page.evaluate(async()=>{for(const t of [0,1,6,2,4.5])await scenePlayer.seek(t);});assert(before.equals(await page.screenshot()),`${mode}: seek back produces the identical image`);
-      await page.evaluate(()=>scenePlayer.setComponent("exhaust","ParticleEmitter",{seed:57}));assert(!before.equals(await page.screenshot()));await page.evaluate(()=>scenePlayer.setComponent("exhaust","ParticleEmitter",{seed:28035}));assert(before.equals(await page.screenshot()));
+      const before=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});await page.evaluate(async()=>{for(const t of [0,1,6,2,4.5])await scenePlayer.seek(t);});assert(before.equals(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})),`${mode}: seek back produces the identical image`);
+      await page.evaluate(()=>scenePlayer.setComponent("exhaust","ParticleEmitter",{seed:57}));assert(!before.equals(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})));await page.evaluate(()=>scenePlayer.setComponent("exhaust","ParticleEmitter",{seed:28035}));assert(before.equals(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})));
       await page.evaluate(async()=>{const {Frame,frameRate}=await import("/runtime/player.js");for(let i=0;i<210;i++)await scenePlayer.seekFrame(Frame.from(i),frameRate(30));});
       const resources=await page.evaluate(()=>{const e=scenePlayer.renderer.objects.find(o=>o.id==="exhaust");return {count:e.count,pool:e.pool?.length,meshes:scenePlayer.renderer.scene?.meshes.length,instances:e.entries?.map(x=>x.mesh.thinInstanceCount),textures:scenePlayer.renderer.scene?.textures.length,jobs:scenePlayer.resources.jobs.size};});
       if(mode==="dom"){assert.equal(await page.locator("canvas").count(),0);assert(resources.pool<=24,"DOM pool must be reused");}else{assert.equal(resources.meshes,2,"One thin-instance mesh plus one glow mesh");assert.deepEqual(resources.instances,[resources.count,resources.count]);assert(resources.textures<=4);}
@@ -74,23 +74,23 @@ async function browserChecks(){
       await page.evaluate(async data=>{await scenePlayer.loadScene(data);await scenePlayer.seek(.2);},data);
       let checked=0;
       for(let frame=0;frame<4;frame++){
-        await page.evaluate(frame=>scenePlayer.setComponent("effect","ParticleEmitter",{animation:{frame}}),frame);const capture=png(await page.screenshot());
+        await page.evaluate(frame=>scenePlayer.setComponent("effect","ParticleEmitter",{animation:{frame}}),frame);const capture=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));
         for(let y=0;y<6;y++)for(let x=0;x<6;x++){
           const at=((y+padding)*atlas.width+frame*stride+padding+x)*4,out=((150+y*10+5)*capture.width+290+x*10+5)*capture.channels;
           for(let c=0;c<3;c++)assert(Math.abs(capture.pixels[out+c]-(atlas.pixels[at+3]?atlas.pixels[at+c]:0))<=2,`${mode} frame ${frame}, cell ${x},${y}`);checked++;
         }
       }
       await page.evaluate(async()=>{await scenePlayer.setComponent("effect","ParticleEmitter",{billboard:"local",animation:{frame:1}});await scenePlayer.setTransform("effect",{localPosition:{x:.15,y:0,z:0}});await scenePlayer.setTransform("parent",{localPosition:{x:.4,y:.2,z:0},localRotation:{x:0,y:0,z:90},localScale:{x:2,y:2,z:2}});});
-      const inherited=png(await page.screenshot());
+      const inherited=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));
       for(let y=0;y<6;y++)for(let x=0;x<6;x++){
         const sx=Math.round(360-20*(2.5-y)),sy=Math.round(130-20*(x-2.5)),out=(sy*inherited.width+sx)*inherited.channels,at=((y+padding)*atlas.width+stride+padding+x)*4;
         for(let c=0;c<3;c++)assert(Math.abs(inherited.pixels[out+c]-(atlas.pixels[at+3]?atlas.pixels[at+c]:0))<=2,`${mode}: local particle cell ${x},${y} follows its transformed parent`);
       }
       await page.evaluate(async()=>{await scenePlayer.setTransform("effect",{localPosition:{x:0,y:0,z:0}});await scenePlayer.setTransform("parent",{localPosition:{x:0,y:0,z:0},localRotation:{x:0,y:0,z:0},localScale:{x:1,y:1,z:1}});});
-      await page.evaluate(()=>scenePlayer.setComponent("effect","ParticleEmitter",{enabled:false}));const blank=png(await page.screenshot());assert(blank.pixels.every((v,i)=>i%blank.channels===3||v===0),"Zero instances must not draw a host quad");
+      await page.evaluate(()=>scenePlayer.setComponent("effect","ParticleEmitter",{enabled:false}));const blank=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));assert(blank.pixels.every((v,i)=>i%blank.channels===3||v===0),"Zero instances must not draw a host quad");
       await page.evaluate(()=>scenePlayer.setComponent("effect","ParticleEmitter",{enabled:true}));
       await page.evaluate(()=>scenePlayer.setTransform("parent",{localPosition:{x:0,y:0,z:-11}}));
-      const clipped=png(await page.screenshot());assert(clipped.pixels.every((v,i)=>i%clipped.channels===3||v===0),"Particles behind the camera are clipped");
+      const clipped=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));assert(clipped.pixels.every((v,i)=>i%clipped.channels===3||v===0),"Particles behind the camera are clipped");
       await page.evaluate(()=>scenePlayer.setTransform("parent",{localPosition:{x:0,y:0,z:0}}));
       await page.setViewportSize({width:360,height:640});await page.evaluate(()=>scenePlayer.whenIdle());assert(Math.abs(await page.evaluate(()=>scenePlayer.view.worldWidth)-6.4)<1e-9);
       await page.keyboard.press("a");assert.equal(await page.evaluate(()=>scenePlayer.scene.data.presentation.referenceAspect),true);

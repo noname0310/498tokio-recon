@@ -37,7 +37,7 @@ class Sprite {
   private readonly shapeFilter:SVGFilterElement;private readonly shapeDilation:SVGFEMorphologyElement;private readonly shapeSoftness:SVGFEGaussianBlurElement;
   private readonly motionGainFilter:SVGFilterElement;private readonly motionGain:SVGFEFuncAElement;
   readonly renderer:DOMRenderer;readonly id:string;readonly elements:Map<"SpriteRenderer"|"DropShadow"|"Glow",SpriteElement>;
-  sourceKey:string|null;sourcePending:Promise<unknown>=Promise.resolve();readonly filters:SVGFilterElement[];readonly shadowBlur:SVGFEGaussianBlurElement;readonly shadowOffset:SVGFEOffsetElement;readonly shadowColor:SVGFEFloodElement;
+  sourceKey:string|null;readonly filters:SVGFilterElement[];readonly shadowBlur:SVGFEGaussianBlurElement;readonly shadowOffset:SVGFEOffsetElement;readonly shadowColor:SVGFEFloodElement;
   readonly glowMatrix:SVGFEColorMatrixElement;readonly glowBlur:SVGFEGaussianBlurElement;readonly glowGain:SVGFEFuncAElement;readonly tintMatrix:SVGFEColorMatrixElement;readonly tintFilter:string;
   noiseDefinition!:SVGFilterElement;noiseFilter!:string;noiseRevision=0;noiseImage!:SVGFEImageElement;noiseTiles!:SVGFETileElement;
   noiseChannels!:NoiseChannels;
@@ -83,10 +83,12 @@ class Sprite {
     const state=scene.spriteState(this.id);
     // Hidden scene hierarchies must not decode/swap every frame of their loops.
     // Incrementing updateRevision above also cancels older pending visible work.
-    if(!scene.active.get(this.id)||!state.visible){for(const {element} of this.elements.values())sync.hidden(element,true);return;}
-    const source=asset.atlas?(await this.renderer.resources.spriteFrames(scene,sprite.asset))[state.frame].src:scene.source(sprite.asset);
+    if(!scene.active.get(this.id)||!state.visible||!this.renderer.resources.isImageReady(sprite.asset)){for(const {element} of this.elements.values())sync.hidden(element,true);return;}
+    const source=(await this.renderer.resources.spriteFrames(scene,sprite.asset))[state.frame].src;
     if(this.disposed||revision!==this.updateRevision)return;
-    if(this.sourceKey!==source){this.sourceKey=source;this.sourcePending=Promise.all([...this.elements.values()].map(({image})=>{image.src=source;return image.decode();}));}
+    // spriteFrames already decoded this source. Do not wait for another
+    // decode on each newly spawned surface (or each atlas frame).
+    if(this.sourceKey!==source){this.sourceKey=source;for(const {image} of this.elements.values()){image.decoding="sync";image.src=source;}}
     // The prepared source has fixed cell bounds, independent of atlas position.
     const motion=scene.component(this.id,"SpriteMotionBlur"),filtered=motion?.enabled&&(motion.dilationPixels>0||motion.softnessPixels>0),rasterScale=filtered?8:1;
     const units=asset.pixelsPerUnit*rasterScale,width=state.size.x*rasterScale,height=state.size.y*rasterScale;
@@ -98,7 +100,7 @@ class Sprite {
     const visible=scene.active.get(this.id)&&state.visible,shadow=scene.component(this.id,"DropShadow"),glow=scene.component(this.id,"Glow");
     const opacity=sprite.color.a;
     const moving=motion?.enabled&&(motion.radialAmount>0||motion.translationWorld.x!==0||motion.translationWorld.y!==0);
-    if(!visible){for(const {element} of this.elements.values())sync.hidden(element,true);await this.sourcePending;return;}
+    if(!visible){for(const {element} of this.elements.values())sync.hidden(element,true);return;}
     for(const [type,{element,image,filter}] of this.elements){
       const surface=image;
       sync.attribute(element,"data-frame",state.frame);
@@ -137,7 +139,9 @@ class Sprite {
     }else sync.style(body,{maskImage:"none"});
     const noise=scene.component(this.id,"ProceduralNoise"),hasNoise=enabled(noise)&&noise.bands.some(b=>b.variance>0);
     sync.attribute(this.shapeDilation,"radius",filtered?motion.dilationPixels*rasterScale:0);sync.attribute(this.shapeSoftness,"stdDeviation",filtered?motion.softnessPixels*rasterScale:0);
-    sync.style(body,{filter:[filtered?`url(#${this.shapeFilter.id})`:"",tinted?this.tintFilter:"",sprite.hueDegrees?`hue-rotate(${sprite.hueDegrees}deg)`:"",sprite.saturation!==1?`saturate(${sprite.saturation})`:"",sprite.brightness!==1?`brightness(${sprite.brightness})`:"",hasNoise?this.noiseFilter:""].filter(Boolean).join(" ")||"none"});
+    const bodyFilters=[filtered?`url(#${this.shapeFilter.id})`:"",tinted?this.tintFilter:"",sprite.hueDegrees?`hue-rotate(${sprite.hueDegrees}deg)`:"",sprite.saturation!==1?`saturate(${sprite.saturation})`:"",sprite.brightness!==1?`brightness(${sprite.brightness})`:""];
+    const applyNoise=()=>sync.style(body,{filter:[...bodyFilters,hasNoise&&this.noiseURL?this.noiseFilter:""].filter(Boolean).join(" ")||"none"});
+    applyNoise();
     if(noise){
       updateNoiseChannels(sync,this.noiseChannels,noise.channelGain);
       const tileWidth=noise.worldSize.x*units,tileHeight=noise.worldSize.y*units;
@@ -152,21 +156,20 @@ class Sprite {
       const key=this.renderer.resources.noiseKey(noise);
       if(key!==this.noiseKey){
         this.noiseKey=key;const revision=++this.noiseRevision;
-        this.noisePending=this.renderer.resources.noiseURL(noise).then(async result=>{
-          const image=new Image();image.src=result.url;await image.decode();
-          if(this.disposed||revision!==this.noiseRevision){this.renderer.resources.releaseURL(result.url);return;}
-          if(this.noiseURL)this.renderer.resources.releaseURL(this.noiseURL);
+        this.noisePending=this.renderer.resources.noiseURL(noise).then(result=>{
+          if(this.disposed||revision!==this.noiseRevision)return;
           this.noiseURL=result.url;sync.attribute(this.noiseImage,"href",String(result.url));
         });
       }
       await this.noisePending;
+      if(this.disposed||revision!==this.updateRevision)return;
+      applyNoise();
     }
     // Keep filter regions large enough when a component's radius is changed.
     for(const [index,effect] of [[0,shadow],[1,glow]] as const)if(effect){
       const pad=4*effect.sigmaWorld*units+(effect.type==="DropShadow"?Math.max(Math.abs(effect.offsetWorld.x),Math.abs(effect.offsetWorld.y))*units:0);
       const filter=this.filters[index];sync.attribute(filter,"x",`${-pad/width*100}%`);sync.attribute(filter,"y",`${-pad/height*100}%`);sync.attribute(filter,"width",`${100+2*pad/width*100}%`);sync.attribute(filter,"height",`${100+2*pad/height*100}%`);
     }
-    await this.sourcePending;
     if(this.disposed||revision!==this.updateRevision)return;
     const bodyElement=this.elements.get("SpriteRenderer")!.element;
     const gain=motion?.enabled?motion.alphaGain:1;sync.attribute(this.motionGain,"slope",gain);sync.style(bodyElement,{opacity:String(opacity),filter:gain!==1?`url(#${this.motionGainFilter.id})`:"none"});
@@ -185,9 +188,8 @@ class Sprite {
     }else{
       this.motionImages.forEach(image=>sync.hidden(image,true));sync.style(bodyElement,{isolation:"auto"});sync.style(body,{mixBlendMode:"normal",transform:"none",opacity:"1"});
     }
-    if(this.sourceKey===source)for(const {image} of this.elements.values())if(image.naturalWidth!==state.size.x||image.naturalHeight!==state.size.y)throw new Error(`Asset dimensions do not match the scene: ${sprite.asset}`);
   }
-  dispose(){this.disposed=true;this.noiseRevision++;if(this.noiseURL)this.renderer.resources.releaseURL(this.noiseURL);this.filters.forEach(f=>f.remove());this.elements.forEach(({element})=>this.renderer.removeSurface(element));}
+  dispose(){this.disposed=true;this.noiseRevision++;this.filters.forEach(f=>f.remove());this.elements.forEach(({element})=>this.renderer.removeSurface(element));}
 }
 
 interface TileSlot {top:SVGRectElement[];bottom:SVGRectElement[];group:SVGGElement}
@@ -228,8 +230,7 @@ class TiledSprite {
     // an awaited image can resume after a seek and reveal the old scene.
     const updateRevision=++this.updateRevision;
     const c=scene.requireComponent(this.id,"TiledSpriteRenderer"),asset=scene.asset(c.asset),blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise");
-    const visible=!!scene.active.get(this.id)&&c.enabled;if(!visible)sync.hidden(this.element,true);
-    if(!visible&&this.pixels)return;
+    const visible=!!scene.active.get(this.id)&&c.enabled&&this.renderer.resources.isImageReady(c.asset);if(!visible){sync.hidden(this.element,true);return;}
     const units=view.pixelsPerUnit*(c.clipBounds&&(enabled(blur)||scene.component(this.id,"Glow")?.enabled)?8:1);
     const transform=scene.cssMatrix(this.id,view,{x:0,y:0,z:0},units);sync.style(this.element,{transform});
     const source=scene.source(c.asset);
@@ -336,10 +337,8 @@ class TiledSprite {
       const key=this.renderer.resources.noiseKey(noise);
       if(key!==this.noiseKey){
         this.noiseKey=key;const revision=++this.noiseRevision;
-        this.noisePending=this.renderer.resources.noiseURL(noise).then(async result=>{
-          const image=new Image();image.src=result.url;await image.decode();
-          if(revision!==this.noiseRevision){this.renderer.resources.releaseURL(result.url);return;}
-          if(this.noiseURL)this.renderer.resources.releaseURL(this.noiseURL);
+        this.noisePending=this.renderer.resources.noiseURL(noise).then(result=>{
+          if(revision!==this.noiseRevision)return;
           this.noiseURL=result.url;sync.style(this.grain,{backgroundImage:`url("${result.url}")`});
         });
       }
@@ -347,18 +346,20 @@ class TiledSprite {
     }
   }
   rgb(x:number,y:number){const i=(y*this.pixels!.width+x)*4,d=this.pixels!.data;return d[i+3]===255?`rgb(${d[i]} ${d[i+1]} ${d[i+2]})`:`rgb(${d[i]} ${d[i+1]} ${d[i+2]} / ${d[i+3]/255})`;}
-  dispose(){this.noiseRevision++;this.updateRevision++;if(this.noiseURL)this.renderer.resources.releaseURL(this.noiseURL);this.renderer.removeSurface(this.element);this.filter.remove();this.crop.remove();this.tintFilter.remove();this.directionalFilter.remove();this.noiseColorFilter.remove();}
+  dispose(){this.noiseRevision++;this.updateRevision++;this.renderer.removeSurface(this.element);this.filter.remove();this.crop.remove();this.tintFilter.remove();this.directionalFilter.remove();this.noiseColorFilter.remove();}
 }
 
 type DOMObjectConstructor=new(renderer:DOMRenderer,node:Entity)=>RenderObject;
 interface DOMRecord {object:RenderObject;Handler:DOMObjectConstructor;layout:string}
 export class DOMRenderer {
+  readonly kind="dom";
+  readonly displayName="DOM · CSS / SVG";
   readonly sync=new DOMSync();
   private readonly transitions=new DOMTransitions(this);
   private readonly frame=new DOMViewportFrame(this);
   private vignetteKey="";
   private viewMatrix=M.identity();private updateRevision=0;
-  private readonly depths=new Map<HTMLDivElement,{depth:number;order:number;tie:number}>();private depthDirty=false;
+  private readonly depths=new Map<HTMLDivElement,{depth:number;order:number;tie:number}>();private depthDirty=false;private depthCommitQueued=false;
   private readonly surfaces=new Set<HTMLDivElement>();
   private readonly records=new Map<string,Map<ComponentType,DOMRecord>>();
   readonly viewport:HTMLElement;readonly registry:Map<ComponentType,DOMObjectConstructor>;objects:RenderObject[];
@@ -375,6 +376,8 @@ export class DOMRenderer {
   setDepth(element:HTMLDivElement,depth:number,order=0,tie=0):void {
     const previous=this.depths.get(element);if(previous?.depth===depth&&previous.order===order&&previous.tie===tie)return;
     if(previous){previous.depth=depth;previous.order=order;previous.tie=tie;}else this.depths.set(element,{depth,order,tie});this.depthDirty=true;
+    // Resource preparation on another object must not postpone visible depth.
+    if(!this.depthCommitQueued){this.depthCommitQueued=true;queueMicrotask(()=>{this.depthCommitQueued=false;this.commitDepths();});}
   }
   removeSurface(element:HTMLDivElement):void {
     if(this.depths.delete(element))this.depthDirty=true;

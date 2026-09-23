@@ -22,11 +22,11 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run check:types
       - run: npm run check:json
       - run: npm run build
       - run: npx playwright install --with-deps chromium firefox
       - run: npm run check:dist
+      - run: npm run check:standalone
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist

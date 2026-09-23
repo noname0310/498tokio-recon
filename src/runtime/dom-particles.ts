@@ -66,7 +66,8 @@ export class DOMParticles {
   async update(scene:Scene,view:View){
     const sync=this.renderer.sync,revision=++this.revision;
     const c=scene.requireComponent(this.id,"ParticleEmitter"),asset=scene.asset(c.asset),cell=asset.atlas?.cellSize||asset.size,source=scene.source(c.asset),glow=scene.component(this.id,"Glow"),states=scene.particleStates(this.id),loading=[];
-    const frames=asset.atlas?await this.renderer.resources.spriteFrames(scene,c.asset):undefined;
+    if(!states.length||!this.renderer.resources.isImageReady(c.asset)){this.count=0;for(const p of this.pool)for(const entry of p.entries)sync.hidden(entry.element,true);return;}
+    const frames=await this.renderer.resources.spriteFrames(scene,c.asset);
     if(this.disposed||revision!==this.revision)return;
     this.count=states.length;
     const sortBySize=c.sortMode==="sizeAscending",sortDepth=sortBySize?this.renderer.viewDepth(scene,this.id,{x:0,y:0,z:0}):0;
@@ -103,7 +104,7 @@ export class DOMParticles {
       sync.attribute(p.matrix,"values",`${t.r} 0 0 0 0 0 ${t.g} 0 0 0 0 0 ${t.b} 0 0 0 0 0 1 0`);
       for(const entry of p.entries){
         const {element,surface,blurFrame,image,glow:isGlow}=entry;
-        const frameSource=frames?frames[s.frame].src:source;
+        const frameSource=frames[s.frame].src;
         if(entry.source!==frameSource){entry.source=frameSource;sync.attribute(image,"src",frameSource);entry.pending=image.decode().then(()=>{if(entry.source===frameSource&&(image.naturalWidth!==cell.x||image.naturalHeight!==cell.y))throw new Error(`Asset dimensions do not match the scene: ${c.asset}`);});}
         loading.push(entry.pending);
         const pr=isGlow?glowProjection:bodyProjection;

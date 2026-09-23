@@ -1,5 +1,5 @@
 import type * as Babylon from "@babylonjs/core/pure";
-import type {BabylonRenderer} from "./babylon.js";
+import type {BabylonSceneContext} from "./babylon-context.js";
 import type {SpriteAsset} from "./types.js";
 
 export const particleFilterResolution=8;
@@ -40,6 +40,15 @@ void main(){
   gl_FragColor=sum/weights;
 }`;
 
+export function createDilationEffect(r:BabylonSceneContext,id:string,reach:number):Babylon.EffectWrapper {
+  const shader=`sceneDilation${reach}`;r.B.Effect.ShadersStore.sceneFilterVertexShader=vertex;r.B.Effect.ShadersStore[shader+"FragmentShader"]=fragment(reach);
+  return new r.B.EffectWrapper({engine:r.engine,name:`${id}/dilation`,useShaderStore:true,vertexShader:"sceneFilter",fragmentShader:shader,attributeNames:["position"],uniformNames:["sourceSize","cellSize","gridSize","sourcePadding","padding","radius"],samplerNames:["sourceTex"]});
+}
+export function createSoftnessEffect(r:BabylonSceneContext,id:string):Babylon.EffectWrapper {
+  r.B.Effect.ShadersStore.sceneFilterVertexShader=vertex;r.B.Effect.ShadersStore.sceneSoftnessFragmentShader=blurFragment;
+  return new r.B.EffectWrapper({engine:r.engine,name:`${id}/softness`,useShaderStore:true,vertexShader:"sceneFilter",fragmentShader:"sceneSoftness",attributeNames:["position"],uniformNames:["sigma"],samplerNames:["sourceTex"]});
+}
+
 /** Small GPU working textures shared by all instances of an emitter. Only
  * artwork, dilation or softness edits rerender them; motion and gain do not. */
 export class BabylonParticleFilter {
@@ -53,7 +62,7 @@ export class BabylonParticleFilter {
   private pending:Promise<void>=Promise.resolve();
   private last?:{asset:SpriteAsset;source:Babylon.RawTexture;radius:number;softness:number};
   private readonly restored:Babylon.Observer<Babylon.AbstractEngine>;
-  constructor(private readonly renderer:BabylonRenderer,private readonly id:string){
+  constructor(private readonly renderer:BabylonSceneContext,private readonly id:string){
     this.pass=new renderer.B.EffectRenderer(renderer.engine);
     this.restored=renderer.engine.onContextRestoredObservable.add(()=>{
       this.key="";const input=this.last;
@@ -81,13 +90,13 @@ export class BabylonParticleFilter {
       const reach=Math.ceil(radius);
       if(this.reach!==reach){
         this.effect?.dispose();this.reach=reach;
-        this.effect=new B.EffectWrapper({engine:r.engine,name:`${this.id}/dilation`,vertexShader:vertex,fragmentShader:fragment(reach),attributeNames:["position"],uniformNames:["sourceSize","cellSize","gridSize","sourcePadding","padding","radius"],samplerNames:["sourceTex"]});
+        this.effect=createDilationEffect(r,this.id,reach);
       }
       const wrapper=this.effect!;await wrapper.effect.whenCompiledAsync();
       if(this.disposed||revision!==this.revision)return;
       if(softness>0){
         if(!this.scratch){this.scratch=new B.RenderTargetTexture(`${this.id}/particle-filter-scratch`,{width,height},r.scene,{generateMipMaps:false,generateDepthBuffer:false,samplingMode:B.Texture.BILINEAR_SAMPLINGMODE,gammaSpace:false});this.scratch.wrapU=this.scratch.wrapV=B.Texture.CLAMP_ADDRESSMODE;}
-        this.blur??=new B.EffectWrapper({engine:r.engine,name:`${this.id}/softness`,vertexShader:vertex,fragmentShader:blurFragment,attributeNames:["position"],uniformNames:["sigma"],samplerNames:["sourceTex"]});
+        this.blur??=createSoftnessEffect(r,this.id);
         await this.blur.effect.whenCompiledAsync();if(this.disposed||revision!==this.revision)return;
       }
       wrapper.onApplyObservable.clear();wrapper.onApplyObservable.add(()=>{

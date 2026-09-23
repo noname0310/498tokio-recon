@@ -16,7 +16,7 @@ export class Scene {
   animationEnabled=true;
   private seconds=0;private exactTime?:FrameTime;private timelinePosition=Time.fromFrame(Frame.zero);
   cameraNode!:Entity;sequence?:SequenceRuntime;
-  constructor(data:unknown,baseURL:string){this.baseURL=baseURL;this.data=normalizeScene(data);this.original=structuredClone(this.data);this.index();this.compileAnimation();this.updateWorld();}
+  constructor(data:unknown,baseURL:string,private readonly resolveAsset:(url:string)=>string=url=>url){this.baseURL=baseURL;this.data=normalizeScene(data);this.original=structuredClone(this.data);this.index();this.compileAnimation();this.updateWorld();}
   get time():number{return this.seconds;}
   set time(value:number){if(!Number.isFinite(value)||value<0)throw new Error("Scene time must be finite and nonnegative.");this.seconds=value;this.timelinePosition=Time.fromDecimal(value);this.exactTime=undefined;}
   /** Rational seconds, retained even when the scene has no master sequence. */
@@ -49,11 +49,18 @@ export class Scene {
     reconcile(this.nodes,nodes);reconcile(this.parents,parents);reconcile(this.authoredNodes,authored);
   }
   find(id:string):Entity {const node=this.nodes.get(id);if(!node)throw new Error(`Unknown entity: ${id}`);return node;}
+  /** All declarations, including descendants of future nested spawnables. */
+  *declaredEntities():IterableIterator<Entity>{
+    yield* this.authoredNodes.values();
+    if(this.sequence)yield* this.sequence.templates.values();
+  }
+  /** An entity outside its owning sequence does not exist and is inactive. */
+  isActive(id:string):boolean{return this.active.get(id)??false;}
   component<K extends ComponentType>(id:string,type:K):ComponentMap[K]|undefined {return (this.overlays.get(id)||this.find(id)).components.find(c=>c.type===type) as ComponentMap[K]|undefined;}
   requireComponent<K extends ComponentType>(id:string,type:K):ComponentMap[K] {const component=this.component(id,type);if(!component)throw new Error(`Missing ${type} on ${id}.`);return component;}
   asset(id:string):SpriteAsset {const a=this.data.assets[id];if(a?.type!=="Sprite")throw new Error(`Unknown Sprite asset: ${id}`);return a;}
   audioAsset(id:string):AudioAsset {const a=this.data.assets[id];if(a?.type!=="Audio")throw new Error(`Unknown Audio asset: ${id}`);return a;}
-  source(id:string):string{const a=this.data.assets[id];if(!a)throw new Error(`Unknown asset: ${id}`);return new URL(a.file,this.baseURL).href;}
+  source(id:string):string{const a=this.data.assets[id];if(!a)throw new Error(`Unknown asset: ${id}`);return this.resolveAsset(new URL(a.file,this.baseURL).href);}
   spriteState(id:string):SpriteState {
     const sprite=this.requireComponent(id,"SpriteRenderer"),asset=this.asset(sprite.asset),atlas=asset.atlas,animation=this.component(id,"SpriteAnimator");
     let frame=sprite.frame,visible=sprite.enabled;

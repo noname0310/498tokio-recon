@@ -1,5 +1,5 @@
 import type * as Babylon from "@babylonjs/core/pure";
-import type { BabylonRenderer } from "./babylon.js";
+import type { BabylonSceneContext } from "./babylon-context.js";
 import type { Scene } from "./scene.js";
 import type { Entity, Vec3, ParticleState, RenderObject } from "./types.js";
 import {BabylonParticleFilter,particleFilterResolution} from "./babylon-particle-filter.js";
@@ -59,12 +59,12 @@ void main(){
 }`;
 
 export class BabylonParticles {
-  readonly renderer:BabylonRenderer;readonly id:string;readonly entries:{mesh:Babylon.Mesh;material:Babylon.ShaderMaterial;glow:boolean}[];
+  readonly renderer:BabylonSceneContext;readonly id:string;readonly entries:{mesh:Babylon.Mesh;material:Babylon.ShaderMaterial;glow:boolean}[];
   capacity:number;count:number;matrices!:Float32Array;colors!:Float32Array;rects!:Float32Array;blurs!:Float32Array;revision=0;sourceKey?:string;texture?:Babylon.RawTexture;disposed=false;
   filter?:BabylonParticleFilter;
   states:ParticleState[]=[];sortBySize=false;sortOrigin:Vec3={x:0,y:0,z:0};
   private readonly runs:ParticleDrawRun[]=[];private runCount=0;
-  constructor(renderer:BabylonRenderer,node:Entity){
+  constructor(renderer:BabylonSceneContext,node:Entity){
     this.renderer=renderer;this.id=node.id;this.entries=[];this.capacity=0;this.count=0;
     const B=renderer.B;B.Effect.ShadersStore.sceneParticleVertexShader=vertex;B.Effect.ShadersStore.sceneParticleFragmentShader=fragment;
     for(const glow of [false,...(node.components.some(c=>c.type==="Glow")?[true]:[])]){
@@ -83,9 +83,15 @@ export class BabylonParticles {
     this.matrices=new Float32Array(this.capacity*16);this.colors=new Float32Array(this.capacity*4);this.rects=new Float32Array(this.capacity*4);this.blurs=new Float32Array(this.capacity*2);
     for(const {mesh} of this.entries){mesh.thinInstanceSetBuffer("matrix",this.matrices,16,false);mesh.thinInstanceSetBuffer("particleColor",this.colors,4,false);mesh.thinInstanceSetBuffer("particleRect",this.rects,4,false);mesh.thinInstanceSetBuffer("particleBlur",this.blurs,2,false);}
   }
+  prepareShaders():void {
+    this.allocate(1);
+    for(const {mesh} of this.entries)mesh.thinInstanceCount=1;
+  }
   async update(scene:Scene){
     const r=this.renderer,B=r.B,c=scene.requireComponent(this.id,"ParticleEmitter"),asset=scene.asset(c.asset),glow=scene.component(this.id,"Glow"),cell=asset.atlas?.cellSize||asset.size;
-    const revision=this.revision=(this.revision||0)+1,source=await r.resources.image(scene,c.asset);
+    const revision=++this.revision;
+    if(!scene.active.get(this.id)||!c.enabled||!r.resources.isImageReady(c.asset)){this.states=[];this.count=0;for(const entry of this.entries)entry.mesh.isVisible=false;return;}
+    const source=await r.resources.image(scene,c.asset);
     if(this.disposed||revision!==this.revision)return;
     const key=JSON.stringify([scene.source(c.asset),asset.filter]);
     if(this.sourceKey!==key){this.sourceKey=key;this.texture?.dispose();this.texture=r.texture(`${this.id}/atlas`,source,{linear:asset.filter==="linear"});for(const e of this.entries)e.material.setTexture("spriteTex",this.texture);}

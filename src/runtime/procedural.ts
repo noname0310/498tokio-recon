@@ -27,27 +27,65 @@ export function generateTexture(input:TextureJob):PixelImage {
 
   function convolve(input:ArrayLike<number>, width:number, height:number, channels:number, weights:Float64Array, axis:string, boundary:string) {
     const output = new Float64Array(input.length);
-    const length = axis === "y" ? height : width;
-    const radius = (weights.length - 1) / 2;
-    const indices = new Int32Array(length * weights.length);
-    for (let i = 0; i < length; i++) {
-      for (let k = 0; k < weights.length; k++) {
-        indices[i * weights.length + k] = boundaryIndex(i + k - radius, length, boundary);
+    const stride = width * channels, size = weights.length;
+    const radius = (size - 1) / 2;
+    if (axis === "y") {
+      // Resolve row boundaries/strides once, outside the pixel loop.
+      const indices = new Int32Array(height * size);
+      for (let i = 0; i < height; i++) {
+        for (let k = 0; k < size; k++) {
+          indices[i * size + k] = boundaryIndex(i + k - radius, height, boundary) * stride;
+        }
       }
+      for (let y = 0; y < height; y++) {
+        const row = y * stride, indexBase = y * size;
+        let x = 0;
+        // Four independent sums reuse each coefficient/index and adjacent
+        // cache lines. Each pixel retains the original summation order.
+        for (; x + 3 < stride; x += 4) {
+          let a = 0, b = 0, c = 0, d = 0;
+          for (let k = 0; k < size; k++) {
+            const source = indices[indexBase + k] + x, weight = weights[k];
+            a += input[source] * weight; b += input[source + 1] * weight;
+            c += input[source + 2] * weight; d += input[source + 3] * weight;
+          }
+          output[row + x] = a; output[row + x + 1] = b;
+          output[row + x + 2] = c; output[row + x + 3] = d;
+        }
+        for (; x < stride; x++) {
+          let sum = 0;
+          for (let k = 0; k < size; k++) sum += input[indices[indexBase + k] + x] * weights[k];
+          output[row + x] = sum;
+        }
+      }
+      return output;
+    }
+    const padded = new Float64Array((width + radius * 2) * channels);
+    const rowIndices = new Int32Array(padded.length);
+    for (let i = 0; i < width + radius * 2; i++) {
+      const source = boundaryIndex(i - radius, width, boundary) * channels;
+      for (let c = 0; c < channels; c++) rowIndices[i * channels + c] = source + c;
     }
     for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const destination = (y * width + x) * channels;
-        const indexBase = (axis === "y" ? y : x) * weights.length;
-        for (let c = 0; c < channels; c++) {
-          let sum = 0;
-          for (let k = 0; k < weights.length; k++) {
-            const mapped = indices[indexBase + k];
-            const source = axis === "y" ? mapped * width + x : y * width + mapped;
-            sum += input[source * channels + c] * weights[k];
-          }
-          output[destination + c] = sum;
+      const row = y * stride;
+      // Pad once per row so the inner horizontal loop reads consecutive data
+      // without boundary lookups, including kernels wider than the image.
+      for (let i = 0; i < padded.length; i++) padded[i] = input[row + rowIndices[i]];
+      let x = 0;
+      for (; x + 3 < stride; x += 4) {
+        let a = 0, b = 0, c = 0, d = 0;
+        for (let k = 0; k < size; k++) {
+          const source = x + k * channels, weight = weights[k];
+          a += padded[source] * weight; b += padded[source + 1] * weight;
+          c += padded[source + 2] * weight; d += padded[source + 3] * weight;
         }
+        output[row + x] = a; output[row + x + 1] = b;
+        output[row + x + 2] = c; output[row + x + 3] = d;
+      }
+      for (; x < stride; x++) {
+        let sum = 0;
+        for (let k = 0; k < size; k++) sum += padded[x + k * channels] * weights[k];
+        output[row + x] = sum;
       }
     }
     return output;
@@ -94,10 +132,10 @@ export function generateTexture(input:TextureJob):PixelImage {
 
   function normalize(field:Float64Array, targetStd:number) {
     let mean = 0;
-    for (const value of field) mean += value;
+    for (let i = 0; i < field.length; i++) mean += field[i];
     mean /= field.length;
     let variance = 0;
-    for (const value of field) variance += (value - mean) ** 2;
+    for (let i = 0; i < field.length; i++) variance += (field[i] - mean) ** 2;
     const multiplier = targetStd / Math.max(Math.sqrt(variance / field.length), 1e-12);
     for (let i = 0; i < field.length; i++) field[i] = (field[i] - mean) * multiplier;
   }
@@ -107,7 +145,16 @@ export function generateTexture(input:TextureJob):PixelImage {
   if(kind==="noise"){
     const c=input.component,width=c.textureSize.x,height=c.textureSize.y,random=randomGenerator(c.seed),total=new Float64Array(width*height);
     let variance=0;
-    for(const band of c.bands){const field=blur(normalField(total.length,random),width,height,1,[band.sigmaTexels.y,band.sigmaTexels.x],["wrap","wrap"]);normalize(field,Math.sqrt(band.variance));for(let i=0;i<total.length;i++)total[i]+=field[i];variance+=band.variance;}
+    for(const band of c.bands){
+      if(band.variance===0){
+        // Keep subsequent bands on the same seeded random stream without
+        // generating or filtering a field that contributes nothing.
+        for(let i=0;i<total.length;i+=2){random();random();}
+        continue;
+      }
+      const field=blur(normalField(total.length,random),width,height,1,[band.sigmaTexels.y,band.sigmaTexels.x],["wrap","wrap"]);
+      normalize(field,Math.sqrt(band.variance));for(let i=0;i<total.length;i++)total[i]+=field[i];variance+=band.variance;
+    }
     normalize(total,Math.sqrt(variance));return texture(bytes(total,127.5/c.range,127.5),width,height,1);
   }
   const {source,asset,resolution}=input;

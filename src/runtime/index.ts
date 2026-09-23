@@ -2,6 +2,8 @@
 export { Engine } from "./engine.js";
 export { Scene } from "./scene.js";
 export { Resources } from "./resources.js";
+export {LoadingProgress,LoadingStatus,type LoadingStage,type LoadingTask} from "./loading-status.js";
+export {TextureProcessor,type TextureWorkerFactory,type TextureWorkerHandle} from "./texture-processor.js";
 export { Math3D } from "./math.js";
 export { mulberry32, particleStates, sampleKeys } from "./particles.js";
 export { flickerVisible } from "./flicker.js";

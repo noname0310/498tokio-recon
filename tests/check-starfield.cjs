@@ -6,8 +6,9 @@ async function main(){
   const file=path.join(root,"assets/final_animation.scene.json"),data=JSON.parse(fs.readFileSync(file)),scene=new Scene(data,pathToFileURL(file).href),rate=frameRate(30);
   const sample=n=>{scene.setFrameTime(Time.fromFrame(Frame.from(n)),rate);scene.updateWorld();};
   for(const n of [547,548,615,647,705,739,773,799,800,839,846,847,850,851,853,863,900]){
-    sample(n);assert.equal(scene.active.get("starfield-scene"),n>=548&&n<851);
-    assert.equal(scene.active.get("starfield-wipe"),n>=800&&n<900);assert.equal(scene.component("camera","Vignette").enabled,n<548);
+    sample(n);assert.equal(scene.isActive("starfield-scene"),n>=548&&n<851);
+    assert.equal(scene.isActive("starfield-wipe"),n>=800&&n<900);assert.equal(scene.component("camera","Vignette").enabled,n<548);
+    if(!scene.nodes.has("starfield-scene"))continue;
     for(const [id,z] of [["flight-ship",0],["stars-back",1],["stars-front",-1],["starfield-wipe",-2]])assert.equal(scene.world.get(id)[14],z);
     for(const id of ["flight-exhaust","flight-pilot","flight-thruster"])assert.equal(scene.parents.get(id).id,"flight-ship");
     assert(scene.world.get("flight-thruster")[14]>scene.world.get("flight-exhaust")[14],"The opaque thruster sits behind its exhaust particles");
@@ -40,20 +41,20 @@ async function main(){
         // Exercise the real audio-backed seek path, including browser media time
         // quantization. Direct Scene.setFrameTime would hide an off-by-one cut.
         const at=async n=>{
-          const actual=await page.evaluate(async n=>{const {Frame,Time,frameRate}=await import("/runtime/player.js");scenePlayer.pause();await scenePlayer.seekFrame(Frame.from(n));await scenePlayer.whenIdle();return {frame:Time.key(Time.convert(scenePlayer.scene.frameTime,scenePlayer.scene.sequence.tickResolution,frameRate(30))),pose:scenePlayer.scene.component("starfield-wipe","SpriteRenderer").frame,outgoing:scenePlayer.scene.active.get("starfield-scene"),incoming:scenePlayer.scene.active.get("forward-scene")};},n);
+          const actual=await page.evaluate(async n=>{const {Frame,Time,frameRate}=await import("/runtime/player.js");scenePlayer.pause();await scenePlayer.seekFrame(Frame.from(n));await scenePlayer.whenIdle();return {frame:Time.key(Time.convert(scenePlayer.scene.frameTime,scenePlayer.scene.sequence.tickResolution,frameRate(30))),pose:scenePlayer.scene.component("starfield-wipe","SpriteRenderer").frame,outgoing:scenePlayer.scene.isActive("starfield-scene"),incoming:scenePlayer.scene.isActive("forward-scene")};},n);
           assert.equal(actual.frame,`${n}:0/1`,`${label}: audio-backed frame seek must be exact`);
           assert.equal(actual.outgoing,n>=548&&n<851);assert.equal(actual.incoming,n>=851&&n<1155);
           sample(n);assert.equal(actual.pose,scene.component('starfield-wipe','SpriteRenderer').frame,`${label}: audio seek selects the same atlas pose as direct frame evaluation`);
         };
-        const capture=n=>page.screenshot(output?{path:path.join(output,`${label}_${n}.png`)}:{});let before;
+        const capture=n=>page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",...output?{path:path.join(output,`${label}_${n}.png`)}:{}});let before;
         for(const n of [548,558,580,615,630,647,700,739,773,810,839,841,842,844,845,847,848,850,851,852,853,854,857,858,860,861,863,864,700]){
           await at(n);const bytes=await capture(n);
           if(n===700){if(before){const d=compare(before,bytes);assert(d.max<=2&&d.mae<.005,"Rewind preserves particle pixels within filter rounding");}else before=bytes;}
-          if(n>=851){const state=await page.evaluate(()=>({outgoing:scenePlayer.scene.active.get("starfield-scene"),incoming:scenePlayer.scene.active.get("forward-scene")}));assert.equal(state.outgoing,false);assert.equal(state.incoming,true);const im=png(bytes);assert(im.pixels.some((v,i)=>i%im.channels!==3&&v>100),"Incoming flight and foreground wipe remain visible after the hard cut");}
+          if(n>=851){const state=await page.evaluate(()=>({outgoing:scenePlayer.scene.isActive("starfield-scene"),incoming:scenePlayer.scene.isActive("forward-scene")}));assert.equal(state.outgoing,false);assert.equal(state.incoming,true);const im=png(bytes);assert(im.pixels.some((v,i)=>i%im.channels!==3&&v>100),"Incoming flight and foreground wipe remain visible after the hard cut");}
         }
         await at(810);const jobs=await page.evaluate(()=>scenePlayer.resources.jobs.size);await at(739);await at(810);
         assert.equal(await page.evaluate(()=>scenePlayer.resources.jobs.size),jobs,"Animated particles do not regenerate texture jobs");
-        for(const viewport of [{width:375,height:812},{width:1400,height:600}]){await page.setViewportSize(viewport);await at(851);assert.equal(await page.evaluate(()=>scenePlayer.scene.active.get("starfield-scene")),false);}
+        for(const viewport of [{width:375,height:812},{width:1400,height:600}]){await page.setViewportSize(viewport);await at(851);assert.equal(await page.evaluate(()=>scenePlayer.scene.isActive("starfield-scene")),false);}
         assert.deepEqual(errors,[]);console.log(`Starfield ${label}: continuous animation, deterministic rewind, foreground wipe over hard cut, responsive view and live effects passed.`);
       }finally{await browser.close();}
     }

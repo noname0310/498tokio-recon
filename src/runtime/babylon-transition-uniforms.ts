@@ -1,12 +1,12 @@
 import type {ShaderMaterial} from "@babylonjs/core/pure";
-import type {BabylonRenderer} from "./babylon.js";
+import type {BabylonSceneContext} from "./babylon-context.js";
 import type {Bounds,ComponentMap} from "./types.js";
 import {gridTransitionFront,pinwheelFront,pinwheelProfile} from "./geometry.js";
 
 export const transitionUniformNames=["gridSize","gridOrigin","gridDirection","gridFront","gridFeather","transitionKind","transitionProgress","pinwheelFronts","dissolveSeed"];
 export class BabylonTransitionUniforms {
   private readonly fronts:number[]=Array<number>(64).fill(0);
-  update(r:BabylonRenderer,m:ShaderMaterial,c:ComponentMap["Transition"]|undefined,bounds:Bounds|null):void {
+  update(r:BabylonSceneContext,m:ShaderMaterial,c:ComponentMap["Transition"]|undefined,bounds:Bounds|null):void {
     m.setFloat("transitionKind",c?.enabled===false||!c?0:c.kind==="grid"?1:c.kind==="pinwheel"?2:c.kind==="dissolve"?3:4);
     m.setFloat("transitionProgress",c?.progress??1);
     if(!c||!bounds)return;

@@ -1,4 +1,4 @@
-import {Frame,Time,AnimationTrackFloat32,AnimationTrackInt32,AnimationTrackBoolean,packInterpolationModes,type FrameNumber,type FrameStamp,type DeepPartial,type PackedInterpolationModes} from "../../src/runtime/index.js";
+import {Frame,Time,AnimationTrackFloat32,AnimationTrackInt32,AnimationTrackBoolean,packInterpolationModes,type FrameNumber,type FrameStamp,type DeepPartial,type PackedInterpolationModes,type AnimationClock} from "../../src/runtime/index.js";
 
 const first:FrameNumber=Frame.from(10);
 const next:FrameNumber=Frame.add(first,Frame.from(2));
@@ -29,6 +29,12 @@ const sum:FrameNumber=first+next;
 Frame.add(first,2);
 // @ts-expect-error Fractional seconds cannot enter a FrameTime as a raw number.
 Time.fromFrame(1.5);
+
+declare const clock:AnimationClock;
+clock.pauseOffsetHint=Time.fromRatio(2236n,30n);
+// @ts-expect-error Pause hints retain rational time rather than untyped seconds.
+clock.pauseOffsetHint=2236/30;
+clock.pauseOffsetHint=undefined;
 
 const float=new AnimationTrackFloat32({frameNumber:[0],value:[1]});
 const int=new AnimationTrackInt32({frameNumber:[0],value:[1]});

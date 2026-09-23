@@ -12,11 +12,12 @@ export class AudioPlayer extends ObservableClock implements AnimationClock {
   private static mediaOwner:AudioPlayer|undefined;
   private readonly mediaActions:MediaSessionAction[]=[];
   private position=0;private wall=0;private mediaHint=0;private correction=1;private advancing=false;private awaitingProgress=true;
+  private pausePending=false;private ownedSeekEvents=0;
   // A media element can quantize a requested frame's seconds. Retain its exact
   // rational time until the observed media position actually changes.
-  private seekAnchor:{time:FrameTime;rate:FrameRate;seconds:number;mediaSeconds:number|undefined}|undefined;
+  private seekAnchor:{time:FrameTime;rate:FrameRate;seconds:number;mediaSeconds:number|undefined;pending:boolean}|undefined;
   // MmdRuntime.beforePhysics uses a 50 ms dead band, +/-10% catch-up and a
-  // 500 ms resync threshold. Media events, unlike time hints, reanchor exactly.
+  // 500 ms resync threshold. Pause retains the consumer's last evaluated offset.
   private static readonly syncTolerance=.05;private static readonly snapTolerance=.5;
   constructor(readonly entityId:string,url:string,readonly component:AudioPlayerComponent,host:HTMLElement,private readonly now:()=>number=()=>performance.now()){
     super();const audio=this.element=new Audio();audio.preload="metadata";audio.hidden=true;
@@ -31,12 +32,15 @@ export class AudioPlayer extends ObservableClock implements AnimationClock {
     void this.ready.catch(()=>{});
     for(const event of ["play","pause","ended","ratechange","playing","waiting","stalled","canplay"]){
       audio.addEventListener(event,()=>{
+        // A queued pause event can arrive after a new play request.
+        if(event==="pause"&&!audio.paused)return;
+        if((event==="play"||event==="playing")&&!audio.paused)this.pausePending=true;
         // A stalled download can still have enough buffered audio to play.
         if(event==="stalled"&&audio.readyState>=HTMLMediaElement.HAVE_FUTURE_DATA)return;
         if(event==="waiting"||event==="stalled"){this.waiting=true;this.advancing=false;}
         if(event==="play")this.advancing=!this.waiting&&audio.readyState>=HTMLMediaElement.HAVE_FUTURE_DATA;
         if(event==="playing"){this.waiting=false;this.advancing=true;}
-        if(event==="pause"||event==="ended"){this.waiting=false;this.advancing=false;}
+        if(event==="pause"||event==="ended"){this.waiting=false;this.advancing=false;this.applyPauseOffsetHint();}
         if(event==="play"||event==="playing"||event==="waiting"||event==="stalled")this.awaitingProgress=true;
         // canplay announces readiness; playing is the actual buffering resume.
         if(event!=="canplay")this.synchronize();
@@ -44,7 +48,20 @@ export class AudioPlayer extends ObservableClock implements AnimationClock {
       },options);
     }
     for(const event of ["seeking","seeked","timeupdate"]){audio.addEventListener(event,()=>{
+      // Completion from an older request may still be queued after a new seek.
+      if(event==="seeked"&&(audio.seeking||this.ownedSeekEvents>0))return;
       if(event!=="timeupdate"){
+        if(event==="seeking"){
+          this.pauseOffsetHint=undefined;
+          // Seeking events are queued, so the decoder may already have settled
+          // by delivery. Match our assignments by event, not rounded timestamps.
+          if(this.ownedSeekEvents>0)this.ownedSeekEvents--;else this.seekAnchor=undefined;
+        }
+        if(event==="seeked"&&this.seekAnchor?.pending){
+          // Decoder settlement may quantize again, with timeupdate preceding
+          // seeked. It completes the same seek; it is not playback progression.
+          this.seekAnchor.mediaSeconds=audio.currentTime;this.seekAnchor.pending=false;
+        }
         this.awaitingProgress=true;
         this.advancing=event==="seeked"&&this.playing&&!this.waiting&&audio.readyState>=HTMLMediaElement.HAVE_FUTURE_DATA;
         this.synchronize();if(event==="seeked")this.finishSeek();
@@ -70,13 +87,16 @@ export class AudioPlayer extends ObservableClock implements AnimationClock {
     const anchor=this.seekAnchor;
     if(anchor){
       anchor.mediaSeconds??=seconds;
-      if(seconds!==anchor.mediaSeconds)this.seekAnchor=undefined;
+      if(!anchor.pending&&seconds!==anchor.mediaSeconds)this.seekAnchor=undefined;
     }
     this.position=this.seekAnchor?.seconds??seconds;this.mediaHint=seconds;this.wall=now;this.correction=1;
   }
   private readTime(now:number):number {
     if(this.disposed)return this.position;
     const audio=this.element;
+    // Native pause queues timeupdate before pause. Hold the displayed offset
+    // before either event (or another getter) can overwrite it with media time.
+    if(audio.paused)this.applyPauseOffsetHint();else if(!audio.ended)this.pausePending=true;
     if(!this.advancing||!this.playing||this.waiting||audio.seeking){this.synchronize(audio.currentTime,Math.max(now,this.wall));return this.position;}
     // An event/getter may have sampled later than this frame's RAF timestamp.
     if(now<this.wall)return this.position;
@@ -111,14 +131,15 @@ export class AudioPlayer extends ObservableClock implements AnimationClock {
     const seconds=Time.toSeconds(time,rate);
     if(!Number.isFinite(seconds)||seconds<0)throw new Error("Audio time must be finite and nonnegative.");
     if(this.disposed)return Promise.resolve();
+    this.pauseOffsetHint=undefined;
     if(this.element.readyState<1)return this.ready.then(()=>this.seek(time,rate));
     const target=Math.min(this.duration,seconds);this.finishSeek();
-    this.seekAnchor={time:target<seconds?Time.fromSeconds(target,rate):time,rate,seconds:target,mediaSeconds:undefined};
+    this.seekAnchor={time:target<seconds?Time.fromSeconds(target,rate):time,rate,seconds:target,mediaSeconds:undefined,pending:true};
     this.awaitingProgress=true;
-    if(target===this.element.currentTime&&!this.seeking){this.synchronize(target);this.emit({type:"time",discontinuity:true});return Promise.resolve();}
+    if(target===this.element.currentTime&&!this.seeking){this.seekAnchor.pending=false;this.synchronize(target);this.emit({type:"time",discontinuity:true});return Promise.resolve();}
     return new Promise<void>(resolve=>{
       this.finishSeek=()=>{this.finishSeek=()=>{};resolve();};
-      this.element.currentTime=target;this.synchronize();this.emit({type:"time",discontinuity:true});if(!this.seeking)this.finishSeek();
+      this.ownedSeekEvents++;this.element.currentTime=target;this.synchronize();this.emit({type:"time",discontinuity:true});if(!this.seeking)this.finishSeek();
     });
   }
   seekSeconds(seconds:number):Promise<void> {
@@ -126,10 +147,18 @@ export class AudioPlayer extends ObservableClock implements AnimationClock {
   }
   play():Promise<void> {
     if(this.disposed)return Promise.resolve();
-    if(this.element.ended){this.element.currentTime=0;this.synchronize(0);}
+    this.pausePending=true;
+    if(this.element.ended){this.pauseOffsetHint=undefined;this.element.currentTime=0;this.synchronize(0);}
     return this.element.play();
   }
-  pause():void {this.element.pause();this.advancing=false;this.synchronize();}
+  private applyPauseOffsetHint():void {
+    if(!this.pausePending||!this.element.paused)return;
+    this.pausePending=false;
+    const hint=this.pauseOffsetHint;
+    // An explicit seek or natural end takes precedence over an older pose.
+    if(hint&&!this.element.ended&&!this.seeking)void this.seek(hint,secondsRate).catch(error=>this.emit({type:"error",error}));
+  }
+  pause():void {this.element.pause();this.advancing=false;this.applyPauseOffsetHint();this.synchronize();}
   setPlaybackRate(numerator:number,denominator=1):void {
     const ratio=playbackRatio(numerator,denominator),value=Number(ratio.numerator)/Number(ratio.denominator);
     if(value<=0)throw new Error("Native audio playback requires a positive rate.");this.element.playbackRate=value;this.synchronize();

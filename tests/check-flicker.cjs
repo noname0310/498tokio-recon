@@ -17,10 +17,10 @@ async function check(){
   }finally{Math.random=saved;}
   const data={schemaVersion:1,assets:{},root:{id:"root",children:[{id:"camera",components:[{type:"Camera"}]},{id:"group",components:[{type:"Flicker",...periodic}],children:[{id:"light",components:[{type:"PlaneRenderer"}]}]}]}};
   const scene=new Scene(data,"http://localhost/");const at=time=>{scene.setFrameTime(Time.fromDecimal(time),frameRate(1));scene.updateWorld();return scene.animationSignature();};
-  const first=at(0);assert.equal(scene.active.get("light"),true);assert.equal(at(1/120),first,"No redraw when the flicker-only scene stays in the same state");
-  scene.setFrameTime(Time.fromFrame(Frame.from(1)),frameRate(30));scene.updateWorld();assert.notEqual(scene.animationSignature(),first);assert.equal(scene.active.get("light"),false);assert.equal(scene.find("group").active,true,"Flicker never edits authored activation");
-  scene.setComponent("group","Flicker",{enabled:false});assert.equal(scene.active.get("light"),true);
-  scene.find("group").active=false;at(0);assert.equal(scene.active.get("light"),false);
+  const first=at(0);assert.equal(scene.isActive("light"),true);assert.equal(at(1/120),first,"No redraw when the flicker-only scene stays in the same state");
+  scene.setFrameTime(Time.fromFrame(Frame.from(1)),frameRate(30));scene.updateWorld();assert.notEqual(scene.animationSignature(),first);assert.equal(scene.isActive("light"),false);assert.equal(scene.find("group").active,true,"Flicker never edits authored activation");
+  scene.setComponent("group","Flicker",{enabled:false});assert.equal(scene.isActive("light"),true);
+  scene.find("group").active=false;at(0);assert.equal(scene.isActive("light"),false);
   for(const patch of [{frequency:0},{dutyCycle:2},{mode:"invalid"},{probability:-1},{seed:-1},{seed:1.5},{phase:-.1},{start:{frame:1.5,rate:frameRate(30)}}]){
     const bad=structuredClone(data);Object.assign(bad.root.children[1].components[0],patch);assert.throws(()=>new Scene(bad,"http://localhost/"));
   }

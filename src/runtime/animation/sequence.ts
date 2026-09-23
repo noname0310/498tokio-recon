@@ -3,7 +3,7 @@ import { createTrack, type AnimationTrack, type TrackData, type TrackType } from
 import type { Entity, EntityInput, ComponentType, SceneData } from "../types.js";
 
 export type ObjectReference={entity:string}|{binding:string;descendant?:string};
-export type ObjectBinding={id:string;kind:"possessable";target?:ObjectReference}|{id:string;kind:"spawnable";template:EntityInput;parent?:ObjectReference;spawnTrack?:string};
+export type ObjectBinding={id:string;kind:"possessable";target?:ObjectReference}|{id:string;kind:"spawnable";template:EntityInput;parent?:ObjectReference;spawnTrack?:string;idScope?:"instance"|"scene"};
 export interface PropertyPath {component:"Entity"|"Transform"|ComponentType;path:string}
 /** The non-generic outer container supplies the binding that a track deliberately lacks. */
 export interface AnimationBinding {
@@ -78,9 +78,12 @@ export class SequenceRuntime {
         else if(binding.kind==="possessable"){
           if(!binding.target)throw new Error(`Unbound possessable: ${objectId}`);target=resolveReference(binding.target);
         }else if(binding.kind==="spawnable"){
+          if(binding.idScope!==undefined&&binding.idScope!=="instance"&&binding.idScope!=="scene")throw new Error("Unknown spawn ID scope.");
           const node=host.normalizeTemplate(binding.template),descendants=new Map<string,string>();
           const prefix=`__sequence__/${instanceId}/${encodeURIComponent(objectId)}`;
-          const rename=(n:Entity)=>{const name=n.id;n.id=`${prefix}/${encodeURIComponent(name)}`;if(allNodes.has(n.id))throw new Error(`Spawn ID collision: ${n.id}`);descendants.set(name,n.id);allNodes.set(n.id,n);this.templates.set(n.id,n);n.children.forEach(rename);};rename(node);target=node.id;
+          const rename=(n:Entity)=>{const name=n.id;n.id=binding.idScope==="scene"?name:`${prefix}/${encodeURIComponent(name)}`;if(allNodes.has(n.id))throw new Error(`Spawn ID collision: ${n.id}`);descendants.set(name,n.id);allNodes.set(n.id,n);this.templates.set(n.id,n);n.children.forEach(rename);};rename(node);target=node.id;
+          // Component references inside a prefab follow this exact instance.
+          const remap=(n:Entity)=>{for(const c of n.components)if(c.type==="Transition"&&c.target){const id=descendants.get(c.target.entity);if(id)c.target.entity=id;}n.children.forEach(remap);};remap(node);
           const spec:SpawnSpec={id:target,parent:host.data.root.id,node,descendants};spawnRoots.set(objectId,spec);
           const gate=binding.spawnTrack?this.tracks.get(binding.spawnTrack):undefined;
           if(binding.spawnTrack&&gate?.type!=="AnimationTrackBoolean")throw new Error("Spawn tracks must be AnimationTrackBoolean.");
@@ -125,6 +128,22 @@ export class SequenceRuntime {
   }
   get tickResolution():FrameRate{return this.master.rate;}
   get displayRate():FrameRate{return this.master.definition.displayRate;}
+  /** Bound a numeric property over every reachable binding, without frame sampling. */
+  propertyBounds(entity:string,property:PropertyPath,initial:number):{min:number;max:number} {
+    let min=initial,max=initial,addMin=0,addMax=0;
+    const visit=(instance:SequenceInstance)=>{
+      for(const binding of instance.bindings){
+        const d=binding.definition;
+        if(d.enabled===false||binding.entity!==entity||d.property.component!==property.component||d.property.path!==property.path)continue;
+        const bounds=binding.track.valueBounds(instance.rate);if(!bounds)continue;
+        const weight=d.weight??1;
+        if(d.blend==="additive"){addMin+=Math.min(0,bounds.min*weight);addMax+=Math.max(0,bounds.max*weight);}
+        else {min=Math.min(min,bounds.min);max=Math.max(max,bounds.max);}
+      }
+      for(const section of instance.sections)if(section.definition.enabled!==false)visit(section.instance);
+    };
+    visit(this.master);return {min:min+addMin,max:max+addMax};
+  }
   fromSeconds(seconds:number):FrameTime{return Time.add(Time.fromFrame(this.master.start),Time.fromSeconds(seconds,this.master.rate));}
   evaluate(time:FrameTime):SequenceEvaluation {
     const result:SequenceEvaluation={spawns:new Map(),writes:[],activeInstances:[]};

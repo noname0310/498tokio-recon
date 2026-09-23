@@ -4,16 +4,22 @@ const assert=require("node:assert/strict"),path=require("node:path"),{pathToFile
 class Media extends EventTarget {
   static HAVE_FUTURE_DATA=3;
   dataset={};duration=120;readyState=4;paused=true;ended=false;seeking=false;
-  mediaTime=0;quantum=0;playbackRate=1;volume=1;muted=false;loop=false;
+  mediaTime=0;quantum=0;settlementOffset=0;settleBeforeSeeking=false;playbackRate=1;volume=1;muted=false;loop=false;seekWrites=0;
   get currentTime(){return this.mediaTime;}
   set currentTime(time){
-    this.mediaTime=this.quantum?Math.floor(time/this.quantum)*this.quantum:time;this.seeking=true;this.send("seeking");
-    queueMicrotask(()=>{this.seeking=false;this.send("seeked");});
+    const revision=++this.seekWrites;
+    this.mediaTime=this.quantum?Math.floor(time/this.quantum)*this.quantum:time;this.seeking=true;
+    if(!this.settleBeforeSeeking)this.send("seeking");
+    queueMicrotask(()=>{
+      if(revision===this.seekWrites){this.mediaTime+=this.settlementOffset;this.seeking=false;}
+      if(this.settleBeforeSeeking)this.send("seeking");
+      if(revision!==this.seekWrites)return;if(this.settlementOffset)this.send("timeupdate");this.send("seeked");
+    });
   }
   send(type){this.dispatchEvent(new Event(type));}
   load(){queueMicrotask(()=>this.send("loadedmetadata"));}
   async play(){this.paused=false;this.ended=false;this.send("play");this.send("playing");}
-  pause(){this.paused=true;this.send("pause");}
+  pause(){if(this.paused)return;this.paused=true;queueMicrotask(()=>{this.send("timeupdate");this.send("pause");});}
   removeAttribute(){} remove(){}
 }
 
@@ -96,9 +102,63 @@ async function main(){
       assert.equal(Time.key(player.sample(displayRate)),"851:0/1","Overlapping frame seeks retain only the newest rational anchor");
       await player.seek(Time.fromFrame(Frame.from(5000)),displayRate);close(sample(),audio.duration,"An exact seek still clamps to the media duration");
     }
-    audio.quantum=0;await player.seekSeconds(2);
+    // A browser may report the assigned seek target first, then a slightly
+    // different decoder position in timeupdate before seeked (Chromium).
+    for(const quantum of [0,.000001,.002])for(const settled of [false,true]){
+      audio.quantum=quantum;audio.settlementOffset=-.000001;audio.settleBeforeSeeking=settled;
+      const exact=Time.fromDecimal(16.133483000000002),secondsRate=frameRate(1);
+      await player.seek(exact,secondsRate);
+      assert.equal(Time.compare(player.sample(secondsRate),exact),0,"Decoder settlement cannot replace an exact seek anchor");
+      const superseded=player.seek(exact,secondsRate);audio.send("seeked");await superseded;
+      assert.equal(Time.compare(player.sample(secondsRate),exact),0,"A queued older seeked event cannot complete the current seek");
+      await player.play();player.pauseOffsetHint=exact;audio.mediaTime+=.05;sample();player.pause();await Promise.resolve();
+      assert.equal(Time.compare(player.sample(secondsRate),exact),0,"Pause offset survives both target and settled media quantization");
+      const pending=player.seek(exact,secondsRate);audio.currentTime=4.125;await pending;
+      close(sample(),audio.currentTime,"A native seek still supersedes an application seek before settlement");
+    }
+    audio.settlementOffset=0;audio.settleBeforeSeeking=false;
+    // The displayed offset is independent of media quantization and later reads
+    // by controls. Both wrapper and native pauses must retain that exact pose.
+    for(const quantum of [0,.000001,.002,.1])for(const sourceRate of [frameRate(30),frameRate(30000,1001)])for(const native of [false,true])for(const drift of [-.08,.08]){
+      audio.quantum=quantum;await player.seekSeconds(10);await player.play();
+      const displayed=Time.fromRatio(1703n,2n),offset=Time.convert(displayed,sourceRate,frameRate(1)),seconds=Time.toSeconds(displayed,sourceRate);
+      player.pauseOffsetHint=offset;audio.mediaTime=seconds+drift;sample();now+=10;sample();
+      const writes=audio.seekWrites;
+      if(native)audio.pause();else player.pause();
+      assert.equal(Time.compare(player.sample(sourceRate),displayed),0,"Pause keeps the displayed subframe before queued media events");
+      await Promise.resolve();await Promise.resolve();
+      assert.equal(Time.compare(player.sample(sourceRate),displayed),0,"Queued timeupdate/pause/seeked retain the exact displayed subframe");
+      assert(Math.abs(audio.currentTime-seconds)<quantum+1e-8,"Audio seeks to the displayed offset within its exposed precision");
+      assert.equal(audio.seekWrites,writes+1,"Each playback-to-pause transition corrects the audio once");
+      player.pauseOffsetHint=offset;player.pause();audio.send("timeupdate");audio.send("pause");now+=1000;
+      assert.equal(Time.compare(player.sample(sourceRate),displayed),0,"Paused reads and duplicate pause events preserve the held pose");
+      assert.equal(audio.seekWrites,writes+1,"Repeated pause events cannot schedule extra seeks");
+      await player.play();now+=200;
+      assert.equal(Time.compare(player.sample(sourceRate),displayed),0,"Resume holds the same subframe until media starts advancing");
+      audio.mediaTime+=.2;close(sample(),audio.currentTime,"Resumed media progress releases the pause anchor");
+      now+=20;close(sample(),audio.currentTime+.02,"Pause correction preserves smooth resumed playback");
+      player.pause();await Promise.resolve();
+    }
+    audio.quantum=0;
+    for(const native of [false,true]){
+      await player.seekSeconds(10);await player.play();player.pauseOffsetHint=Time.fromDecimal(10.1);
+      if(native)audio.pause();else player.pause();
+      await player.seek(Time.fromFrame(Frame.from(2236)),frameRate(30));await Promise.resolve();
+      assert.equal(Time.key(player.sample(frameRate(30))),"2236:0/1","A newer frame seek wins over queued pause events");
+      await player.play();player.pauseOffsetHint=Time.fromDecimal(10.1);audio.pause();audio.currentTime=4.125;
+      await Promise.resolve();await Promise.resolve();close(sample(),4.125,"A native seek supersedes an unhandled native pause");
+    }
+    await player.seekSeconds(10);await player.play();player.pauseOffsetHint=Time.fromDecimal(10);
+    player.pause();await player.play();await Promise.resolve();
+    audio.mediaTime=10.01;close(sample(),10.01,"A queued pause from the previous play session cannot stop resumed playback");
+    now+=20;close(sample(),10.03,"Immediate pause/resume retains wall-clock interpolation");
+    player.pauseOffsetHint=Time.fromDecimal(119.9);
+    audio.mediaTime=120;audio.ended=true;audio.paused=true;audio.send("timeupdate");audio.send("pause");audio.send("ended");
+    close(sample(),120,"Natural completion reaches the end despite an older displayed hint");
+    await player.play();player.pause();await Promise.resolve();close(sample(),0,"Immediate pause after replay cannot restore the previous end pose");
+    await player.seekSeconds(2);
     player.dispose();now+=1000;close(sample(),2,"Disposal stops the interpolated clock");
-    console.log(`Audio clock: exact frame/subframe seeks at rational rates with quantized media, native seek takeover, quantized hints (maximum drift ${(maxError*1000).toFixed(3)} ms), startup/seek output delay, stale samples, bounded correction, buffering, rate changes, loop, suspension and disposal passed.`);
+    console.log(`Audio clock: exact pause hints and frame/subframe seeks with quantized media, queued pause/seek precedence, native seek takeover, quantized hints (maximum drift ${(maxError*1000).toFixed(3)} ms), startup/seek output delay, stale samples, bounded correction, buffering, rate changes, loop, suspension and disposal passed.`);
   }finally{player.dispose();for(const [key,value] of Object.entries(originals)){if(value===undefined)delete global[key];else global[key]=value;}}
 }
 if(require.main===module)main().catch(error=>{console.error(error);process.exitCode=1;});

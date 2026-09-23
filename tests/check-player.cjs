@@ -1,5 +1,5 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),{pathToFileURL}=require("node:url");
-const {chromium}=require("playwright"),{makeServer,root}=require("./serve.cjs");
+const {chromium,firefox}=require("playwright"),{makeServer,root}=require("./serve.cjs");
 const soundtrack=path.join(root,"assets/soundtrack.mp3");
 async function clocks(){
   const {PerformanceClock,Frame,Time,frameRate,Scene}=await import(pathToFileURL(path.join(root,"dist/runtime/player.js")));
@@ -10,6 +10,13 @@ async function clocks(){
   // Microsecond sampling has bounded quantization; exact seeks are not rounded.
   clock.pause();await clock.seek(Time.fromFrame(Frame.from(2147483000)),frameRate(24000));
   assert.equal(clock.sample(frameRate(24000)).frame,2147483000);clock.dispose();
+  const heldClock=new PerformanceClock(Time.fromFrame(Frame.from(120)),frameRate(1),false,()=>now);
+  await heldClock.seek(Time.fromRatio(1703n,2n),rate);await heldClock.play();now+=16;
+  const displayed=heldClock.sample(rate);heldClock.pauseOffsetHint=Time.convert(displayed,rate,frameRate(1));
+  now+=10;heldClock.sample(rate);heldClock.pause();
+  assert.equal(Time.compare(heldClock.sample(rate),displayed),0,"Performance pause retains the evaluated pose despite later clock samples");
+  await heldClock.seek(Time.fromFrame(Frame.from(60)),rate);await heldClock.play();heldClock.pause();
+  assert.equal(Time.key(heldClock.sample(rate)),"60:0/1","A seek invalidates an older pause hint");heldClock.dispose();
   const data=JSON.parse(fs.readFileSync(path.join(root,"assets/final_animation.scene.json")));
   const scene=new Scene(data,pathToFileURL(path.join(root,"assets/final_animation.scene.json")).href);
   assert.equal(scene.animationPlayer.clock.entity,"playback");assert.equal(scene.asset("moon").type,"Sprite");assert.equal(scene.audioAsset("soundtrack").type,"Audio");assert.throws(()=>scene.asset("soundtrack"));
@@ -55,6 +62,48 @@ async function observeUI(page){
   });
 }
 async function stopObservingUI(page){return page.evaluate(()=>{window.uiObserver.disconnect();window.stopStateObserver();return window.uiStats;});}
+async function pauseChecks(page,label){
+  const settled=await page.evaluate(async()=>{
+    const {Time,frameRate}=await import('/runtime/player.js'),time=Time.fromDecimal(16.133483000000002);
+    scenePlayer.pause();await scenePlayer.seekFrame(time,frameRate(1));
+    return {expected:Time.key(time),actual:Time.key(scenePlayer.scene.timelineTime)};
+  });
+  assert.equal(settled.actual,settled.expected,`${label}: asynchronous decoder settlement preserves the exact requested subframe`);
+  const modes=["engine","native"];
+  if(await page.evaluate(()=>Boolean(window.mediaActions?.get("pause"))))modes.push("session");
+  for(const mode of modes){
+    await page.evaluate(async()=>{scenePlayer.pause();scenePlayer.setPlaybackRate(1);await scenePlayer.seek(16);await scenePlayer.play();});
+    await page.waitForFunction(()=>scenePlayer.time>16.12);
+    const before=await page.evaluate(async mode=>{
+      const {Time}=await import('/runtime/player.js'),engine=scenePlayer;
+      const time=engine.time,key=Time.key(engine.scene.timelineTime),signature=engine.scene.animationSignature();
+      if(mode==="engine")engine.pause();else if(mode==="native")engine.audioPlayer.element.pause();else window.mediaActions.get("pause")({action:"pause"});
+      // A getter can run before the browser's queued timeupdate/pause events.
+      const clockTime=engine.clock.currentTime;
+      return {time,key,signature,clockTime};
+    },mode);
+    await page.waitForFunction(()=>!scenePlayer.playing&&!scenePlayer.audioPlayer.seeking);
+    await page.waitForTimeout(100);await page.evaluate(()=>scenePlayer.whenIdle());
+    const after=await page.evaluate(async()=>{
+      const {Time}=await import('/runtime/player.js');
+      return {time:scenePlayer.time,key:Time.key(scenePlayer.scene.timelineTime),signature:scenePlayer.scene.animationSignature(),audio:scenePlayer.audioPlayer.element.currentTime};
+    });
+    assert.equal(before.clockTime,before.time,`${label} ${mode}: a getter before pause events preserves the displayed offset`);
+    assert.equal(after.key,before.key,`${label} ${mode}: pause preserves the exact evaluated subframe`);
+    assert.equal(after.signature,before.signature,`${label} ${mode}: pause keeps the rendered pose`);
+    assert(Math.abs(after.audio-before.time)<.005,`${label} ${mode}: audio aligns to the displayed offset`);
+    await page.evaluate(()=>scenePlayer.play());await page.waitForFunction(time=>scenePlayer.time>time+.08,before.time);
+  }
+  await page.evaluate(async()=>{
+    const {Frame}=await import('/runtime/player.js');
+    scenePlayer.audioPlayer.element.pause();await scenePlayer.seekFrame(Frame.from(2236));
+  });
+  await page.waitForTimeout(100);
+  assert.equal(await page.evaluate(async()=>{const {Time,frameRate}=await import('/runtime/player.js');return Time.key(Time.convert(scenePlayer.scene.timelineTime,frameRate(1),frameRate(30)));}),"2236:0/1",`${label}: a new exact seek supersedes queued native pause events`);
+  assert(await page.evaluate(()=>scenePlayer.scene.isActive('helmet-launch-hull')),`${label}: the requested keyframe boundary is evaluated`);
+  await page.evaluate(()=>scenePlayer.seek(0));
+  console.log(`${label}: engine/native/available Media Session pause preserve the evaluated subframe and pose; audio alignment, resume and queued seek precedence passed.`);
+}
 async function browserChecks(origin){
   const executablePath=[chromium.executablePath()].find(fs.existsSync);
   const browser=await chromium.launch({headless:true,executablePath});
@@ -64,7 +113,7 @@ async function browserChecks(origin){
     await page.addInitScript(()=>{
       window.mediaActions=new Map();if("mediaSession" in navigator){const original=navigator.mediaSession.setActionHandler.bind(navigator.mediaSession);navigator.mediaSession.setActionHandler=(name,handler)=>{window.mediaActions.set(name,handler);original(name,handler);};}
     });
-    if(renderer==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas forbidden");};window.OffscreenCanvas=class{constructor(){throw new Error("OffscreenCanvas forbidden");}};});
+    if(renderer==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas forbidden");};});
     await page.goto(`${origin}/index.html?renderer=${renderer}`);await page.waitForFunction(()=>window.scenePlayer?.ready);
     await page.evaluate(()=>scenePlayer.setComponent("playback","PlayerControls",{hideDelayMs:120}));
     assert.equal(await page.evaluate(()=>scenePlayer.clock.kind),"audio");assert.equal(await page.locator('audio[data-component="AudioPlayer"]').count(),1);
@@ -72,6 +121,7 @@ async function browserChecks(origin){
     assert.equal(await page.locator('.player-controls[data-entity="playback"][data-component="PlayerControls"]').count(),1);
     assert.equal(await page.evaluate(()=>scenePlayer.playerControls.element.parentElement===document.body),true);
     await buttonChecks(page);
+    await pauseChecks(page,`Chromium ${renderer}`);
     const duration=await page.evaluate(()=>scenePlayer.duration);assert(duration>230&&duration<230.1,"Gapless decoded duration matches AAC source, not padded MP3 container");
     const controls=page.locator(".player-controls"),bar=await controls.boundingBox();
     await page.locator('[data-action="play"]').click();await page.mouse.move(480,200);await page.waitForFunction(()=>scenePlayer.time>.15);
@@ -95,10 +145,10 @@ async function browserChecks(origin){
     await page.evaluate(async()=>{const {Frame}=await import('/runtime/player.js');await scenePlayer.seekFrame(Frame.from(850));});
     await page.getByRole('button',{name:'Next frame (.)',exact:true}).click();await page.waitForFunction(()=>!scenePlayer.audioPlayer.seeking);await page.evaluate(()=>scenePlayer.whenIdle());
     assert.equal(await page.locator('.player-timeline').inputValue(),"851");
-    assert.equal(await page.evaluate(()=>scenePlayer.scene.active.get('forward-scene')),true,"Stepping to frame 851 applies the hard cut immediately");
+    assert.equal(await page.evaluate(()=>scenePlayer.scene.isActive('forward-scene')),true,"Stepping to frame 851 applies the hard cut immediately");
     assert.equal(await page.evaluate(()=>scenePlayer.scene.component('starfield-wipe','SpriteRenderer').frame),4,"Stepping to frame 851 also changes the wipe atlas pose");
     await page.getByRole('button',{name:'Previous frame (,)',exact:true}).click();await page.waitForFunction(()=>!scenePlayer.audioPlayer.seeking);await page.evaluate(()=>scenePlayer.whenIdle());
-    assert.equal(await page.locator('.player-timeline').inputValue(),"850");assert.equal(await page.evaluate(()=>scenePlayer.scene.active.get('forward-scene')),false);
+    assert.equal(await page.locator('.player-timeline').inputValue(),"850");assert.equal(await page.evaluate(()=>scenePlayer.scene.isActive('forward-scene')),false);
     await page.evaluate(()=>{const a=scenePlayer.audioPlayer.element;a.volume=.33;a.muted=true;a.playbackRate=1.5;});
     await page.waitForFunction(()=>document.querySelector('[data-action="speed"]').textContent==="1.5×");assert.equal(await page.locator('[data-action="mute"]').getAttribute("aria-label"),"Unmute (M)");
     await page.locator('[data-action="speed"]').click();const speedSlider=page.getByRole('slider',{name:'Playback speed',exact:true});assert.equal(await speedSlider.inputValue(),"1.5");
@@ -155,8 +205,18 @@ async function browserChecks(origin){
     await touch.touchscreen.tap(188,600);assert.equal(await touch.locator('.player-controls').getAttribute('data-visible'),"true","Touching a letterbox bar reveals screen controls without pausing");
     assert.equal(await touch.evaluate(()=>scenePlayer.playing),true);await touch.locator('[data-action="play"]').tap();await touch.waitForFunction(()=>!scenePlayer.playing);
     await touch.locator('[data-action="speed"]').tap();assert(await touch.getByRole('slider',{name:'Playback speed',exact:true}).isVisible());
-    fs.mkdirSync(path.join(root,"test-results/animation_runtime"),{recursive:true});await touch.screenshot({path:path.join(root,"test-results/animation_runtime/dom-player.png")});await touch.close();
+    fs.mkdirSync(path.join(root,"test-results/animation_runtime"),{recursive:true});await touch.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(root,"test-results/animation_runtime/dom-player.png")});await touch.close();
     console.log("Touch: scene taps preserve playback; letterbox taps reveal controls; play/pause and speed controls remain usable outside the scene.");
   }finally{await browser.close();}
+  const firefoxBrowser=await firefox.launch({headless:true});
+  try{
+    const page=await firefoxBrowser.newPage({viewport:{width:640,height:360}}),errors=[];
+    page.on("pageerror",error=>errors.push(error.message));
+    await page.addInitScript(()=>{
+      window.mediaActions=new Map();if("mediaSession" in navigator){const original=navigator.mediaSession.setActionHandler.bind(navigator.mediaSession);navigator.mediaSession.setActionHandler=(name,handler)=>{window.mediaActions.set(name,handler);original(name,handler);};}
+    });
+    await page.goto(`${origin}/index.html?renderer=dom&controls=0`);await page.waitForFunction(()=>window.scenePlayer?.ready);
+    await pauseChecks(page,"Firefox DOM");assert.deepEqual(errors,[]);
+  }finally{await firefoxBrowser.close();}
 }
 (async()=>{await clocks();await require("./check-audio-clock.cjs").main();const server=makeServer();await new Promise(r=>server.listen(0,"127.0.0.1",r));try{const origin=`http://127.0.0.1:${server.address().port}`;await rangeChecks(origin);await browserChecks(origin);}finally{await new Promise(r=>server.close(r));}})().catch(error=>{console.error(error);process.exitCode=1;});

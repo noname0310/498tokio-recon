@@ -153,20 +153,21 @@ async function browserChecks(){
       const page=await browser.newPage({viewport:{width:640,height:360}}),errors=[],requests=[];
       page.on("pageerror",e=>errors.push(e.message));page.on("console",m=>{if(m.type()==="error")errors.push(m.text());});page.on("request",r=>requests.push(r.url()));
       await page.route(/^https?:/,route=>route.request().url().startsWith(origin+"/")?route.continue():route.abort());
-      if(renderer==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("DOM canvas forbidden");};window.OffscreenCanvas=class{constructor(){throw new Error("OffscreenCanvas forbidden");}};});
+      if(renderer==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("DOM canvas forbidden");};});
       await page.goto(`${origin}/index.html?scene=assets/intro_background/intro.scene.json&renderer=${renderer}&controls=0`);await page.waitForFunction(()=>window.scenePlayer?.ready);
       await page.evaluate(data=>scenePlayer.loadScene(data),fixture());
+      await page.evaluate(()=>scenePlayer.whenIdle());
       const seek=frame=>page.evaluate(async frame=>{const {Frame}=await import("/runtime/player.js");await scenePlayer.seekFrame(Frame.from(frame));},frame);
       const stale=await page.evaluate(async()=>{
         const {Frame}=await import("/runtime/player.js");await scenePlayer.seekFrame(Frame.from(30));
         const original=requestAnimationFrame;let callback;window.requestAnimationFrame=fn=>{callback=fn;return 0;};
         try{scenePlayer.play();callback(performance.now()-100);scenePlayer.pause();return scenePlayer.time;}finally{window.requestAnimationFrame=original;}
       });assert.equal(stale,1,"A stale first RAF timestamp must not move playback before its anchor");
-      await seek(35);const initial=await page.screenshot();assert.equal(await page.evaluate(()=>scenePlayer.renderer.objects.length),2);
+      await seek(35);const initial=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});assert.equal(await page.evaluate(()=>scenePlayer.renderer.objects.length),2);
       if(renderer==="dom")assert(await page.evaluate(()=>{const surfaces=[...document.querySelectorAll('.component[data-entity^="__sequence__"]')];return surfaces.length>0&&surfaces.every(e=>e.parentElement===scenePlayer.renderer.world&&scenePlayer.scene.nodes.has(e.dataset.entity));}),"Spawned surfaces belong directly to the render root");
       else assert.equal(await page.evaluate(()=>Object.hasOwn(window,"BABYLON")),false);
       for(const frame of [40,50,60,95,120,35])await seek(frame);
-      assert.deepEqual(await page.screenshot(),initial,`${renderer} rewind must reconstruct the same pixel result`);
+      assert.deepEqual(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),initial,`${renderer} rewind must reconstruct the same pixel result`);
       assert.equal(await page.evaluate(()=>scenePlayer.renderer.objects.length),2);
       await page.evaluate(()=>scenePlayer.stop());assert.equal(await page.evaluate(()=>scenePlayer.renderer.objects.length),1);
       assert.equal(await page.evaluate(()=>scenePlayer.scene.transformAt("actor").localPosition.x),7);

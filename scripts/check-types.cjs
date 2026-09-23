@@ -12,7 +12,7 @@ function checkTypes(){
 module.exports={checkTypes};
 if(require.main===module){
   checkTypes();
-  const config=ts.readConfigFile(path.resolve(__dirname,"../tsconfig.runtime.json"),ts.sys.readFile);
+  const config=ts.readConfigFile(path.resolve(__dirname,"../tsconfig.json"),ts.sys.readFile);
   const options=ts.parseJsonConfigFileContent(config.config,ts.sys,path.resolve(__dirname,".."));
   const program=ts.createProgram([path.resolve(__dirname,"../tests/fixtures/animation-types.ts")],{...options.options,rootDir:path.resolve(__dirname,".."),noEmit:true});
   const diagnostics=ts.getPreEmitDiagnostics(program);

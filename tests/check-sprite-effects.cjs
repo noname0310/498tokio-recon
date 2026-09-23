@@ -17,7 +17,7 @@ async function main(){
       if(renderer==='dom')await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error('Canvas forbidden');};});
       await page.goto(`${origin}/index.html?renderer=${renderer}&controls=0`);await page.waitForFunction(()=>window.scenePlayer?.ready);
       const id=await page.evaluate(async()=>{const {Frame}=await import('/runtime/player.js');await scenePlayer.seekFrame(Frame.from(15));await scenePlayer.whenIdle();return [...scenePlayer.scene.nodes.keys()].find(id=>id.endsWith('/effect/burst_a'));});
-      assert(id);await page.screenshot({path:path.join(directory,`${label}_fixed.png`)});
+      assert(id);await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(directory,`${label}_fixed.png`)});
       await page.evaluate(id=>scenePlayer.setComponent(id,'Glow',{enabled:false}),id);
       for(const viewport of [{width:640,height:360},{width:1366,height:768},{width:390,height:844}]){
         await page.setViewportSize(viewport);await page.waitForFunction(size=>scenePlayer.view.width===size.width&&scenePlayer.view.height===size.height,viewport);
@@ -27,7 +27,7 @@ async function main(){
           return [v.width/2+(m[12]-a.pivot.x*w*m[0])*v.pixelsPerUnit,v.height/2-(m[13]+(1-a.pivot.y)*h*m[5])*v.pixelsPerUnit,
             v.width/2+(m[12]+(1-a.pivot.x)*w*m[0])*v.pixelsPerUnit,v.height/2-(m[13]-a.pivot.y*h*m[5])*v.pixelsPerUnit];
         },id);
-        const actual=brightBounds(await page.screenshot());for(let i=0;i<4;i++)assert(Math.abs(actual[i]-expected[i])<=1,`${label}: projected texel bound ${actual} vs ${expected}`);
+        const actual=brightBounds(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));for(let i=0;i<4;i++)assert(Math.abs(actual[i]-expected[i])<=1,`${label}: projected texel bound ${actual} vs ${expected}`);
       }
       if(renderer==='babylon'){
         const report=await page.evaluate(async id=>{

@@ -29,7 +29,9 @@ docs/               Runtime and animation contracts
 dist/               Generated website; ignored
 ```
 
-`assets/` is the editable source of truth. Webpack compiles the runtime and uses `CopyWebpackPlugin` to copy HTML, styles and final data into `dist/`. JSON and images remain independent resources; both backends load the same copies.
+`assets/` is the editable source of truth. The website build compiles the runtime, generates HTML with its entry script through `HtmlWebpackPlugin`, and copies scene JSON, PNGs, audio and styles into `dist/`. Both backends load external images relative to the scene JSON. Only the standalone variant embeds asset data.
+
+Image preparation starts for every image declared in the scene, including assets used later by spawned objects. Playback can start while preparation continues. A centered text status shows the loading stage, completed count and current filename, then disappears. Prepared images and atlas frames stay cached; procedural texture jobs share one persistent worker per loaded scene.
 
 ## Build and verify
 
@@ -39,11 +41,13 @@ npx playwright install chromium firefox
 npm run check
 ```
 
-`npm run check:dist` verifies copied files, case-sensitive asset paths, MP3 range requests and both renderers at root and repository-prefixed URLs. Other checks cover animation, clocks, scene components and rendering behavior. Diagnostic captures go into ignored `test-results/`.
+The build also emits **`dist/standalone/index.html`**: a Babylon.js player with the runtime, scene, PNGs, MP3, styles and worker code embedded. Copy this one file anywhere and open it directly, including offline. `npm run build:standalone` builds only this variant. It uses the same runtime and scene data as the website.
 
-For live edits, run `npm run build:watch` and `node scripts/serve.cjs` in separate terminals. Webpack watches scene JSON and assets as well as TypeScript, HTML and CSS; refresh the page after a rebuild.
+`npm run check:dist` verifies external files, standalone image bytes, case-sensitive asset paths, MP3 range requests and both renderers at root and repository-prefixed URLs. `npm run check:loading` checks progressive image preparation and worker reuse; `npm run check:standalone` checks the portable HTML with external requests blocked. `npm run check:lifetimes` verifies sequence ownership and resource reuse. Other checks cover animation, clocks, scene components and rendering behavior.
 
-See [runtime components and rendering](docs/runtime.md) and [animation/time contracts](docs/animation.md).
+For live edits, run `npm run build:watch` and `node scripts/serve.cjs` in separate terminals. Watch mode builds the website; Webpack watches scene JSON and assets as well as TypeScript, HTML and CSS. Refresh the page after a rebuild. `npm run build -- --env site` builds only the website once.
+
+See [build pipeline](docs/build.md), [runtime components and rendering](docs/runtime.md) and [animation/time contracts](docs/animation.md).
 
 ## License
 

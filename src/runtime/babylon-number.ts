@@ -1,5 +1,5 @@
 import type * as Babylon from "@babylonjs/core/pure";
-import type {BabylonRenderer} from "./babylon.js";
+import type {BabylonSceneContext} from "./babylon-context.js";
 import type {Scene} from "./scene.js";
 import type {Entity,View} from "./types.js";
 import {numberLayout} from "./sprite-number.js";
@@ -7,14 +7,14 @@ import {numberLayout} from "./sprite-number.js";
 export class BabylonNumber {
   readonly id:string;readonly mesh:Babylon.Mesh;readonly material:Babylon.ShaderMaterial;
   private texture?:Babylon.RawTexture;private source="";private revision=0;
-  constructor(readonly renderer:BabylonRenderer,node:Entity){
+  constructor(readonly renderer:BabylonSceneContext,node:Entity){
     this.id=node.id;const B=renderer.B;
     this.material=new B.ShaderMaterial(`${node.name} / SpriteNumberRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneNumber"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint","units","cell","atlasSize","columns","padding","glyphCount","glyphFrames","glyphStarts","textLeft","period","repeated","sigma","gain"],samplers:["glyphTex"],needAlphaBlending:true});
     this.material.backFaceCulling=false;this.material.disableDepthWrite=true;this.mesh=renderer.quad(node.name,node.id,this.material);
   }
   async update(scene:Scene,view:View):Promise<void>{
     const revision=++this.revision,r=this.renderer,c=scene.requireComponent(this.id,"SpriteNumberRenderer"),m=this.material;
-    if(!scene.active.get(this.id)||!c.enabled||!c.color.a){this.mesh.setEnabled(false);return;}
+    if(!scene.active.get(this.id)||!c.enabled||!c.color.a||!r.resources.isImageReady(c.asset)){this.mesh.setEnabled(false);return;}
     const asset=scene.asset(c.asset),layout=numberLayout(c,asset),bounds=c.repeatWorld?scene.coverage(this.id,view):layout.bounds;
     this.mesh.setEnabled(!!bounds);if(!bounds)return;
     if(this.source!==scene.source(c.asset)){

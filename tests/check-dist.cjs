@@ -13,15 +13,19 @@ async function main() {
   for (const entry of ['index.html', 'runtime/player.js', 'runtime/bootstrap.js', 'styles/controls.css']) {
     assert(fs.statSync(path.join(dist, entry)).isFile(), `Missing build output: ${entry}`);
   }
-  for (const file of files(dist)) assert(/^(?:index\.html|LICENSE(?:-MIT|-APACHE)?$|runtime[/\\]|styles[/\\]|assets[/\\])/.test(file), `Unexpected deployment file: ${file}`);
+  for (const file of files(dist)) assert(/^(?:index\.html|LICENSE(?:-MIT|-APACHE)?$|runtime[/\\]|styles[/\\]|assets[/\\]|standalone[/\\]index\.html$)/.test(file), `Unexpected deployment file: ${file}`);
+  assert(!fs.readFileSync(path.join(dist, 'runtime/bootstrap.js'), 'utf8').includes('data:image/png;base64,'), 'The website must use external images');
+  const portable = fs.readFileSync(path.join(dist, 'standalone/index.html'), 'utf8');
   let references = 0;
   for (const file of files(path.join(root, 'assets'))) {
+    const source = path.join(root, 'assets', file);
     const copy = path.join(dist, 'assets', file);
-    assert(fs.readFileSync(copy).equals(fs.readFileSync(path.join(root, 'assets', file))), `Static asset changed during copying: ${file}`);
+    assert(fs.readFileSync(copy).equals(fs.readFileSync(source)), `Static asset changed during copying: ${file}`);
+    if (file.endsWith('.png')) assert(portable.includes(`data:image/png;base64,${fs.readFileSync(source).toString('base64')}`), `Missing exact standalone PNG bytes: ${file}`);
     if (!file.endsWith('.json')) continue;
     for (const asset of Object.values(JSON.parse(fs.readFileSync(copy, 'utf8')).assets || {})) {
       const target = fileURLToPath(new URL(asset.file, pathToFileURL(copy)));
-      assert(target.startsWith(dist + path.sep), `Asset escapes dist: ${asset.file}`);
+      assert(target.startsWith(path.join(dist, 'assets') + path.sep), `Asset escapes assets: ${asset.file}`);
       // Windows is case-insensitive; Pages is not. Verify the exact spelling.
       let directory = dist;
       for (const segment of path.relative(dist, target).split(path.sep)) {
@@ -45,16 +49,20 @@ async function main() {
       for (const [name, type, renderer] of [['chromium-dom', chromium, 'dom'], ['chromium-babylon', chromium, 'babylon'], ['firefox-dom', firefox, 'dom']]) {
         const browser = await type.launch({ headless: true });
         try {
-          const page = await browser.newPage({ viewport: { width: 640, height: 360 } }), errors = [];
+          const page = await browser.newPage({ viewport: { width: 640, height: 360 } }), errors = [], images = new Set();
           page.on('pageerror', error => errors.push(error.message));
           page.on('response', response => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
           page.on('request', request => {
             if (request.url().startsWith('http:') && !request.url().startsWith(base)) errors.push(`Request escaped site prefix: ${request.url()}`);
+            if (/^https?:.*\.png(?:\?|$)/.test(request.url())) images.add(request.url());
           });
           if (renderer === 'dom') await page.addInitScript(() => { HTMLCanvasElement.prototype.getContext = () => { throw new Error('Canvas forbidden in DOM'); }; });
           await page.goto(`${base}?renderer=${renderer}&frame=2236&controls=0`);
           await page.waitForFunction(() => window.scenePlayer?.ready);
-          assert(await page.evaluate(() => scenePlayer.scene.active.get('helmet-launch-hull')), 'Initial frame query reaches the exact appearance boundary');
+          await page.evaluate(() => scenePlayer.whenIdle());
+          assert(await page.evaluate(async () => scenePlayer instanceof (await import(new URL('runtime/player.js', document.baseURI).href)).Engine), 'Bootstrap and public API share the same runtime instance');
+          assert(images.size > 40, 'The website fetches all external scene images up front');
+          assert(await page.evaluate(() => scenePlayer.scene.isActive('helmet-launch-hull')), 'Initial frame query reaches the exact appearance boundary');
           for (const n of [15, 900, 2200, 2225]) {
             await page.evaluate(async n => {
               const { Frame, frameRate } = await import(new URL('runtime/player.js', document.baseURI).href);
@@ -62,11 +70,11 @@ async function main() {
             }, n);
           }
           assert.deepEqual(errors, [], `${basePath} ${name}`);
-          console.log(`${basePath} ${name}: standalone assets, chunks, worker, frame seek and effects passed.`);
+          console.log(`${basePath} ${name}: external PNGs, chunks, worker, frame seek and effects passed.`);
         } finally { await browser.close(); }
       }
     } finally { await new Promise(resolve => server.close(resolve)); }
   }
-  console.log(`dist: ${references} valid scene asset references; exact static copies; source files excluded.`);
+  console.log(`dist: ${references} valid scene asset references; exact external files and standalone inline PNG bytes; source files excluded.`);
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

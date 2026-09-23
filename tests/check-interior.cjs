@@ -22,20 +22,20 @@ async function main(){
   };
   for(let n=1722;n<=2100;n++){
     at(n);assert.equal(scene.cameraNode.id,n<1727?'landscape-camera':'interior-camera');
-    assert.equal(scene.active.get('landscape-scene'),n<1727);assert.equal(scene.active.get('interior-scene'),n>=1727);
+    assert.equal(scene.isActive('landscape-scene'),n<1727);assert.equal(scene.isActive('interior-scene'),n>=1727);
     if(n>=1727){
       assert.equal(scene.component('interior-camera','ViewportFrame').enabled,n<1820||n>=1837&&n<1920||n>=1940&&n<2023);
       assert.equal(scene.component('interior-camera','Vignette').enabled,n>=2097);
-      for(const id of ['interior-beam-room','interior-tableau','interior-ball-room','interior-chest-room','interior-light-room'])assert.equal(typeof scene.active.get(id),'boolean');
+      for(const id of ['interior-beam-room','interior-tableau','interior-ball-room','interior-chest-room','interior-light-room'])assert.equal(typeof scene.isActive(id),'boolean');
     }
     for(const m of scene.world.values())assert(m.every(Number.isFinite),`Finite transforms at ${n}`);
     checkPoses(n);
   }
   for(const n of [2022,2009,2008,1996,1954,1819,1793,1792,1791]){at(n);checkPoses(n);}
   at(1790);assert.equal(scene.spriteState('interior-jumper-0').frame,2,'Seeking before the fast loop restores the preceding run cycle');
-  at(1820);assert.equal(scene.active.get('interior-jumper-0'),false,'The cropped walking group ends at the cut');
+  at(1820);assert.equal(scene.isActive('interior-jumper-0'),false,'The cropped walking group ends at the cut');
   assert.equal(data.animation.tracks['interior-ball-x'].frameNumber.length,3);
-  for(const n of [1883,1884,1893,1894,2009,2010,2017,2022]){at(n);const id=n<1940?'interior-runner-surprise-0':'interior-chest-surprise-0';assert.equal(Boolean(scene.spriteState(id).visible&&scene.active.get(id)),n%2===1,'Source surprise alternates every frame');}
+  for(const n of [1883,1884,1893,1894,2009,2010,2017,2022]){at(n);const id=n<1940?'interior-runner-surprise-0':'interior-chest-surprise-0';assert.equal(Boolean(scene.spriteState(id).visible&&scene.isActive(id)),n%2===1,'Source surprise alternates every frame');}
   at(2100);assert.equal(scene.world.get('interior-final-person')[14],0);assert.equal(scene.world.get('interior-light-column')[14],2);
   const server=makeServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
   const captures=[1726,1728,1732,1735,1740,1768,1797,1798,1799,1808,1825,1837,1857,1883,1898,1908,1927,1943,1955,1996,2008,2009,2011,2030,2055,2083,2097,2100];
@@ -53,7 +53,7 @@ async function main(){
       await page.goto(`http://127.0.0.1:${server.address().port}/index.html?renderer=${renderer}&controls=0`);await page.waitForFunction(()=>window.scenePlayer?.ready);
       for(const n of captures){
         await page.evaluate(async n=>{const {Frame}=await import('/runtime/player.js');await scenePlayer.seekFrame(Frame.from(n));},n);await settled(page);
-        const shot=await page.screenshot({path:path.join(output,`${name}_${n}.png`)});
+        const shot=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(output,`${name}_${n}.png`)});
         if(n===2097){
           if(name==='dom')references.set('light',shot);else assert(compare(references.get('light'),shot).mae<1.2,`${name}: floor gradient, glow and textured column match DOM`);
           const im=png(shot),k=(285*im.width+320)*im.channels;assert(im.pixels[k]>10,'Floor glow remains visible below the opaque sprite');
@@ -62,21 +62,21 @@ async function main(){
       }
       for(const size of [{width:390,height:844},{width:1280,height:320}]){
         await page.setViewportSize(size);await page.waitForFunction(s=>scenePlayer.view.width===s.width&&scenePlayer.view.height===s.height,size);await settled(page);
-        await page.screenshot({path:path.join(output,`${name}_2100_${size.width}.png`)});
+        await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(output,`${name}_2100_${size.width}.png`)});
       }
       if(renderer==='dom'){
         const mutations=await page.evaluate(async()=>{let count=0;const observer=new MutationObserver(records=>count+=records.length);observer.observe(document.querySelector('#viewport'),{attributes:true,childList:true,subtree:true});for(let i=0;i<5;i++)await scenePlayer.update();await Promise.resolve();observer.disconnect();return count;});
         assert.equal(mutations,0,'Paused scene reuses retained DOM surfaces without mutations');
       }
       await page.setViewportSize({width:640,height:360});await page.waitForFunction(()=>scenePlayer.view.width===640&&scenePlayer.view.height===360);await settled(page);await page.evaluate(async input=>scenePlayer.loadScene(input),fixture);await settled(page);
-      const mask=await page.screenshot({path:path.join(output,`${name}_dissolve.png`)});if(name==='dom')references.set('mask',mask);else {const diff=compare(references.get('mask'),mask);console.log(name,'dissolve difference',diff);assert(diff.mae<.35,`${name}: seeded cells agree with DOM`);}
-      for(const progress of [0,1,.43]){await page.evaluate(async progress=>{await scenePlayer.setComponent('mask','Transition',{progress});},progress);await settled(page);const shot=await page.screenshot();if(progress===.43)assert(compare(mask,shot).mae<.001,'Dissolve reverse seek is deterministic');else{const p=png(shot),expected=progress===0?[0,0,0]:[26,102,51];for(let y=5;y<p.height;y+=7)for(let x=5;x<p.width;x+=7){const i=(y*p.width+x)*p.channels;assert(expected.every((v,c)=>Math.abs(v-p.pixels[i+c])<=1),'Complete/empty dissolve has no seams');}}}
+      const mask=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(output,`${name}_dissolve.png`)});if(name==='dom')references.set('mask',mask);else {const diff=compare(references.get('mask'),mask);console.log(name,'dissolve difference',diff);assert(diff.mae<.35,`${name}: seeded cells agree with DOM`);}
+      for(const progress of [0,1,.43]){await page.evaluate(async progress=>{await scenePlayer.setComponent('mask','Transition',{progress});},progress);await settled(page);const shot=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});if(progress===.43)assert(compare(mask,shot).mae<.001,'Dissolve reverse seek is deterministic');else{const p=png(shot),expected=progress===0?[0,0,0]:[26,102,51];for(let y=5;y<p.height;y+=7)for(let x=5;x<p.width;x+=7){const i=(y*p.width+x)*p.channels;assert(expected.every((v,c)=>Math.abs(v-p.pixels[i+c])<=1),'Complete/empty dissolve has no seams');}}}
       await page.evaluate(async()=>{await scenePlayer.addComponent('mask',{type:'ProceduralNoise',seed:7,textureSize:{x:64,y:64},worldSize:{x:.64,y:.64},range:.5,bands:[{sigmaTexels:{x:1,y:1},variance:.02}]});});await settled(page);
-      assert(compare(mask,await page.screenshot()).mae>1,'Adding procedural plane noise affects the rendered cells');
-      await page.evaluate(async()=>{await scenePlayer.removeComponent('mask','ProceduralNoise');});await settled(page);assert(compare(mask,await page.screenshot()).mae<.001,'Removing plane noise restores the original cells');
+      assert(compare(mask,await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})).mae>1,'Adding procedural plane noise affects the rendered cells');
+      await page.evaluate(async()=>{await scenePlayer.removeComponent('mask','ProceduralNoise');});await settled(page);assert(compare(mask,await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})).mae<.001,'Removing plane noise restores the original cells');
       for(const size of [{width:390,height:844},{width:1280,height:320}]){
         await page.setViewportSize(size);await page.waitForFunction(s=>scenePlayer.view.width===s.width&&scenePlayer.view.height===s.height,size);await settled(page);
-        const shot=await page.screenshot(),key=`mask-${size.width}`;if(name==='dom')references.set(key,shot);else assert(compare(references.get(key),shot).mae<1,'Expanded dissolve preserves the same field across renderers');
+        const shot=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),key=`mask-${size.width}`;if(name==='dom')references.set(key,shot);else assert(compare(references.get(key),shot).mae<1,'Expanded dissolve preserves the same field across renderers');
       }
       assert.deepEqual(errors,[],`${name} browser errors`);console.log(`${name}: render captures, dynamic aspect, deterministic dissolve passed.`);
     }finally{await browser.close();}

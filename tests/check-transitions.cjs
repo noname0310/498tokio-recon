@@ -41,7 +41,7 @@ function checkField(bytes,view,transition,label){
 async function main(){
   const {Scene}=await import(pathToFileURL(path.join(root,'dist/runtime/player.js')));
   const data=JSON.parse(fs.readFileSync(path.join(root,'assets/final_animation.scene.json')));
-  const authored=data.root.children.find(n=>n.id==='forward-grid-wipe').components.find(c=>c.type==='Transition');
+  const authored=new Scene(data,'http://localhost/scene.json').sequence.templates.get('forward-grid-wipe').components.find(c=>c.type==='Transition');
   assert.equal(authored.kind,'grid');assert(authored.grid.feather>0);
   const fixture={schemaVersion:1,timeline:{duration:2},assets:{},root:{id:'root',children:[
     {id:'camera',transform:{localPosition:{x:0,y:0,z:-10}},components:[{type:'Camera',referenceVerticalSize:3.6}]},
@@ -66,7 +66,7 @@ async function main(){
         await page.waitForFunction(()=>window.scenePlayer?.ready);
         for(const n of [1147,1150,1154,1155]){
           await page.evaluate(async n=>{const {Frame}=await import('/runtime/player.js');await scenePlayer.seekFrame(Frame.from(n));await scenePlayer.whenIdle();},n);
-          await page.screenshot({path:path.join(output,`${label}_${n}.png`)});
+          await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(output,`${label}_${n}.png`)});
           const progress=await page.evaluate(()=>scenePlayer.scene.component('forward-grid-wipe','Transition').progress);
           assert(progress>=0&&progress<=1,'Frame seeks keep transition progress in range');
         }
@@ -86,14 +86,14 @@ async function main(){
           await page.setViewportSize(c.view);
           await page.waitForFunction(view=>scenePlayer.view.width===view.width&&scenePlayer.view.height===view.height,c.view);
           const state=await page.evaluate(async c=>{await scenePlayer.setComponent('wipe','Transition',{progress:c.progress,grid:c.grid});await scenePlayer.update();await scenePlayer.whenIdle();return {view:scenePlayer.view,transition:scenePlayer.scene.component('wipe','Transition')};},c);
-          const bytes=await page.screenshot({path:path.join(output,`${label}_${c.name}.png`)});
+          const bytes=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",path:path.join(output,`${label}_${c.name}.png`)});
           report.push({case:c.name,...checkField(bytes,state.view,state.transition,`${label}/${c.name}`)});
         }
         await page.evaluate(()=>scenePlayer.setComponent('wipe','Transition',{progress:0}));
-        const empty=png(await page.screenshot());
+        const empty=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));
         for(let i=0;i<empty.width*empty.height;i++)for(let c=0;c<3;c++)assert.equal(empty.pixels[i*empty.channels+c],0,'Zero progress hides all retained transition geometry');
         await page.evaluate(()=>scenePlayer.setComponent('wipe','Transition',{enabled:false}));
-        const disabled=png(await page.screenshot());
+        const disabled=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));
         for(let i=0;i<disabled.width*disabled.height;i++)for(const [c,value] of [25.5,102,51].entries())assert(Math.abs(disabled.pixels[i*disabled.channels+c]-value)<=2,'Disabling a transition shows its plane exactly once');
         if(renderer==='dom'){
           await page.evaluate(()=>scenePlayer.setComponent('wipe','Transition',{enabled:true,progress:.6}));

@@ -26,10 +26,10 @@ function alternative(origin){
       const page=await browser.newPage({viewport:{width:640,height:360}}),errors=[],requests=[];
       page.on("pageerror",e=>errors.push(e.message));page.on("console",m=>{if(m.type()==="error")errors.push(m.text());});page.on("request",r=>requests.push(r.url()));
       await page.route(/^https?:/,route=>route.request().url().startsWith(origin+"/")?route.continue():route.abort());
-      if(mode==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas is forbidden");};window.OffscreenCanvas=class{constructor(){throw new Error("OffscreenCanvas is forbidden");}};});
-      await page.goto(`${origin}/index.html?scene=${sourceURL}&renderer=${mode}`);await page.waitForFunction(()=>window.scenePlayer?.ready);
+      if(mode==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas is forbidden");};});
+      await page.goto(`${origin}/index.html?scene=${sourceURL}&renderer=${mode}`);await page.waitForFunction(()=>window.scenePlayer?.ready);await page.evaluate(()=>scenePlayer.whenIdle());
       const call=(method,...args)=>page.evaluate(async({method,args})=>{await scenePlayer[method](...args);await scenePlayer.whenIdle();},{method,args});
-      const capture=name=>page.screenshot({...output?{path:path.join(output,`${mode}_${name}.png`)}:{},animations:"disabled"});
+      const capture=name=>page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }",...output?{path:path.join(output,`${mode}_${name}.png`)}:{},animations:"disabled"});
       const initial=await capture("reference");
       await call("setComponent","moon","ProceduralNoise",{enabled:false});
       const withoutMoonNoise=await capture("without_moon_noise"),previous=fs.readFileSync(path.join(root,`tests/fixtures/intro_${mode}.png`)),visual=compare(withoutMoonNoise,previous);

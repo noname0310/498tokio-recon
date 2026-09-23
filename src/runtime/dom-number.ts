@@ -25,7 +25,7 @@ export class DOMNumber {
   }
   async update(scene:Scene,view:View):Promise<void>{
     const rev=++this.revision,r=this.renderer,s=r.sync,c=scene.requireComponent(this.id,"SpriteNumberRenderer");
-    if(!scene.active.get(this.id)||!c.enabled||!c.color.a){s.hidden(this.element,true);return;}
+    if(!scene.active.get(this.id)||!c.enabled||!c.color.a||!r.resources.isImageReady(c.asset)){s.hidden(this.element,true);return;}
     const asset=scene.asset(c.asset),layout=numberLayout(c,asset),bounds=c.repeatWorld?scene.coverage(this.id,view):layout.bounds;
     if(!bounds){s.hidden(this.element,true);return;}
     const frames=await r.resources.spriteFrames(scene,c.asset);if(rev!==this.revision)return;
