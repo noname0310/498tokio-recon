@@ -230,7 +230,7 @@ class TiledSprite {
     // an awaited image can resume after a seek and reveal the old scene.
     const updateRevision=++this.updateRevision;
     const c=scene.requireComponent(this.id,"TiledSpriteRenderer"),asset=scene.asset(c.asset),blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise");
-    const visible=!!scene.active.get(this.id)&&c.enabled&&this.renderer.resources.isImageReady(c.asset);if(!visible){sync.hidden(this.element,true);return;}
+    const visible=!!scene.active.get(this.id)&&c.enabled&&this.renderer.resources.isImageReady(c.asset);if(!visible){sync.hidden(this.element,true);sync.style(this.svg,{willChange:"auto"});return;}
     const units=view.pixelsPerUnit*(c.clipBounds&&(enabled(blur)||scene.component(this.id,"Glow")?.enabled)?8:1);
     const transform=scene.cssMatrix(this.id,view,{x:0,y:0,z:0},units);sync.style(this.element,{transform});
     const source=scene.source(c.asset);
@@ -247,7 +247,7 @@ class TiledSprite {
     }
     if(!this.pixels||!visible)return;
     const directional=scene.component(this.id,"DirectionalBlur"),bounds=clippedBounds(scene.coverage(this.id,view,.1+(enabled(directional)?4*directional.sigmaWorld:0)),c.clipBounds);
-    if(!bounds){sync.hidden(this.element,true);return;}
+    if(!bounds){sync.hidden(this.element,true);sync.style(this.svg,{willChange:"auto"});return;}
     sync.attribute(this.contentAxes,"clip-path",c.clipBounds?`url(#${this.artID}-crop)`:"none");
     if(c.clipBounds)sync.attrs(this.cropRect,{x:bounds.left*units,y:-bounds.top*units,width:(bounds.right-bounds.left)*units,height:(bounds.top-bounds.bottom)*units});
     this.renderer.setDepth(this.element,this.renderer.viewDepth(scene,this.id,{x:(bounds.left+bounds.right)/2,y:(bounds.bottom+bounds.top)/2,z:0}));
@@ -325,6 +325,11 @@ class TiledSprite {
     sync.style(this.svg,{filter:enabled(blur)||enabled(glow)?`url(#${this.artID}-blur)`:"none"});
     if(blur)sync.attribute(this.blur,"stdDeviation",`${blur.sigmaWorld.x*units} ${blur.sigmaWorld.y*units}`);
     const liveBlur=enabled(directional)&&directional.sigmaWorld>0;
+    // Chromium can present missing raster tiles when a filtered SVG changes
+    // bounds under perspective. Retain its compositor layer while visible;
+    // orthographic/inactive surfaces do not need this allocation hint.
+    const composited=clipping.visible&&(enabled(blur)||enabled(glow)||liveBlur)&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective";
+    sync.style(this.svg,{willChange:composited?"transform":"auto"});
     sync.attribute(this.blurAxes,"filter",liveBlur?`url(#${this.artID}-directional)`:"none");
     sync.attribute(this.blurAxes,"transform",liveBlur?`rotate(${-directional.angleDegrees})`:"");sync.attribute(this.contentAxes,"transform",liveBlur?`rotate(${directional.angleDegrees})`:"");
     if(liveBlur)sync.attribute(this.directionalBlur,"stdDeviation",`${directional.sigmaWorld*units} 0`);

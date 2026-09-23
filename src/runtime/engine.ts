@@ -63,9 +63,6 @@ export class Engine {
       ["Timeline",`${fps} fps reference`]
     ]);
     const current=this.revision;
-    const images=this.resources.preload(scene,this.renderer.kind==="dom");
-    // Start immediately but report through the complete preparation chain below.
-    void images.catch(()=>{});
     try{
       const audioReady:Promise<void>[]=[];
       for(const node of scene.authoredNodes.values()){
@@ -74,6 +71,9 @@ export class Engine {
         const file=scene.audioAsset(c.asset).file,finish=this.loadingProgress.begin("Audio",file.startsWith("data:")?c.asset:file.split("/").at(-1)||c.asset);
         audioReady.push(audio.ready.finally(finish));
       }
+      const images=this.resources.preload(scene,this.renderer.kind==="dom");
+      // Image and texture preparation runs alongside media metadata loading.
+      void images.catch(()=>{});
       const reference=scene.animationPlayer?.clock;
       if(reference){const audio=this.audioPlayers.get(reference.entity);if(!audio)throw new Error(`Animation clock must be an active AudioPlayer: ${reference.entity}`);this.transport=audio;}
       else {const sequence=scene.sequence,rate=sequence?.tickResolution||frameRate(1),duration=sequence?Time.fromFrame(Frame.subtract(sequence.master.end,sequence.master.start)):Time.fromSeconds(scene.data.timeline.duration,rate);this.transport=new PerformanceClock(duration,rate,scene.data.timeline.loop);}
@@ -85,8 +85,8 @@ export class Engine {
         if(current===this.revision&&ticket===this.loadTicket&&!this.disposed)this.loadingProgress.complete();
       });
       void this.preparation.catch(error=>{if(current===this.revision&&ticket===this.loadTicket&&!this.disposed)this.reportError(error);});
-      await rendererReady;if(current!==this.revision||ticket!==this.loadTicket||this.disposed)return;
-      // UI/transport readiness does not wait for media metadata or texture jobs.
+      await Promise.all([rendererReady,...audioReady]);if(current!==this.revision||ticket!==this.loadTicket||this.disposed)return;
+      // The transport requires metadata; unrelated texture jobs remain progressive.
       this.update(false);this.loading=false;this.ready=true;
       if(this.resourceDirty)this.requestResourceUpdate();
       this.syncControls();
@@ -123,10 +123,7 @@ export class Engine {
   get playerControls():PlayerControls|undefined{return this.controlsInstance;}
   get audioPlayer():AudioPlayer|undefined{return this.transport instanceof AudioPlayer?this.transport:undefined;}
   get playing():boolean{return this.transport?.playing??false;}
-  get duration():number {
-    const clock=this.transport;
-    return !clock||clock instanceof AudioPlayer&&clock.element.readyState<HTMLMediaElement.HAVE_METADATA?this.scene?.data.timeline.duration??0:clock.duration;
-  }
+  get duration():number {return this.transport?.duration??this.scene?.data.timeline.duration??0;}
   get playbackRate():number {return this.transport?.playbackRate??1;}
   get loop():boolean{return this.transport?.loop??false;}
   setLoop(enabled:boolean):void {this.scene.data.timeline.loop=enabled;this.transport?.setLoop(enabled);this.notifyState();}
@@ -165,7 +162,6 @@ export class Engine {
     if(this.disposed||this.loading)return;
     if(this.playing)this.loadingStatus.playbackStarted();
     if(event.type==="error"){this.reportError(event.error);return;}
-    if(event.type==="duration")this.syncControls();
     // RAF samples moving time. Native timeupdate is not a UI state change.
     if(event.type==="time"&&!event.discontinuity&&this.playing)return;
     if(event.type==="time"&&event.discontinuity||this.playing)this.scene.animationEnabled=true;

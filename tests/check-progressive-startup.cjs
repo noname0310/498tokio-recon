@@ -37,10 +37,15 @@ async function check(type,renderer){
   await page.waitForFunction(()=>/\((?:49|50)%\)/.test(document.querySelector('[data-state="active"][data-stage="Scene"]')?.textContent||''));
   assert.equal(await page.locator('#status').isVisible(),false);
   assert.equal(await page.locator('.player-controls').count(),0,'Scene declarations are not available until JSON completes');
-  gates.json.resolve();await page.waitForFunction(()=>window.scenePlayer?.ready||document.querySelector('#status[role="alert"]'));
+  gates.json.resolve();await page.waitForFunction(()=>document.querySelector('audio')&&document.querySelector('[data-state="active"][data-stage="Images"]'));
+  assert.equal(await page.evaluate(()=>Boolean(window.scenePlayer)),false,'Startup waits for the audio clock metadata');
+  assert.equal(await page.locator('.player-controls').count(),0,'Controls require the actual media duration');
+  assert.deepEqual(await page.evaluate(()=>{const audio=document.querySelector('audio');return {ready:audio.readyState,paused:audio.paused,preload:audio.preload};}),{ready:0,paused:true,preload:'metadata'});
+  gates.audio.resolve();await page.waitForFunction(()=>window.scenePlayer?.ready||document.querySelector('#status[role="alert"]'));
   assert.equal(await page.locator('#status[role="alert"]').count(),0,await page.locator('#status').textContent());
-  assert.equal(await page.locator('.player-controls').isVisible(),true,'Controls must precede audio, images and procedural jobs');
-  assert.deepEqual(await page.evaluate(()=>({audio:scenePlayer.audioPlayer.element.readyState,duration:scenePlayer.duration,complete:scenePlayer.loadingProgress.isComplete})),{audio:0,duration:5,complete:false});
+  assert.equal(await page.locator('.player-controls').isVisible(),true,'Metadata makes controls ready without waiting for images or procedural jobs');
+  assert.deepEqual(await page.evaluate(()=>({metadata:scenePlayer.audioPlayer.element.readyState>=HTMLMediaElement.HAVE_METADATA,mediaDuration:scenePlayer.duration===scenePlayer.audioPlayer.element.duration,complete:scenePlayer.loadingProgress.isComplete})),{metadata:true,mediaDuration:true,complete:false});
+  assert(await page.evaluate(()=>scenePlayer.duration>200),'Controls use the media duration, not the authored five-second timeline');
   // Visible geometry must not wait for the unrelated procedural job either.
   await page.waitForFunction(()=>scenePlayer.resources.isImageReady('fast'));
   await page.waitForFunction(()=>scenePlayer.renderer.kind==='dom'||scenePlayer.renderer.renderCount>0);
@@ -48,12 +53,8 @@ async function check(type,renderer){
   const capture=png(await page.screenshot({style:'.runtime-loading-status,.player-controls { visibility:hidden !important; }'}));
   const center=(180*capture.width+320)*capture.channels;
   assert(capture.pixels[center+1]>240,'The prepared green plane must render before pending assets');
-  await page.locator('[data-action="play"]').click();await page.waitForFunction(()=>scenePlayer.playing);
-  await page.locator('[data-action="play"]').click();await page.waitForFunction(()=>!scenePlayer.playing);
-  assert.equal(await page.locator('.player-feedback').isVisible(),false,'Cancelling buffered play is not an error');
-  gates.audio.resolve();await page.evaluate(()=>scenePlayer.audioPlayer.ready);
-  assert(await page.evaluate(()=>scenePlayer.duration>200),'Metadata replaces the authored duration hint');
   await page.locator('[data-action="play"]').click();await page.waitForFunction(()=>scenePlayer.time>.1);await page.evaluate(()=>scenePlayer.pause());
+  assert.equal(await page.locator('.player-feedback').isVisible(),false);
   gates.image.resolve();await page.evaluate(()=>window.releaseTextures());await page.evaluate(()=>scenePlayer.whenIdle());
   assert.equal(await page.locator('.runtime-loading-status').isVisible(),false);
   await page.evaluate(()=>{window.oldLoad=scenePlayer.loadScene('/cancel.scene.json');});
@@ -64,7 +65,7 @@ async function check(type,renderer){
   const bad=await page.evaluate(()=>scenePlayer.loadScene('/invalid.scene.json').then(()=>'',error=>error.message));assert.match(bad,/parse scene JSON/);
   assert.equal(await page.evaluate(()=>scenePlayer.scene.data.root.id),'new','Invalid JSON retains the current scene');
   assert.deepEqual(errors,[]);
-  console.log(`${type.name()}-${renderer}: XHR progress, early controls/geometry, buffered play/pause, duration and cancelled downloads passed.`);
+  console.log(`${type.name()}-${renderer}: XHR progress, metadata-gated startup, progressive geometry, media duration and cancelled downloads passed.`);
  }finally{Object.values(gates).forEach(gate=>gate.resolve());await browser.close();await new Promise(r=>server.close(r));}
 }
 (async()=>{for(const [type,renderer]of [[chromium,'dom'],[chromium,'babylon'],[firefox,'dom']])await check(type,renderer);})().catch(error=>{console.error(error);process.exitCode=1;});

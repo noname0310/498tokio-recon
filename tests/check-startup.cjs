@@ -18,8 +18,7 @@ async function check(browser,base,renderer){
   try{
     await early.goto(`${base}/?renderer=${renderer}&controls=0`,{waitUntil:'domcontentloaded'});
     await alert(early,/moon\.png.*HTTP 404/);
-    await early.waitForFunction(()=>window.scenePlayer?.ready);
-    assert.equal(await early.evaluate(()=>scenePlayer.audioPlayer.element.readyState),0,'UI/scene startup does not wait for audio metadata');
+    assert.equal(await early.evaluate(()=>Boolean(window.scenePlayer)),false,'Startup waits for audio metadata');
     assert.equal(await early.locator('.runtime-loading-status').isVisible(),false,'Progress must not cover the error');
     releaseAudio();await early.waitForFunction(()=>window.scenePlayer?.ready);
     await alert(early,/moon\.png.*HTTP 404/);
