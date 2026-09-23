@@ -3,7 +3,7 @@ import type * as Babylon from "@babylonjs/core/pure";
 import { B, registerBabylon } from "./babylon-library.js";
 import type { Scene } from "./scene.js";
 import type { Resources } from "./resources.js";
-import type { Entity, ComponentType, Vec3, PixelImage, View, TextureJob, MaskParameters } from "./types.js";
+import type { Entity, ComponentType, Vec3, PixelImage, View, TextureJob, MaskParameters, Bounds } from "./types.js";
 import {BabylonSceneContext,type BabylonObjectConstructor,type BabylonRenderObject,type TextureOptions} from "./babylon-context.js";
 
 import { Math3D as M } from "./math.js";
@@ -19,9 +19,11 @@ import {BabylonParticleFilter} from "./babylon-particle-filter.js";
 import {BabylonShaderPreparation} from "./babylon-preparation.js";
 import type {LoadingProgress} from "./loading-status.js";
 const enabled=<T extends {enabled:boolean}>(c:T|undefined):c is T=>Boolean(c?.enabled);
+interface SpriteMaskTexture {texture:Babylon.RawTexture;bounds:Bounds;bytes:number}
 
 class Sprite {
   private filter?:BabylonParticleFilter;
+  private readonly maskTextures=new Map<string,SpriteMaskTexture>();private maskBytes=0;
   readonly renderer:BabylonSceneContext;readonly id:string;
   readonly textures:Map<string,Babylon.RawTexture>;readonly keys:Map<string,string>;readonly jobs:Map<string,Promise<void>>;readonly revisions:Map<string,number>;
   updateRevision=0;disposed=false;
@@ -55,7 +57,6 @@ class Sprite {
     const gradient=scene.component(this.id,"OpacityGradient");body.material.setFloat("opacityGradientEnabled",gradient?.enabled?1:0);r.vec2(body.material,"opacityGradientStart",gradient?.start??{x:0,y:0});r.vec2(body.material,"opacityGradientEnd",gradient?.end??{x:0,y:-1});
     const rect=state.rect;body.material.setVector4("uvRect",new B.Vector4(rect.x/source.width,rect.y/source.height,rect.width/source.width,rect.height/source.height));
     body.material.setVector4("uvBounds",asset.atlas?new B.Vector4((rect.x+.5)/source.width,(rect.y+.5)/source.height,(rect.x+rect.width-.5)/source.width,(rect.y+rect.height-.5)/source.height):new B.Vector4(0,0,1,1));
-    const maskSource=asset.atlas?r.resources.crop(source,rect):source;
     const jobs:(Promise<void>|undefined)[]=[];
     const noise=scene.component(this.id,"ProceduralNoise");
     r.vec2(body.material,"noiseOrigin",noise?.origin||{x:0,y:0});r.vec2(body.material,"noiseSize",noise?.worldSize||{x:1,y:1});
@@ -75,7 +76,7 @@ class Sprite {
     }
     for(const type of ["DropShadow","Glow"] as const){
       const c=scene.component(this.id,type),entry=this.meshes.get(type);if(!entry)continue;entry.mesh.setEnabled(state.visible&&enabled(c)&&this.textures.has(type));
-      if(!c)continue;
+      if(!enabled(c))continue;
       const isShadow=c.type==="DropShadow";
       entry.material.alphaMode=!isShadow&&c.blend==="additive"?B.Engine.ALPHA_ADD:B.Engine.ALPHA_COMBINE;
       entry.mesh.position.set(isShadow?c.offsetWorld.x:0,isShadow?c.offsetWorld.y:0,isShadow?.0002:.0001);
@@ -84,11 +85,16 @@ class Sprite {
       const key=JSON.stringify([scene.source(sprite.asset),asset,state.frame,parameters,resolution]);
       if(this.keys.get(type)!==key){
         this.keys.set(type,key);const revision=(this.revisions.get(type)||0)+1;this.revisions.set(type,revision);
-        this.jobs.set(type,r.resources.texture("mask:"+key,{kind:"mask",source:maskSource,asset,component:parameters,resolution}).then(result=>{
-          if(this.revisions.get(type)!==revision)return;
-          this.textures.get(type)?.dispose();const texture=r.texture(`${this.id}/${type}`,result,{linear:true});this.textures.set(type,texture);entry.material.setTexture("spriteTex",texture);
-          const b=result.bounds!;r.rect(entry.mesh,b.left,b.bottom,b.right,b.top);
-        }));
+        const cached=this.maskTextures.get(key);
+        if(cached){this.applyMask(type,key,cached);this.jobs.delete(type);}
+        else{
+          const maskSource=asset.atlas?r.resources.crop(source,rect):source;
+          this.jobs.set(type,r.resources.texture("mask:"+key,{kind:"mask",source:maskSource,asset,component:parameters,resolution}).then(result=>{
+            if(this.disposed||this.revisions.get(type)!==revision)return;
+            const texture=r.texture(`${this.id}/${type}`,result,{linear:true});
+            this.applyMask(type,key,{texture,bounds:result.bounds!,bytes:result.width*result.height*4});
+          }));
+        }
       }
       jobs.push(this.jobs.get(type));
     }
@@ -96,7 +102,20 @@ class Sprite {
     if(this.disposed||revision!==this.updateRevision)return;
     for(const type of ["DropShadow","Glow"] as const)this.meshes.get(type)?.mesh.setEnabled(state.visible&&enabled(scene.component(this.id,type))&&this.textures.has(type));
   }
-  dispose(){this.disposed=true;this.filter?.dispose();for(const type of this.revisions.keys())this.revisions.set(type,(this.revisions.get(type)||0)+1);for(const {mesh,material} of this.meshes.values()){mesh.dispose();material.dispose();}this.textures.forEach(t=>t.dispose());}
+  private applyMask(type:"Glow"|"DropShadow",key:string,mask:SpriteMaskTexture):void {
+    if(!this.maskTextures.has(key))this.maskBytes+=mask.bytes;
+    this.maskTextures.delete(key);this.maskTextures.set(key,mask);
+    this.textures.set(type,mask.texture);const entry=this.meshes.get(type)!;
+    entry.material.setTexture("spriteTex",mask.texture);const b=mask.bounds;this.renderer.rect(entry.mesh,b.left,b.bottom,b.right,b.top);
+    // LRU limits apply to inactive masks. Never dispose a texture still bound to
+    // the current glow/shadow, even if that single mask exceeds the byte budget.
+    for(const [oldKey,old] of this.maskTextures){
+      if(this.maskTextures.size<=32&&this.maskBytes<=8*1024*1024)break;
+      if(old.texture===this.textures.get("Glow")||old.texture===this.textures.get("DropShadow"))continue;
+      this.maskTextures.delete(oldKey);this.maskBytes-=old.bytes;old.texture.dispose();
+    }
+  }
+  dispose(){this.disposed=true;this.filter?.dispose();for(const type of this.revisions.keys())this.revisions.set(type,(this.revisions.get(type)||0)+1);for(const {mesh,material} of this.meshes.values()){mesh.dispose();material.dispose();}for(const [type,texture] of this.textures)if(type!=="Glow"&&type!=="DropShadow")texture.dispose();for(const mask of this.maskTextures.values())mask.texture.dispose();this.maskTextures.clear();this.maskBytes=0;}
 }
 
 class TiledSprite {
@@ -262,7 +281,7 @@ export class BabylonRenderer {
     this.transitions!.update(transitionGroups(data,view));
     // Transparent component planes use view depth, also for off-center cameras.
     const viewMatrix=M.inverse(data.world.get(data.cameraNode.id)!);
-    const transparent=scene.meshes.filter(mesh=>mesh.material?.needAlphaBlending()).map(mesh=>{mesh.computeWorldMatrix(true);const metadata=mesh.metadata as {sortWorldPosition?:Vec3;sortOrder?:number}|null,p=metadata?.sortWorldPosition||mesh.getBoundingInfo().boundingSphere.centerWorld;return {mesh,z:M.point(viewMatrix,p).z,order:metadata?.sortOrder??0};}).sort((a,b)=>b.z-a.z||a.order-b.order);
+    const transparent=scene.meshes.filter(mesh=>mesh.isVisible&&mesh.visibility>0&&mesh.isEnabled()&&mesh.material?.needAlphaBlending()).map(mesh=>{mesh.computeWorldMatrix(true);const metadata=mesh.metadata as {sortWorldPosition?:Vec3;sortOrder?:number}|null,p=metadata?.sortWorldPosition||mesh.getBoundingInfo().boundingSphere.centerWorld;return {mesh,z:M.point(viewMatrix,p).z,order:metadata?.sortOrder??0};}).sort((a,b)=>b.z-a.z||a.order-b.order);
     transparent.forEach(({mesh},index)=>mesh.alphaIndex=index);
   }
   private cancelProgressiveDraw():void {if(this.progressiveDraw!==null)cancelAnimationFrame(this.progressiveDraw);this.progressiveDraw=null;}

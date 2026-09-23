@@ -62,16 +62,17 @@ async function browserChecks(){
       if(mode==="dom")await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>{throw new Error("Canvas is forbidden");};});
       await page.goto(`${url}/index.html?scene=assets/exhaust/exhaust.scene.json&renderer=${mode}&time=4.5&controls=0`);await page.waitForFunction(()=>window.scenePlayer?.ready);
       await page.evaluate(()=>scenePlayer.whenIdle());
+      const preparedJobs=await page.evaluate(()=>scenePlayer.resources.jobs.size);
       const state=await page.evaluate(()=>JSON.stringify(scenePlayer.scene.particleStates("exhaust")));if(baseline)assert.equal(state,baseline,"Backends must share exactly the same particle states");else baseline=state;
       const before=await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"});await page.evaluate(async()=>{for(const t of [0,1,6,2,4.5])await scenePlayer.seek(t);});assert(before.equals(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})),`${mode}: seek back produces the identical image`);
       await page.evaluate(()=>scenePlayer.setComponent("exhaust","ParticleEmitter",{seed:57}));assert(!before.equals(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})));await page.evaluate(()=>scenePlayer.setComponent("exhaust","ParticleEmitter",{seed:28035}));assert(before.equals(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"})));
       await page.evaluate(async()=>{const {Frame,frameRate}=await import("/runtime/player.js");for(let i=0;i<210;i++)await scenePlayer.seekFrame(Frame.from(i),frameRate(30));});
       const resources=await page.evaluate(()=>{const e=scenePlayer.renderer.objects.find(o=>o.id==="exhaust");return {count:e.count,pool:e.pool?.length,meshes:scenePlayer.renderer.scene?.meshes.length,instances:e.entries?.map(x=>x.mesh.thinInstanceCount),textures:scenePlayer.renderer.scene?.textures.length,jobs:scenePlayer.resources.jobs.size};});
       if(mode==="dom"){assert.equal(await page.locator("canvas").count(),0);assert(resources.pool<=24,"DOM pool must be reused");}else{assert.equal(resources.meshes,2,"One thin-instance mesh plus one glow mesh");assert.deepEqual(resources.instances,[resources.count,resources.count]);assert(resources.textures<=4);}
-      assert.equal(resources.jobs,0,"Particle animation and glow must not generate texture jobs");
+      assert.equal(resources.jobs,preparedJobs,"Particle animation must reuse all prepared glow masks");
       // Isolated, large, opaque atlas pixels test both UV selection and alpha.
       const data=fixture({rate:0,bursts:[{time:0,count:1}],speed:{min:0,max:0},lifetime:{min:10,max:10},animation:{mode:"single",frame:0}});
-      await page.evaluate(async data=>{await scenePlayer.loadScene(data);await scenePlayer.seek(.2);},data);
+      await page.evaluate(async data=>{await scenePlayer.loadScene(data);await scenePlayer.seek(.2);await scenePlayer.whenIdle();},data);
       let checked=0;
       for(let frame=0;frame<4;frame++){
         await page.evaluate(frame=>scenePlayer.setComponent("effect","ParticleEmitter",{animation:{frame}}),frame);const capture=png(await page.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));

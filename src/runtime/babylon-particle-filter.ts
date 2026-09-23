@@ -1,6 +1,6 @@
 import type * as Babylon from "@babylonjs/core/pure";
 import type {BabylonSceneContext} from "./babylon-context.js";
-import type {SpriteAsset} from "./types.js";
+import type {SpriteAsset,Glow} from "./types.js";
 
 export const particleFilterResolution=8;
 
@@ -12,6 +12,7 @@ const fragment=(reach:number)=>`precision highp float;
 uniform sampler2D sourceTex;
 uniform vec2 sourceSize,cellSize,gridSize;
 uniform float sourcePadding,padding,radius;
+uniform float maskEnabled,threshold,softness;
 varying vec2 vUV;
 void main(){
   vec2 expanded=cellSize+2.0*padding,at=vUV*gridSize*expanded;
@@ -25,6 +26,7 @@ void main(){
     if(any(lessThan(q,vec2(0.0)))||any(greaterThanEqual(q,cellSize)))continue;
     if(any(greaterThanEqual(q,p+radius))||any(lessThanEqual(q+1.0,p-radius)))continue;
     vec4 s=texture2D(sourceTex,(origin+q+.5)/sourceSize);
+    if(maskEnabled>.5)s=vec4(1.0,1.0,1.0,s.a*clamp((dot(s.rgb,vec3(.2126,.7152,.0722))-threshold)/softness,0.0,1.0));
     largest=max(largest,vec4(s.rgb*s.a,s.a));
   }
   gl_FragColor=largest;
@@ -42,7 +44,7 @@ void main(){
 
 export function createDilationEffect(r:BabylonSceneContext,id:string,reach:number):Babylon.EffectWrapper {
   const shader=`sceneDilation${reach}`;r.B.Effect.ShadersStore.sceneFilterVertexShader=vertex;r.B.Effect.ShadersStore[shader+"FragmentShader"]=fragment(reach);
-  return new r.B.EffectWrapper({engine:r.engine,name:`${id}/dilation`,useShaderStore:true,vertexShader:"sceneFilter",fragmentShader:shader,attributeNames:["position"],uniformNames:["sourceSize","cellSize","gridSize","sourcePadding","padding","radius"],samplerNames:["sourceTex"]});
+  return new r.B.EffectWrapper({engine:r.engine,name:`${id}/dilation`,useShaderStore:true,vertexShader:"sceneFilter",fragmentShader:shader,attributeNames:["position"],uniformNames:["sourceSize","cellSize","gridSize","sourcePadding","padding","radius","maskEnabled","threshold","softness"],samplerNames:["sourceTex"]});
 }
 export function createSoftnessEffect(r:BabylonSceneContext,id:string):Babylon.EffectWrapper {
   r.B.Effect.ShadersStore.sceneFilterVertexShader=vertex;r.B.Effect.ShadersStore.sceneSoftnessFragmentShader=blurFragment;
@@ -60,18 +62,18 @@ export class BabylonParticleFilter {
   private scratch?:Babylon.RenderTargetTexture;
   private reach=-1;private key="";private revision=0;private disposed=false;
   private pending:Promise<void>=Promise.resolve();
-  private last?:{asset:SpriteAsset;source:Babylon.RawTexture;radius:number;softness:number};
+  private last?:{asset:SpriteAsset;source:Babylon.RawTexture;radius:number;softness:number;mask?:Pick<Glow,"threshold"|"softness">};
   private readonly restored:Babylon.Observer<Babylon.AbstractEngine>;
   constructor(private readonly renderer:BabylonSceneContext,private readonly id:string){
     this.pass=new renderer.B.EffectRenderer(renderer.engine);
     this.restored=renderer.engine.onContextRestoredObservable.add(()=>{
       this.key="";const input=this.last;
-      if(input)void this.update(input.asset,input.source,input.radius,input.softness).then(()=>{if(!this.disposed)renderer.render();});
+      if(input)void this.update(input.asset,input.source,input.radius,input.softness,input.mask).then(()=>{if(!this.disposed)renderer.render();});
     });
   }
-  update(asset:SpriteAsset,source:Babylon.RawTexture,radius:number,softness:number):Promise<void>{
-    this.last={asset,source,radius,softness};
-    const key=JSON.stringify([source.uniqueId,asset.size,asset.atlas,radius,softness]);
+  update(asset:SpriteAsset,source:Babylon.RawTexture,radius:number,softness:number,mask?:Pick<Glow,"threshold"|"softness">):Promise<void>{
+    this.last={asset,source,radius,softness,mask};
+    const key=JSON.stringify([source.uniqueId,asset.size,asset.atlas,radius,softness,mask?.threshold,mask?.softness]);
     if(key===this.key)return this.pending;
     this.key=key;const revision=++this.revision;
     this.pending=this.pending.then(async()=>{
@@ -103,6 +105,7 @@ export class BabylonParticleFilter {
         const effect=wrapper.effect;effect.setTexture("sourceTex",source);
         effect.setFloat2("sourceSize",asset.size.x,asset.size.y);effect.setFloat2("cellSize",cell.x,cell.y);effect.setFloat2("gridSize",columns,rows);
         effect.setFloat("sourcePadding",asset.atlas?.padding||0);effect.setFloat("padding",padding);effect.setFloat("radius",radius);
+        effect.setFloat("maskEnabled",mask?1:0);effect.setFloat("threshold",mask?.threshold??0);effect.setFloat("softness",mask?.softness??1);
       });
       const alpha=r.engine.getAlphaMode();r.engine.setAlphaMode(B.Engine.ALPHA_DISABLE);
       try{

@@ -40,9 +40,11 @@ export class DOMPlane {
     // Drawing overscan must not change the authored transition timing.
     const frameBounds=planeBounds(scene,this.id,view,c,0)!;
     const key=JSON.stringify([bounds,frameBounds,transitionGeometryKey(transition)]);
-    if(key===this.gridKey){await pendingNoise;return;}this.gridKey=key;
-    sync.attribute(this.gridPath!,"d",this.pathGeometry.transition(bounds,frameBounds,transition,(x,y)=>({x,y:-y})));
+    if(key!==this.gridKey){this.gridKey=key;sync.attribute(this.gridPath!,"d",this.pathGeometry.transition(bounds,frameBounds,transition,(x,y)=>({x,y:-y})));}
     await pendingNoise;
+    // The first texture finishes asynchronously. Copy the completed filter as
+    // well, so a paused transition needs no extra animation tick to show noise.
+    sync.style(grid,{filter:this.fill.style.filter});
   }
   dispose():void{this.noise?.dispose();this.renderer.removeSurface(this.element);}
 }

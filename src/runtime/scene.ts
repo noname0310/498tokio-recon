@@ -15,7 +15,15 @@ export class Scene {
   private overlays=new Map<string,Entity>();private snapshot?:SequenceEvaluation;
   animationEnabled=true;
   private seconds=0;private exactTime?:FrameTime;private timelinePosition=Time.fromFrame(Frame.zero);
+  private cameraWorld?:Matrix;private inverseCamera?:Matrix;
   cameraNode!:Entity;sequence?:SequenceRuntime;
+  /** World matrices are replaced on evaluation. Invert the active camera only
+   * once for all surfaces/particles in that evaluation, including camera cuts. */
+  get viewMatrix():Matrix {
+    const world=this.world.get(this.cameraNode.id)!;
+    if(world!==this.cameraWorld){this.cameraWorld=world;this.inverseCamera=M.inverse(world);}
+    return this.inverseCamera!;
+  }
   constructor(data:unknown,baseURL:string,private readonly resolveAsset:(url:string)=>string=url=>url){this.baseURL=baseURL;this.data=normalizeScene(data);this.original=structuredClone(this.data);this.index();this.compileAnimation();this.updateWorld();}
   get time():number{return this.seconds;}
   set time(value:number){if(!Number.isFinite(value)||value<0)throw new Error("Scene time must be finite and nonnegative.");this.seconds=value;this.timelinePosition=Time.fromDecimal(value);this.exactTime=undefined;}
@@ -100,7 +108,7 @@ export class Scene {
     return overlay?.transform||this.baseTransform(this.find(id),seconds);
   }
   matrixAt(id:string,time:FrameTime|number=this.timelineTime):Matrix {const parent=this.parents.get(id),local=M.trs(this.transformAt(id,time));return parent?M.multiply(this.matrixAt(parent.id,time),local):local;}
-  particleStates(id:string,time:FrameTime|number=this.timelineTime){return particleStates(this,id,time);}
+  particleStates(id:string,time:FrameTime|number=this.timelineTime,view?:Pick<View,"worldWidth"|"worldHeight">){return particleStates(this,id,time,view);}
   updateWorld():void {
     this.snapshot=this.animationEnabled?this.sequence?.evaluate(this.frameTime!):undefined;this.index();this.overlays=this.evaluateOverlays(this.snapshot,this.time);this.world.clear();this.active.clear();
     const visit=(id:string):void=>{if(this.world.has(id))return;const parent=this.parents.get(id);if(parent)visit(parent.id);const n=this.overlays.get(id)||this.find(id);this.world.set(id,M.multiply(parent?this.world.get(parent.id)!:M.identity(),M.trs(this.transformAt(id))));const flicker=n.components.find(c=>c.type==="Flicker");this.active.set(id,(parent?this.active.get(parent.id)!:true)&&n.active&&(!flicker?.enabled||flickerVisible(flicker,this.timelineTime)));};for(const id of this.nodes.keys())visit(id);
@@ -130,7 +138,7 @@ export class Scene {
   projectCameraPoint(p:Vec3):Vec3 {const s=this.frustumScale(p.z),o=this.projectionOffset;return {x:p.x/s+o.x,y:p.y/s+o.y,z:p.z};}
   cssProjection(world:Matrix,view:View,units:Vec3):Matrix {
     const flip=[1,0,0,0,0,-1,0,0,0,0,-1,0,0,0,0,1];
-    const matrix=M.multiply(M.multiply(flip,M.multiply(M.inverse(this.world.get(this.cameraNode.id)!),world)),flip),u=[units.x,units.y,units.z];
+    const matrix=M.multiply(M.multiply(flip,M.multiply(this.viewMatrix,world)),flip),u=[units.x,units.y,units.z];
     for(let col=0;col<3;col++)for(let row=0;row<3;row++)matrix[col*4+row]*=view.pixelsPerUnit/u[col];
     for(let row=0;row<3;row++)matrix[12+row]*=view.pixelsPerUnit;
     if(this.requireComponent(this.cameraNode.id,"Camera").projection==="perspective"){
@@ -145,7 +153,7 @@ export class Scene {
     }
     return matrix;
   }
-  coverage(id:string,view:View,padding=.1){
+  coverage(id:string,view:Pick<View,"worldWidth"|"worldHeight">,padding=.1){
     // Intersect the finite near/far frustum with local Z=0. Infinite corner rays
     // explode as a plane becomes edge-on; the twelve finite edges never do.
     const m=M.multiply(M.inverse(this.world.get(id)!),this.world.get(this.cameraNode.id)!),c=this.requireComponent(this.cameraNode.id,"Camera");
@@ -161,7 +169,7 @@ export class Scene {
     return {left:Math.min(...points.map(p=>p.x))-padding,right:Math.max(...points.map(p=>p.x))+padding,bottom:Math.min(...points.map(p=>p.y))-padding,top:Math.max(...points.map(p=>p.y))+padding};
   }
   clipPlane(id:string,view:View,bounds:Bounds,offsetZ=0,origin={x:0,y:0},units=view.pixelsPerUnit){
-    const matrix=M.multiply(M.inverse(this.world.get(this.cameraNode.id)!),this.world.get(id)!),camera=this.requireComponent(this.cameraNode.id,"Camera");
+    const matrix=M.multiply(this.viewMatrix,this.world.get(id)!),camera=this.requireComponent(this.cameraNode.id,"Camera");
     let points=[[bounds.left,bounds.bottom],[bounds.right,bounds.bottom],[bounds.right,bounds.top],[bounds.left,bounds.top]].map(([x,y])=>({x,y,z:M.point(matrix,{x,y,z:offsetZ}).z}));
     const inside=points.every(p=>p.z>=camera.near&&p.z<=camera.far);
     for(const [limit,sign] of [[camera.near,1],[camera.far,-1]]){

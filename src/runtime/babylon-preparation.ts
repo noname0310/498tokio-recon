@@ -49,6 +49,10 @@ export class BabylonShaderPreparation {
         if(unique)this.objects.push(object);else object.dispose();
       }
       for(const c of node.components){
+        if(c.type==="Glow"&&node.components.some(c=>c.type==="ParticleEmitter")){
+          wrapper("Dilation / radius 0",()=>createDilationEffect(r,"Preparation",0));
+          wrapper("Motion blur / softness",()=>createSoftnessEffect(r,"Preparation"));
+        }
         if(c.type==="Camera")post("Camera / Vignette",()=>r.vignetteEffect(camera));
         if(c.type==="ViewportFrame")post("Camera / ViewportFrame",()=>createViewportFrameEffect(r,camera));
         if(c.type==="Vignette"&&c.depth!==null&&!features.has("depth-vignette")){

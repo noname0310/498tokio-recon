@@ -3,7 +3,7 @@ import { Math3D as M } from "./math.js";
 import { spriteRect } from "./atlas.js";
 import {Frame,Time,frameRate,type FrameTime} from "./animation/time.js";
 import type { Scene } from "./scene.js";
-import type { Vec3, Color, Key, Range, ParticleEmitter, ParticleState, SpriteAsset } from "./types.js";
+import type { Vec3, Color, Key, Range, View, ParticleEmitter, ParticleState, SpriteAsset } from "./types.js";
 type Random = () => number;
 const axes = ["x", "y", "z"] as const;
 
@@ -69,20 +69,40 @@ function direction(c:ParticleEmitter,point:Vec3,random:Random):Vec3{
 function frameAt(c:ParticleEmitter,asset:SpriteAsset,age:FrameTime,u:number,random:Random){
   const a=c.animation,frames=a.frames.length?a.frames:Array.from({length:asset.atlas?.frameCount||1},(_,i)=>i),offset=a.randomStart?Math.floor(random()*frames.length):0;
   const i=a.mode==="random"?Math.floor(random()*frames.length):a.mode==="lifetime"?Math.min(frames.length-1,Math.floor(u*frames.length)):a.mode==="fps"?Time.floor(Time.scale(age,Time.decimal(a.framesPerSecond)))+offset:a.frame;
-  return a.mode==="single"?a.frame:frames[a.mode==="fps"&&a.loop?i%frames.length:Math.min(frames.length-1,i)];
+  return a.mode==="single"?a.frame:frames[a.mode==="fps"&&a.loop?((i%frames.length)+frames.length)%frames.length:Math.max(0,Math.min(frames.length-1,i))];
 }
-export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene.timelineTime):ParticleState[]{
+export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene.timelineTime,view?:Pick<View,"worldWidth"|"worldHeight">):ParticleState[]{
   const c=scene.component(id,"ParticleEmitter");
   if(!c?.enabled||!scene.active.get(id))return [];
   const position=typeof time==="number"?Time.fromDecimal(time):time,start=Time.convert(Time.fromFrame(c.start.frame),c.start.rate,frameRate(1)),now=Time.subtract(position,start);
-  if(now.frame<0)return [];
-  const asset=scene.asset(c.asset),cell=asset.atlas?.cellSize||asset.size,spawns=[];
-  if(c.rate>0){
-    const rate=Time.decimal(c.rate),prewarm=Time.fromDecimal(-c.prewarm),oldest=Time.subtract(now,Time.fromDecimal(c.lifetime.max));
-    const first=Time.ceil(Time.scale(Time.compare(prewarm,oldest)>0?prewarm:oldest,rate)),last=Math.min(Time.floor(Time.scale(now,rate)),c.duration>0?Time.ceil(Time.scale(Time.fromDecimal(c.duration),rate))-1:Infinity);
-    for(let n=last;n>=first;n--){spawns.push({id:n,offset:Time.fromRatio(BigInt(n)*rate.denominator,rate.numerator),salt:0});if(spawns.length>=c.maxParticles+Math.ceil(c.rate*(c.lifetime.max-c.lifetime.min)))break;}
+  if(now.frame<0&&!c.cameraContinuation)return [];
+  const asset=scene.asset(c.asset),cell=asset.atlas?.cellSize||asset.size,spawns:{id:number;offset:FrameTime;salt:number;sizeScale?:number;color?:Color}[]=[];
+  // Continue planar streams through the live frustum. The
+  // authored birth is still the reference point for IDs, motion and curves:
+  // resizing only reveals earlier/later portions of the same trajectories.
+  // Beyond the authored lifetime, use its endpoint velocity and clamp curves.
+  let earliestAge=0,latestAge=c.lifetime.max;
+  let bounds:ReturnType<Scene["coverage"]>=null;
+  if(c.cameraContinuation){
+    const camera=scene.requireComponent(scene.cameraNode.id,"Camera"),glow=scene.component(id,"Glow"),blur=scene.component(id,"ParticleMotionBlur");
+    const maxSize=c.startSize.max*Math.max(1,...c.sizeOverLife.map(k=>k.value))*Math.max(1,...c.bursts.map(b=>b.sizeScale??1));
+    const radius=maxSize*Math.hypot(cell.x/cell.y,1)/2;
+    const glowRadius=glow?.enabled?4*glow.sigmaWorld*asset.pixelsPerUnit*maxSize/cell.y:0;
+    const blurRadius=blur?.enabled?4*blur.maxSigmaWorld+(blur.dilationPixels+4*blur.softnessPixels)*maxSize/cell.y:0;
+    const padding=c.cameraContinuation.padding+radius+glowRadius+blurRadius;
+    bounds=scene.coverage(id,view||{worldWidth:camera.referenceVerticalSize*camera.referenceAspect,worldHeight:camera.referenceVerticalSize},padding);
+    if(!bounds)return [];
+    const d=normalized(c.direction),support=(Math.abs(d.x)*c.shape.size.x+Math.abs(d.y)*c.shape.size.y)/2;
+    const a=d.x*(d.x<0?bounds.right:bounds.left)+d.y*(d.y<0?bounds.top:bounds.bottom)-support;
+    const b=d.x*(d.x<0?bounds.left:bounds.right)+d.y*(d.y<0?bounds.bottom:bounds.top)+support;
+    earliestAge=Math.min(0,a/c.speed.min);latestAge=Math.max(latestAge,b/c.speed.min);
   }
-  c.bursts.forEach((burst,index)=>{const offset=Time.fromDecimal(burst.time),age=Time.subtract(now,offset);if(age.frame>=0&&Time.compare(age,Time.fromDecimal(c.lifetime.max))<0)for(let n=0;n<burst.count;n++)spawns.push({id:n,offset,salt:hash(0,index,0xB5297A4D)});});
+  if(c.rate>0){
+    const rate=Time.decimal(c.rate),prewarm=Time.fromDecimal(-c.prewarm),oldest=Time.subtract(now,Time.fromDecimal(latestAge)),newest=Time.subtract(now,Time.fromDecimal(earliestAge));
+    const first=Time.ceil(Time.scale(Time.compare(prewarm,oldest)>0?prewarm:oldest,rate)),last=Math.min(Time.floor(Time.scale(newest,rate)),c.duration>0?Time.ceil(Time.scale(Time.fromDecimal(c.duration),rate))-1:Infinity);
+    for(let n=last;n>=first;n--){spawns.push({id:n,offset:Time.fromRatio(BigInt(n)*rate.denominator,rate.numerator),salt:0});if(!bounds&&spawns.length>=c.maxParticles+Math.ceil(c.rate*(c.lifetime.max-c.lifetime.min)))break;}
+  }
+  c.bursts.forEach((burst,index)=>{const offset=typeof burst.time==="number"?Time.fromDecimal(burst.time):Time.convert(Time.fromFrame(burst.time.frame),burst.time.rate,frameRate(1)),age=Time.subtract(now,offset);if(Time.compare(age,Time.fromDecimal(earliestAge))>=0&&Time.compare(age,Time.fromDecimal(latestAge))<0)for(let n=0;n<burst.count;n++)spawns.push({id:n,offset,salt:hash(0,index,0xB5297A4D),sizeScale:burst.sizeScale,color:burst.color});});
   spawns.sort((a,b)=>Time.compare(b.offset,a.offset)||a.salt-b.salt||b.id-a.id);
   const camera=scene.matrixAt(scene.cameraNode.id,position),inverseCamera=M.inverse(camera),current=scene.matrixAt(id,position),states:ParticleState[]=[];
   const perspective=scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective",projectionDistance=perspective?scene.projectionDistance:1;
@@ -90,16 +110,19 @@ export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene
   const paletteWeight=c.colorPalette.reduce((sum,entry)=>sum+entry.weight,0),motionBlur=scene.component(id,"ParticleMotionBlur");
   for(const birth of spawns){
     const random=mulberry32(hash(c.seed,birth.id,birth.salt)),life=range(c.lifetime,random),ageTime=Time.subtract(now,birth.offset),age=Time.toDecimal(ageTime);
-    if(ageTime.frame<0||Time.compare(ageTime,Time.fromDecimal(life))>=0)continue;
-    const u=age/life,point=shapePoint(c.shape,random),d=direction(c,point,random),speed=range(c.speed,random),size=range(c.startSize,random)*sampleKeys(c.sizeOverLife,u,1);
+    if(!bounds&&(ageTime.frame<0||Time.compare(ageTime,Time.fromDecimal(life))>=0))continue;
+    const u=Math.max(0,Math.min(1,age/life)),point=shapePoint(c.shape,random),d=direction(c,point,random),speed=range(c.speed,random),size=range(c.startSize,random)*sampleKeys(c.sizeOverLife,u,1)*(birth.sizeScale??1);
+    const accelerationTime=bounds?(age<0?0:age>life?life*(age-life/2):age*age/2):age*age/2;
+    const velocityTime=bounds?Math.max(0,Math.min(life,age)):age;
+    if(bounds){const x=point.x+d.x*speed*age+c.acceleration.x*accelerationTime,y=point.y+d.y*speed*age+c.acceleration.y*accelerationTime;if(x<bounds.left||x>bounds.right||y<bounds.bottom||y>bounds.top)continue;}
     const spin=(range(c.rotation,random)+range(c.angularVelocity,random)*age)*Math.PI/180,frame=frameAt(c,asset,ageTime,u,random);
-    const color=sampleKeys(c.colorOverLife,u,white),chosen=paletteColor(c,birth,paletteWeight),tint={r:color.r*c.color.r*chosen.r,g:color.g*c.color.g*chosen.g,b:color.b*c.color.b*chosen.b,a:color.a*c.color.a*chosen.a};
+    const color=sampleKeys(c.colorOverLife,u,white),chosen=birth.color||paletteColor(c,birth,paletteWeight),tint={r:color.r*c.color.r*chosen.r,g:color.g*c.color.g*chosen.g,b:color.b*c.color.b*chosen.b,a:color.a*c.color.a*chosen.a};
     // Motion remains in the emitter's simulation coordinates. Local particles
     // use the current hierarchy, including particles born before it moved.
     // World matrices below are a rendering result, not persistent particle entities.
     const distance=c.speedOverLife.length?speed*life*integratedSpeed(c.speedOverLife,u):speed*age,speedNow=speed*sampleKeys(c.speedOverLife,u,1);
     const position={x:0,y:0,z:0},velocity={x:0,y:0,z:0};
-    for(const k of axes){position[k]=point[k]+d[k]*distance+c.acceleration[k]*age*age/2;velocity[k]=d[k]*speedNow+c.acceleration[k]*age;}
+    for(const k of axes){position[k]=point[k]+d[k]*distance+c.acceleration[k]*accelerationTime;velocity[k]=d[k]*speedNow+c.acceleration[k]*velocityTime;}
     const birthTime=Time.add(start,birth.offset);
     const origin=c.space==="world"?scene.matrixAt(id,birthTime):current,worldPosition=M.point(origin,position),matrix=M.identity();
     const height=size,width=size*cell.x/cell.y,co=Math.cos(spin),si=Math.sin(spin);
@@ -140,7 +163,7 @@ export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene
   return states.sort((a,b)=>(c.sortMode==="sizeAscending"?a.projectedArea-b.projectedArea:b.depth-a.depth)||a.birthTime-b.birthTime||a.id.localeCompare(b.id));
 }
 
-export const particleDefaults:ParticleEmitter={asset:"",seed:1,maxParticles:256,start:{frame:Frame.zero,rate:frameRate(30)},duration:0,prewarm:0,rate:10,bursts:[],space:"local",shape:{type:"point",size:{x:0,y:0,z:0}},directionMode:"cone",direction:{x:0,y:1,z:0},spreadDegrees:0,speed:{min:1,max:1},speedOverLife:[],lifetime:{min:1,max:1},startSize:{min:.1,max:.1},rotation:{min:0,max:0},angularVelocity:{min:0,max:0},acceleration:{x:0,y:0,z:0},sizeOverLife:[],color:{r:1,g:1,b:1,a:1},colorPalette:[],colorOverLife:[],billboard:"camera",blend:"alpha",sortMode:"depth",animation:{mode:"single",frame:0,frames:[],framesPerSecond:15,loop:true,randomStart:false}};
+export const particleDefaults:ParticleEmitter={asset:"",seed:1,maxParticles:256,start:{frame:Frame.zero,rate:frameRate(30)},duration:0,prewarm:0,rate:10,bursts:[],cameraContinuation:null,space:"local",shape:{type:"point",size:{x:0,y:0,z:0}},directionMode:"cone",direction:{x:0,y:1,z:0},spreadDegrees:0,speed:{min:1,max:1},speedOverLife:[],lifetime:{min:1,max:1},startSize:{min:.1,max:.1},rotation:{min:0,max:0},angularVelocity:{min:0,max:0},acceleration:{x:0,y:0,z:0},sizeOverLife:[],color:{r:1,g:1,b:1,a:1},colorPalette:[],colorOverLife:[],billboard:"camera",blend:"alpha",sortMode:"depth",animation:{mode:"single",frame:0,frames:[],framesPerSecond:15,loop:true,randomStart:false}};
 
 export function validateKeys(keys:unknown,label:string,axes:string|null=null,unitTime=false,minimum=-Infinity){
   if(!Array.isArray(keys))throw new Error(`${label} must be a key array.`);
@@ -170,9 +193,19 @@ export function validateEmitter(c:ParticleEmitter,assets:Record<string,SpriteAss
   for(const key of ["direction","acceleration"] as const)for(const axis of axes)if(!number(c[key][axis],-Infinity))fail(`invalid ${key}.`);
   for(const axis of axes)if(!number(c.shape.size[axis],0))fail("invalid shape size.");
   if(c.directionMode==="cone"&&length(c.direction)<1e-9)fail("direction must be nonzero.");
-  if(!Array.isArray(c.bursts)||c.bursts.some(b=>!number(b.time,0)||!Number.isInteger(b.count)||!number(b.count,1,20000)))fail("invalid bursts.");
+  if(!Array.isArray(c.bursts)||c.bursts.some(b=>!Number.isInteger(b.count)||!number(b.count,1,20000)))fail("invalid bursts.");
+  for(const burst of c.bursts){
+    if(typeof burst.time==="number"){if(!number(burst.time,0))fail("invalid burst time.");}
+    else {if(!burst.time||!burst.time.rate||burst.time.frame<0)fail("invalid burst frame.");Frame.from(burst.time.frame);frameRate(burst.time.rate.numerator,burst.time.rate.denominator);}
+    if(burst.sizeScale!==undefined&&!number(burst.sizeScale,0))fail("invalid burst size scale.");
+    if(burst.color&&[burst.color.r,burst.color.g,burst.color.b,burst.color.a].some(v=>!number(v,0,1)))fail("invalid burst color.");
+  }
   validateKeys(c.sizeOverLife,"sizeOverLife",null,true,0);validateKeys(c.colorOverLife,"colorOverLife","rgba",true,0);
   validateKeys(c.speedOverLife,"speedOverLife",null,true,0);
+  if(c.cameraContinuation!==null){
+    if(!c.cameraContinuation||!number(c.cameraContinuation.padding,0))fail("invalid camera continuation padding.");
+    if(c.space!=="local"||c.directionMode!=="cone"||c.spreadDegrees!==0||c.direction.z!==0||c.shape.size.z!==0||c.speed.min<=0||c.acceleration.z!==0||c.acceleration.x*c.direction.x+c.acceleration.y*c.direction.y<0||c.speedOverLife.length)fail("camera continuation requires a planar local stream with positive speed, zero spread, non-reversing acceleration and no speed curve.");
+  }
   if(!Array.isArray(c.colorPalette)||c.colorPalette.length>256||c.colorPalette.some(e=>!e||!number(e.weight,0)||!e.color||[e.color.r,e.color.g,e.color.b,e.color.a].some(v=>!number(v,0,1))))fail("invalid weighted color palette.");
   const paletteWeight=c.colorPalette.reduce((sum,e)=>sum+e.weight,0);
   if(c.colorPalette.length&&(!Number.isFinite(paletteWeight)||paletteWeight<=0))fail("color palette needs a positive finite total weight.");

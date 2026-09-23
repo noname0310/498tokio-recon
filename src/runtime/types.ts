@@ -62,7 +62,8 @@ export interface ProceduralNoise {seed:number;textureSize:Vec2;worldSize:Vec2;or
 export interface DropShadow {offsetWorld:Vec2;sigmaWorld:number;color:Color;opacity:number}
 export interface Glow {threshold:number;softness:number;sigmaWorld:number;intensity:number;color:Color;blend:"alpha"|"additive"}
 export interface ParticleEmitter {
-  asset:string;seed:number;maxParticles:number;start:FrameStamp;duration:number;prewarm:number;rate:number;bursts:{time:number;count:number}[];
+  asset:string;seed:number;maxParticles:number;start:FrameStamp;duration:number;prewarm:number;rate:number;bursts:{time:number|FrameStamp;count:number;sizeScale?:number;color?:Color}[];
+  cameraContinuation:{padding:number}|null;
   space:"local"|"world";shape:{type:"point"|"box"|"ellipse"|"sphere";size:Vec3};directionMode:"cone"|"radial";direction:Vec3;spreadDegrees:number;
   speed:Range;speedOverLife:Key<number>[];lifetime:Range;startSize:Range;rotation:Range;angularVelocity:Range;acceleration:Vec3;
   sizeOverLife:Key<number>[];color:Color;colorPalette:{color:Color;weight:number}[];colorOverLife:Key<Color>[];billboard:"camera"|"local";blend:"alpha"|"additive";sortMode:"depth"|"sizeAscending";
@@ -86,7 +87,7 @@ export interface View {width:number;height:number;aspect:number;worldWidth:numbe
 export interface SpriteState {frame:number;visible:boolean;size:Vec2;rect:Rect}
 export interface ParticleState {id:string;birthTime:number;age:number;lifetime:number;frame:number;color:Color;matrix:Matrix;rect:Rect;blurUV:Vec2;localPosition:Vec3;position:Vec3;depth:number;projectedArea:number}
 export type MaskParameters=({type:"Glow"}&Pick<Glow,"sigmaWorld"|"threshold"|"softness">)|{type:"DropShadow";sigmaWorld:number};
-export type TextureJob={kind:"noise";component:ProceduralNoise}|{kind:"tile";source:PixelImage;asset:SpriteAsset;sigmaWorld:Vec2;resolution:number;repeatY?:boolean}|{kind:"mask";source:PixelImage;asset:SpriteAsset;component:MaskParameters;resolution:number};
+export type TextureJob={kind:"noise";component:ProceduralNoise}|{kind:"tile";source:PixelImage;asset:SpriteAsset;sigmaWorld:Vec2;resolution:number;repeatY?:boolean}|{kind:"mask";source:PixelImage;asset:SpriteAsset;component:MaskParameters;resolution:number;gain?:number};
 export interface RenderObject {id:string;update(scene:import("./scene.js").Scene,view:View):Promise<void>;dispose():void}
 export interface Renderer {
   readonly kind:"dom"|"babylon";

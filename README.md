@@ -1,6 +1,6 @@
 # 498 Tokio reconstruction
 
-Pixel-art animation reconstructed as a shared scene graph, with DOM/SVG and Babylon.js rendering backends. The animation currently covers frames 0–2256 at the source rate of 30 fps; continuous tracks interpolate at the display refresh rate. Both renderers use the same scene JSON, component model and audio clock.
+Pixel-art animation reconstructed as a shared scene graph, with DOM/SVG and Babylon.js rendering backends. The animation currently covers frames 0–2536 at the source rate of 30 fps; continuous tracks interpolate at the display refresh rate. Both renderers use the same scene JSON, component model and audio clock.
 
 ## Run
 

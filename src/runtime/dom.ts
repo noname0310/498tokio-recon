@@ -6,6 +6,8 @@ interface SpriteElement {element:HTMLDivElement;image:HTMLImageElement;filter:st
 
 /* DOM backend. Scene ownership and all numerical parameters come from data. */
 import { DOMParticles } from "./dom-particles.js";
+import {DOMParticleGlow} from "./dom-particle-glow.js";
+import type {LoadingProgress} from "./loading-status.js";
 import {DOMPlane,DOMLine} from "./dom-geometry.js";
 import {DOMSync} from "./dom-sync.js";
 import {DOMTransitions} from "./dom-transitions.js";
@@ -199,7 +201,7 @@ class TiledSprite {
   private readonly slots:TileSlot[]=[];
   private readonly rows:SVGUseElement[]=[];
   private readonly paths=new Map<string,SVGPathElement>();
-  private readonly palette=new Map<string,{x:number;y:number}[]>();
+  private readonly palette=new Map<string,{x:number;y:number;width:number;height:number}[]>();
   private readonly repeatGeometry=new Map<number,Map<string,string>>();
   private artworkKey="";
   readonly renderer:DOMRenderer;readonly id:string;readonly element:HTMLDivElement;readonly surface:HTMLDivElement;readonly svg:SVGSVGElement;readonly artID:string;readonly art:SVGGElement;readonly tiles:SVGGElement;readonly grain:HTMLDivElement;
@@ -241,8 +243,22 @@ class TiledSprite {
     if(pixels!==this.pixels){
       this.pixels=pixels;
       this.artworkKey="";this.palette.clear();this.repeatGeometry.clear();
-      for(let y=0;y<asset.size.y;y++)for(let x=0;x<asset.size.x;x++){
-        const fill=this.rgb(x,y);let cells=this.palette.get(fill);if(!cells)this.palette.set(fill,cells=[]);cells.push({x,y});
+      // Coalesce identical horizontal runs, then extend matching runs through
+      // adjacent rows. Exact rectangles preserve every pixel/alpha value while
+      // avoiding thousands of tiny paths for a mostly solid tile background.
+      let previous=new Map<string,{x:number;y:number;width:number;height:number}>();
+      for(let y=0;y<asset.size.y;y++){
+        const next=new Map<string,{x:number;y:number;width:number;height:number}>();
+        for(let x=0;x<asset.size.x;){
+          const fill=this.rgb(x,y),start=x++;
+          while(x<asset.size.x&&this.rgb(x,y)===fill)x++;
+          const width=x-start,key=`${start}/${width}/${fill}`;
+          let rect=previous.get(key);
+          if(rect)rect.height++;
+          else {rect={x:start,y,width,height:1};let cells=this.palette.get(fill);if(!cells)this.palette.set(fill,cells=[]);cells.push(rect);}
+          next.set(key,rect);
+        }
+        previous=next;
       }
     }
     if(!this.pixels||!visible)return;
@@ -267,7 +283,9 @@ class TiledSprite {
     const tint=gray&&s===1?(color.r===1?"":`brightness(${color.r})`):`url(#${this.artID}-tint)`;
     sync.style(this.surface,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,opacity:color.a,filter:[hasNoise?"brightness(2)":"",tint].filter(Boolean).join(" ")||"none"});sync.attribute(this.svg,"viewBox",`${left} ${top} ${width} ${height}`);
     const cell=units/asset.pixelsPerUnit,tileWidth=asset.size.x*cell,tileHeight=asset.size.y*cell,y0=-c.origin.y*units,y1=y0+tileHeight,bleed=cell/2;
-    const x0=c.origin.x*units,first=Math.floor((left-x0)/tileWidth),last=Math.ceil((right-x0)/tileWidth),count=last-first;
+    // One spare tile covers every scroll phase. Geometry must not alternate
+    // between two path lengths whenever the viewport crosses a tile boundary.
+    const x0=c.origin.x*units,first=Math.floor((left-x0)/tileWidth),count=Math.ceil(width/tileWidth)+1;
     const repeatY=c.wrap.y==="repeat"||c.wrap.y==="repeatBottom";
     const firstRow=repeatY?Math.max(c.wrap.y==="repeatBottom"?0:-Infinity,Math.floor((top-y0)/tileHeight)):0;
     const rowCount=repeatY?Math.max(0,Math.ceil((bottom-y0)/tileHeight)-firstRow):1;
@@ -282,14 +300,13 @@ class TiledSprite {
       this.artworkKey=artworkKey;
       // Batch equal-color cells across the visible repeat range. The paths
       // remain DOM objects. Scrolling changes their group transform; geometry
-      // only changes when the repeat count/source changes. Keep the last two
-      // counts, which normally alternate as the view crosses a tile boundary.
+      // only changes on viewport size/source changes. Cache recent sizes.
       let commands=this.repeatGeometry.get(count);
       if(!commands){
         commands=new Map();
         for(const [fill,cells] of this.palette){
           const parts:string[]=[];
-          for(let tile=0;tile<count;tile++)for(const {x,y} of cells)parts.push(`M${tile*asset.size.x+x} ${y}h1v1h-1z`);
+          for(let tile=0;tile<count;tile++)for(const {x,y,width,height} of cells)parts.push(`M${tile*asset.size.x+x} ${y}h${width}v${height}h-${width}z`);
           commands.set(fill,parts.join(""));
         }
         if(this.repeatGeometry.size===2)this.repeatGeometry.delete(this.repeatGeometry.keys().next().value!);
@@ -369,6 +386,7 @@ export class DOMRenderer {
   private readonly records=new Map<string,Map<ComponentType,DOMRecord>>();
   readonly viewport:HTMLElement;readonly registry:Map<ComponentType,DOMObjectConstructor>;objects:RenderObject[];
   resources!:Resources;world!:HTMLDivElement;definitionSVG!:SVGSVGElement;defs!:SVGDefsElement;screen!:HTMLDivElement;screenFill!:HTMLDivElement;
+  particleGlow!:DOMParticleGlow;private preparationScene?:Scene;
   constructor(viewport:HTMLElement){this.viewport=viewport;this.registry=new Map<ComponentType,DOMObjectConstructor>([["SpriteNumberRenderer",DOMNumber],["SpriteRenderer",Sprite],["TiledSpriteRenderer",TiledSprite],["ParticleEmitter",DOMParticles],["PlaneRenderer",DOMPlane],["LineRenderer",DOMLine]]);this.objects=[];}
   createSurface(id:string,type:ComponentType):HTMLDivElement {
     // Hierarchy and component ownership live in Scene/records. Render surfaces
@@ -399,10 +417,12 @@ export class DOMRenderer {
     this.depthDirty=false;
   }
   async createScene(scene:Scene,resources:Resources){
+    this.preparationScene=scene;this.particleGlow=new DOMParticleGlow(resources);
     this.resources=resources;this.world=div("scene-world",this.viewport);this.definitionSVG=svg("svg",{class:"filter-definitions","aria-hidden":"true"},this.viewport);this.defs=svg("defs",{},this.definitionSVG);
     this.screen=div("screen-effect",this.viewport);this.screen.dataset.component="Vignette";this.screenFill=div("screen-effect",this.screen);
     this.reconcile(scene);
   }
+  prepare(progress:LoadingProgress):Promise<void>{return this.particleGlow.prepare(this.preparationScene!,progress);}
   private reconcile(scene:Scene):void {
     let changed=false;
     for(const [id,records] of this.records)if(!scene.nodes.has(id)){for(const record of records.values())record.object.dispose();this.records.delete(id);changed=true;}
@@ -450,6 +470,6 @@ export class DOMRenderer {
     await Promise.all(updates);
     if(revision===this.updateRevision)this.commitDepths();
   }
-  disposeScene(){this.updateRevision++;this.vignetteKey="";this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions.dispose();this.frame.dispose();this.records.clear();this.surfaces.clear();this.depths.clear();this.depthDirty=false;this.world?.remove();this.screen?.remove();this.definitionSVG?.remove();}
+  disposeScene(){this.updateRevision++;this.vignetteKey="";this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions.dispose();this.frame.dispose();this.records.clear();this.surfaces.clear();this.depths.clear();this.depthDirty=false;this.world?.remove();this.screen?.remove();this.definitionSVG?.remove();this.particleGlow?.dispose();this.preparationScene=undefined;}
   dispose(){this.disposeScene();}
 }

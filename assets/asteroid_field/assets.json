@@ -1,0 +1,174 @@
+{
+  "assets": {
+    "background_tile": {
+      "type"          : "Sprite",
+      "file"          : "background_tile.png",
+      "size"          : {"x": 100, "y": 72},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [2258, 2320],
+        "nativeCellPixels": 5,
+        "repeatPixels": {"x": 500},
+        "repeatFrames": 6,
+        "scrollPixelsPerSourceFrame": {"x": 83.33333333333333, "y": 0},
+        "originPixelsAtFrame2264": [0, 3],
+        "method": "Nine native point cells pooled after the fade-in; horizontal period verified across 147 repeated point pairs.",
+        "verticalRepeat": "Not observed in the source. Repeat the recovered visible-height strip to fill taller viewports without altering the reference crop."
+      }
+    },
+    "meteor_atlas"   : {
+      "type"          : "Sprite",
+      "file"          : "meteor_atlas.png",
+      "size"          : {"x": 216, "y": 18},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 16, "y": 16},
+        "columns"   : 12,
+        "rows"      : 1,
+        "frameCount": 12,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames": [2340, 2342, 2344, 2346, 2348, 2350, 2322, 2324, 2326, 2398, 2400, 2402],
+        "samplingFraction": 0.6,
+        "holdFrames": 2,
+        "framesPerSecond": 15,
+        "loopFrames": 24,
+        "palette": [
+          [130, 115,  92],
+          [184, 170, 129],
+          [209, 200, 167]
+        ],
+        "method": "Independent unrotated grids, pooled three-tone palette, a 14x14 body union with a one-cell opaque black outline (16x16 total). Frames 2310-2334 establish all twelve phases and their shared pivot.",
+        "outlinePixels": 1,
+        "outlineColor": [0, 0, 0, 255],
+        "bodyUnionSize": [14, 14],
+        "secondarySamples": [2398, 2413],
+        "additionalPhaseSamples": [2322, 2324, 2326]
+      }
+    },
+    "circle_atlas"   : {
+      "type"          : "Sprite",
+      "file"          : "circle_atlas.png",
+      "size"          : {"x": 26, "y": 13},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 11, "y": 11},
+        "columns"   : 2,
+        "rows"      : 1,
+        "frameCount": 2,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames": [2390, 2398],
+        "samplingFraction": 0.6,
+        "nativeCellPixels": 9.77957437351414,
+        "color": "White mask for live particle tint. Source cyan and yellow share the same silhouette.",
+        "states": ["filled", "eyes"],
+        "eyeCells": [
+          [3, 5],
+          [7, 5]
+        ],
+        "variantSelection": "Choose once per emitted group; do not alternate the two variants as a blink animation.",
+        "glow": "Excluded from alpha; apply Glow at runtime. Bright opaque cell interiors are separated from the halo-filled holes."
+      }
+    },
+    "missile"        : {
+      "type"          : "Sprite",
+      "file"          : "missile.png",
+      "size"          : {"x": 14, "y": 11},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [2425, 2454],
+        "manualArtwork": true,
+        "nativeCellPixels": 3.4980642066485057,
+        "originPixelsAtFrame2427": [25.964628739298988, 88.81193055836808],
+        "samplingFraction": 0.6,
+        "facing": "+X",
+        "previousSize": [12, 8],
+        "preservedColorCellOffset": [1, 1],
+        "passes": [
+          {
+            "referenceFrame"        : 2427,
+            "sourceFrames"          : [
+              2425, 2426, 2427, 2428, 2429, 2430, 2431, 2432, 2433, 2434, 2435, 2436, 2437, 2438
+            ],
+            "originPixels"          : [25.964628739298988, 88.81193055836808],
+            "centerPixels"          : [50.451078185838526, 108.05128369493485],
+            "velocityPixelsPerFrame": 16.275232362395705
+          },
+          {
+            "referenceFrame"        : 2435,
+            "sourceFrames"          : [
+              2436, 2437, 2438, 2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452,
+              2453, 2454
+            ],
+            "originPixels"          : [-6.530300377160235, 277.9609152454222],
+            "centerPixels"          : [17.956149069379304, 297.20026838198896],
+            "velocityPixelsPerFrame": 16.289607141323074
+          }
+        ],
+        "method": "Shared square pixel pitch and one linear trajectory per pass; robust central-60-percent cell means over 33 original frames. User-edited RGBA bytes are unchanged."
+      }
+    },
+    "bullet_atlas"   : {
+      "type"          : "Sprite",
+      "file"          : "bullet_atlas.png",
+      "size"          : {"x": 40, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5245636455357452, "y": 0.4991527575111395},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 8, "y": 8},
+        "columns"   : 4,
+        "rows"      : 1,
+        "frameCount": 4,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames": [2437, 2438, 2441, 2442, 2443, 2444, 2445, 2447, 2449, 2451],
+        "nativeCellPixels": 3.5723609606030498,
+        "gridPhaseRelativeToCenterPixels": [-0.7020016668958998, -0.02421324793095513],
+        "holdFrames": 2,
+        "framesPerSecond": 15,
+        "states": ["vertical", "diagonal_up", "horizontal", "diagonal_down"],
+        "samplingFraction": 0.6,
+        "method": "Joint green-channel grid fit across ten tracked, unobscured poses. Cell means exclude the muzzle, impact flash, and crossing shots.",
+        "glow": "Live runtime Glow; transparent exterior."
+      }
+    },
+    "explosion_atlas": {
+      "type"          : "Sprite",
+      "file"          : "explosion_atlas.png",
+      "size"          : {"x": 84, "y": 20},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.4850636631065795, "y": 0.5112374770896122},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 19, "y": 18},
+        "columns"   : 4,
+        "rows"      : 1,
+        "frameCount": 4,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames": [2441, 2448],
+        "nativeCellPixels": 3.497772348949473,
+        "gridOriginPixelsAtFrame2441": [218.76379690240762, 74.22755931890272],
+        "holdFrames": 2,
+        "framesPerSecond": 15,
+        "loop": false,
+        "samplingFraction": 0.6,
+        "method": "Joint grid from the unobstructed first explosion, one union bound, and held-frame occlusion rejection. Pale core colors are retained; alpha excludes the exterior halo."
+      }
+    }
+  }
+}

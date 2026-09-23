@@ -206,7 +206,7 @@ export function generateTexture(input:TextureJob):PixelImage {
       }
     }
     const sigma=c.sigmaWorld*resolution;
-    const result=texture(bytes(blur(mask,width,height,1,[sigma,sigma],["nearest","nearest"]),255),width,height,1);
+    const result=texture(bytes(blur(mask,width,height,1,[sigma,sigma],["nearest","nearest"]),255*(input.gain??1)),width,height,1);
     result.bounds={left,right,bottom,top};return result;
   }
   throw new Error(`Unknown texture job: ${kind}`);
