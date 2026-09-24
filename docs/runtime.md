@@ -78,7 +78,7 @@ PlayerControls belongs to the scene and references AnimationPlayer. Its fixed sc
 
 createPlayer creates the complete engine and transport. Its optional onError callback is registered before image preparation begins. createRenderer creates a standalone backend. Scene compiles and validates the shared data model; Resources owns cached textures and jobs. Disposal releases renderer surfaces, resources, clocks and controls.
 
-The built index.html accepts renderer=dom or renderer=babylon, a scene URL, an exact frame address, and a controls visibility option. The website loads JSON, PNG and M4A files by URL; it has no bundled image map. Images resolve relative to the loaded JSON, so an external scene can provide its own assets.
+The built index.html accepts renderer=dom or renderer=babylon, a scene URL, an exact frame address, and a controls visibility option. Babylon.js is the default for both the page and the createPlayer/createRenderer APIs. The website loads JSON, PNG and M4A files by URL; it has no bundled image map. Images resolve relative to the loaded JSON, so an external scene can provide its own assets.
 
 The standalone entry imports the final scene and Babylon backend, embeds PNGs and M4A using `asset/inline`, and supplies `resolveAsset(url)` to map original scene paths to embedded data. The worker uses the loader's inline mode. Its single HTML needs no server or companion files. Exported scene JSON retains its original paths; scene evaluation, resource preparation and rendering stay shared. See [build pipeline](build.md).
 

@@ -2,6 +2,10 @@
 
 Pixel-art animation reconstructed as a shared scene graph, with DOM/SVG and Babylon.js rendering backends. Continuous tracks interpolate at the display refresh rate. Both renderers use the same scene JSON, component model and audio clock.
 
+[Play on GitHub Pages](https://noname0310.github.io/498tokio-recon/)
+
+![Frame 2396 rendered with Babylon.js](docs/frame-2396.png)
+
 ## Run
 
 Use Node.js 24 and run:
@@ -11,7 +15,7 @@ npm ci
 npm run preview
 ```
 
-Open http://127.0.0.1:4980/ for DOM or http://127.0.0.1:4980/?renderer=babylon for Babylon. `npm run preview` builds first and serves only `dist/`. Press **A** to toggle the original aspect ratio.
+Open http://127.0.0.1:4980/ for Babylon.js (the default) or http://127.0.0.1:4980/?renderer=dom for DOM/SVG. `npm run preview` builds first and serves only `dist/`. Press **A** to toggle the original aspect ratio.
 
 `?frame=2236` seeks by exact source frame. `?scene=assets/intro_grass/grass.scene.json` selects another scene. URLs also work under a GitHub Pages repository prefix.
 

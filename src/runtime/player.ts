@@ -7,12 +7,12 @@ export interface PlayerOptions {
   resolveAsset?:(url:string)=>string;onError?:(error:unknown)=>void;
 }
 
-export async function createPlayer({viewport,sceneURL,renderer="dom",...options}:PlayerOptions){
+export async function createPlayer({viewport,sceneURL,renderer="babylon",...options}:PlayerOptions){
   const backend=typeof renderer==="string"?await createRenderer(viewport,renderer):renderer;
   return initializePlayer({viewport,scene:sceneURL,renderer:backend,...options});
 }
 
-export async function createRenderer(viewport:HTMLElement,renderer:RendererName="dom"):Promise<Renderer>{
+export async function createRenderer(viewport:HTMLElement,renderer:RendererName="babylon"):Promise<Renderer>{
   if(renderer==="dom"){
     const {DOMRenderer}=await import(/* webpackChunkName: "dom-backend" */ "./dom.js");
     return new DOMRenderer(viewport);
@@ -27,7 +27,7 @@ export async function createRenderer(viewport:HTMLElement,renderer:RendererName=
 export function boot({resolveAsset}:{resolveAsset?:(url:string)=>string}={}):Promise<void>{
   const query=new URLSearchParams(location.search);
   const scene=query.get("scene")||document.documentElement.dataset.scene;
-  const renderer=query.get("renderer")||document.documentElement.dataset.renderer||"dom";
+  const renderer=query.get("renderer")||document.documentElement.dataset.renderer||"babylon";
   return startPlayer({scene,rendererLabel:renderer==="dom"?"DOM":"Babylon.js",resolveAsset,createRenderer:viewport=>{
     if(renderer!=="dom"&&renderer!=="babylon")throw new Error(`Unknown renderer: ${renderer}`);
     return createRenderer(viewport,renderer);

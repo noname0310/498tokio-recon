@@ -42,10 +42,10 @@ function makeServer({mounts=[],basePath="/"}={}){
 module.exports={makeServer,root};
 if(require.main===module){
   if(!fs.existsSync(path.join(root,"dist/index.html")))throw new Error("Missing dist/index.html. Run npm run build first.");
-  const server=makeServer(),url=`http://127.0.0.1:${port}/?renderer=dom`;
+  const server=makeServer(),url=`http://127.0.0.1:${port}/`;
   server.on("error",error=>{console.error(error.message);process.exitCode=1;});
   server.listen(port,"127.0.0.1",()=>{
-    console.log(`Preview: ${url}\nUse renderer=babylon for the other backend. Ctrl+C stops the server.`);
+    console.log(`Preview: ${url}\nBabylon.js is the default; use ?renderer=dom for DOM/SVG. Ctrl+C stops the server.`);
     if(process.argv.includes("--open")){
       if(process.platform==="win32")spawn("powershell.exe",["-NoProfile","-WindowStyle","Hidden","-Command",`Start-Process '${url}'`],{windowsHide:true,stdio:"ignore"}).unref();
       else spawn(process.platform==="darwin"?"open":"xdg-open",[url],{stdio:"ignore"}).unref();
