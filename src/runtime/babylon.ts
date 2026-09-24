@@ -8,10 +8,12 @@ import {BabylonSceneContext,type BabylonObjectConstructor,type BabylonRenderObje
 
 import { Math3D as M } from "./math.js";
 import {BabylonPlane,BabylonLine} from "./babylon-geometry.js";
+import {BabylonCylinder} from "./babylon-cylinder.js";
 import { installShaders } from "./babylon-shaders.js";
 import { BabylonParticles,orderParticleDraws } from "./babylon-particles.js";
 import {BabylonTransitions} from "./babylon-transitions.js";
 import {BabylonViewportFrame} from "./babylon-viewport-frame.js";
+import {BabylonCameraBlur} from "./babylon-camera-blur.js";
 import {transitionGroups} from "./transitions.js";
 import {clippedBounds} from "./geometry.js";
 import {motionBounds} from "./sprite-motion-blur.js";
@@ -42,6 +44,12 @@ class Sprite {
     const revision=this.updateRevision=(this.updateRevision||0)+1;
     if(!scene.active.get(this.id)||!state.visible||!r.resources.isImageReady(sprite.asset)){for(const {mesh}of this.meshes.values())mesh.setEnabled(false);return;}
     const source=await r.resources.image(scene,sprite.asset);if(this.disposed||revision!==this.updateRevision)return;
+    const sortAnchor=scene.spriteSortAnchor(this.id);
+    for(const [type,{mesh}] of this.meshes){
+      const metadata=(mesh.metadata??={}) as {sortWorldPosition?:Vec3;sortOrder?:number};
+      metadata.sortWorldPosition=sortAnchor;
+      metadata.sortOrder=sprite.sortingOrder*4+(sortAnchor?(type==="DropShadow"?-2:type==="Glow"?-1:0):0);
+    }
     const body=this.meshes.get("SpriteRenderer")!,width=state.size.x/asset.pixelsPerUnit,height=state.size.y/asset.pixelsPerUnit;
     const sourceKey=JSON.stringify([scene.source(sprite.asset),asset.filter]);
     if(this.keys.get("source")!==sourceKey){this.keys.set("source",sourceKey);this.textures.get("source")?.dispose();const texture=r.texture(`${this.id}/source`,source,{linear:asset.filter==="linear"});this.textures.set("source",texture);body.material.setTexture("spriteTex",texture);}
@@ -53,7 +61,7 @@ class Sprite {
     const art={left:-asset.pivot.x*width,right:(1-asset.pivot.x)*width,bottom:-asset.pivot.y*height,top:(1-asset.pivot.y)*height},b=motion?.enabled?motionBounds(art,motion,asset.pixelsPerUnit):art;
     r.rect(body.mesh,b.left,b.bottom,b.right,b.top);body.material.setVector4("motionArt",new B.Vector4(art.left,art.bottom,width,height));body.material.setFloat("motionEnabled",moving?1:0);body.material.setFloat("motionAmount",motion?.radialAmount??0);body.material.setInt("motionCount",motion?.samples??25);r.vec2(body.material,"motionCenter",motion?.center??{x:0,y:0});r.vec2(body.material,"motionOffset",motion?.translationWorld??{x:0,y:0});
     body.mesh.setEnabled(state.visible);r.tint(body.material,sprite.color);body.material.setFloat("hue",sprite.hueDegrees*Math.PI/180);
-    body.material.setFloat("saturation",sprite.saturation);body.material.setFloat("brightness",sprite.brightness);body.material.setFloat("whiteMix",sprite.whiteMix);
+    body.material.setFloat("saturation",sprite.saturation);body.material.setFloat("brightness",sprite.brightness);body.material.setFloat("contrast",sprite.contrast);body.material.setFloat("whiteMix",sprite.whiteMix);
     const gradient=scene.component(this.id,"OpacityGradient");body.material.setFloat("opacityGradientEnabled",gradient?.enabled?1:0);r.vec2(body.material,"opacityGradientStart",gradient?.start??{x:0,y:0});r.vec2(body.material,"opacityGradientEnd",gradient?.end??{x:0,y:-1});
     const rect=state.rect;body.material.setVector4("uvRect",new B.Vector4(rect.x/source.width,rect.y/source.height,rect.width/source.width,rect.height/source.height));
     body.material.setVector4("uvBounds",asset.atlas?new B.Vector4((rect.x+.5)/source.width,(rect.y+.5)/source.height,(rect.x+rect.width-.5)/source.width,(rect.y+rect.height-.5)/source.height):new B.Vector4(0,0,1,1));
@@ -146,7 +154,11 @@ class TiledSprite {
     const revision=this.updateRevision=(this.updateRevision||0)+1;
     const source=await r.resources.image(scene,c.asset);if(this.disposed||revision!==this.updateRevision)return;
     if(this.alphaSource!==source){this.alphaSource=source;this.hasAlpha=source.data.some((value,index)=>index%4===3&&value<255);}
-    this.transparent=this.hasAlpha||c.color.a<1||!!c.clipBounds;this.material.disableDepthWrite=this.transparent;
+    // A hard crop is already part of the quad geometry; it does not make an
+    // opaque tile transparent. Keep depth writes so intersecting sprites and
+    // laser planes are occluded per fragment, independently of their centres.
+    const softCrop=!!c.clipBounds&&pad>0;
+    this.transparent=this.hasAlpha||c.color.a<1||softCrop;this.material.disableDepthWrite=this.transparent;
     const repeatY=c.wrap.y==="repeat"||c.wrap.y==="repeatBottom";
     const key=JSON.stringify([scene.source(c.asset),asset,sigma,resolution,repeatY]);
     const jobs:(Promise<void>|undefined)[]=[];
@@ -179,6 +191,7 @@ export class BabylonRenderer {
   private preparation?:BabylonShaderPreparation;
   private transitions?:BabylonTransitions;
   private frame?:BabylonViewportFrame;
+  private cameraBlur?:BabylonCameraBlur;
   private progressiveDraw:number|null=null;
   readonly viewport:HTMLElement;readonly B= B;readonly canvas:HTMLCanvasElement;readonly engine:Babylon.Engine;
   readonly registry:Map<ComponentType,BabylonObjectConstructor>;
@@ -196,12 +209,12 @@ export class BabylonRenderer {
     this.canvas=document.createElement("canvas");this.canvas.id="scene";this.canvas.setAttribute("aria-label","Scene viewport");viewport.append(this.canvas);
     try{this.engine=new B.Engine(this.canvas,false,{preserveDrawingBuffer:true,stencil:true,alpha:false},false);}
     catch(error){this.canvas.remove();throw error;}
-    this.registry=new Map<ComponentType,BabylonObjectConstructor>([["SpriteNumberRenderer",BabylonNumber],["SpriteRenderer",Sprite],["TiledSpriteRenderer",TiledSprite],["ParticleEmitter",BabylonParticles],["PlaneRenderer",BabylonPlane],["LineRenderer",BabylonLine]]);this.objects=[];this.renderCount=0;this.updateRevision=0;
+    this.registry=new Map<ComponentType,BabylonObjectConstructor>([["SpriteNumberRenderer",BabylonNumber],["SpriteRenderer",Sprite],["TiledSpriteRenderer",TiledSprite],["CylindricalSpriteRenderer",BabylonCylinder],["ParticleEmitter",BabylonParticles],["PlaneRenderer",BabylonPlane],["LineRenderer",BabylonLine]]);this.objects=[];this.renderCount=0;this.updateRevision=0;
     this.engine.onContextRestoredObservable.add(()=>this.scene?.executeWhenReady(()=>this.render()));
   }
   async createScene(data:Scene,resources:Resources){
     this.context=new BabylonSceneContext(this.engine,data,resources,()=>this.render());
-    this.transitions=new BabylonTransitions(this.context);this.frame=new BabylonViewportFrame(this.context);
+    this.transitions=new BabylonTransitions(this.context);this.frame=new BabylonViewportFrame(this.context);this.cameraBlur=new BabylonCameraBlur(this.context);
     this.reconcile(data);
   }
   async prepare(progress:LoadingProgress):Promise<void>{
@@ -257,6 +270,7 @@ export class BabylonRenderer {
       const offset=data.projectionOffset;mesh.position.x=-offset.x*scale;mesh.position.y=-offset.y*scale;
       this.context!.rect(mesh,-view.worldWidth*scale/2,-view.worldHeight*scale/2,view.worldWidth*scale/2,view.worldHeight*scale/2);this.context!.vec2(material,"halfSize",{x:view.worldWidth*scale/2,y:view.worldHeight*scale/2});this.context!.vec2(material,"center",v.centerViewport);material.setVector3("shape",new B.Vector3(v.quadratic,v.quartic,v.verticalWeight));
     }else if(this.vignettePlane){this.vignettePlane.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;}
+    this.cameraBlur!.update(data,view,camera);
     this.frame!.update(data,view,camera);
     let completed=false;
     const partial=()=>{
@@ -286,6 +300,6 @@ export class BabylonRenderer {
   }
   private cancelProgressiveDraw():void {if(this.progressiveDraw!==null)cancelAnimationFrame(this.progressiveDraw);this.progressiveDraw=null;}
   render(){this.scene.render();this.renderCount++;}
-  disposeScene(){this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.transitions=undefined;this.frame=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
+  disposeScene(){this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
   dispose(){this.disposeScene();this.engine.dispose();this.canvas.remove();}
 }

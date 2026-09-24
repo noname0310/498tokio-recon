@@ -11,13 +11,14 @@ const NS="http://www.w3.org/2000/svg";
 let serial=0;
 const svg=<K extends keyof SVGElementTagNameMap>(tag:K,attrs:Record<string,string|number>,parent:Element):SVGElementTagNameMap[K]=>{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));parent.append(e);return e;};
 const div=(name:string,parent:Element)=>{const e=document.createElement("div");e.className=name;parent.append(e);return e;};
-function projection(scene:Scene,view:View,relative:Matrix,transform:string,cell:Vec2,pad:Vec2){
+function projection(scene:Scene,view:View,relative:Matrix,transform:string,cell:Vec2,pad:Vec2,renderer:DOMRenderer,world:Matrix,id:string){
   const camera=scene.requireComponent(scene.cameraNode.id,"Camera");
   let points=[[-.5-pad.x,-.5-pad.y],[.5+pad.x,-.5-pad.y],[.5+pad.x,.5+pad.y],[-.5-pad.x,.5+pad.y]].map(([x,y])=>({x,y,z:M.point(relative,{x,y,z:0}).z}));
-  const inside=points.every(p=>p.z>=camera.near&&p.z<=camera.far);
+  let inside=points.every(p=>p.z>=camera.near&&p.z<=camera.far);
   if(!inside)for(const [limit,sign] of [[camera.near,1],[camera.far,-1]]){
     const next=[];for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length],ai=(a.z-limit)*sign>=0,bi=(b.z-limit)*sign>=0;if(ai)next.push(a);if(ai!==bi){const t=(limit-a.z)/(b.z-a.z);next.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:limit});}}points=next;
   }
+  if(renderer.depth.enabled){const clipped=renderer.depth.clipPoints(points,world,id);points=clipped.points;inside&&=!clipped.changed;}
   const projected=points.map(p=>scene.projectCameraPoint(M.point(relative,{x:p.x,y:p.y,z:0})));
   const onscreen=projected.length>=3&&!projected.every(p=>p.x<-view.worldWidth/2)&&!projected.every(p=>p.x>view.worldWidth/2)&&!projected.every(p=>p.y<-view.worldHeight/2)&&!projected.every(p=>p.y>view.worldHeight/2);
   return {transform,visible:onscreen,clip:inside?"none":`polygon(${points.map(p=>`${(p.x+.5)*cell.x}px ${(.5-p.y)*cell.y}px`).join(",")})`};
@@ -102,8 +103,8 @@ export class DOMParticles {
       // differ. Keep the top-left pivot in the matrix, not fractional layout.
       const relative=M.multiply(scene.viewMatrix,s.matrix),css=scene.cssProjection(s.matrix,view,{x:display.x,y:display.y,z:1});
       for(let row=0;row<4;row++)css[12+row]-=(css[row]*display.x+css[4+row]*display.y)/2;
-      const transform=`matrix3d(${css.join(",")})`,bodyProjection=projection(scene,view,relative,transform,display,pad),glowSigma=glow?.enabled?glow.sigmaWorld*asset.pixelsPerUnit:0;
-      const glowProjection=glowSigma>0?projection(scene,view,relative,transform,display,{x:pad.x+4*glowSigma/cell.x,y:pad.y+4*glowSigma/cell.y}):bodyProjection;
+      const transform=`matrix3d(${css.join(",")})`,bodyProjection=projection(scene,view,relative,transform,display,pad,this.renderer,s.matrix,this.id),glowSigma=glow?.enabled?glow.sigmaWorld*asset.pixelsPerUnit:0;
+      const glowProjection=glowSigma>0?projection(scene,view,relative,transform,display,{x:pad.x+4*glowSigma/cell.x,y:pad.y+4*glowSigma/cell.y},this.renderer,s.matrix,this.id):bodyProjection;
       // Offscreen filter surfaces can still consume raster work before the
       // viewport clips them. Cull the full expanded effect, not just the sprite.
       if(!bodyProjection.visible&&!glowProjection.visible){p.entries.forEach(entry=>sync.hidden(entry.element,true));continue;}

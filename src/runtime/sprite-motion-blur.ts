@@ -7,6 +7,7 @@ export function motionSamples(count:number):Float32Array {
   for(let i=0;i<count;i++)samples[i*2+1]/=total;cache.set(count,samples);return samples;
 }
 export function motionBounds(art:Bounds,c:SpriteMotionBlur,pixelsPerUnit:number):Bounds {
+  if(c.clipToSprite)return {...art};
   const filtered=c.dilationPixels>0||c.softnessPixels>0;
   const pad=(c.dilationPixels+4*c.softnessPixels+(filtered?.0625:0))/pixelsPerUnit;
   const b={left:art.left-pad,right:art.right+pad,bottom:art.bottom-pad,top:art.top+pad},out={...b};

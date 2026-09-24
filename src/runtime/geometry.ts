@@ -95,11 +95,14 @@ export function lineGeometry(scene:Scene,id:string,view:View,c:LineRenderer):Lin
   const dx=end.x-start.x,dy=end.y-start.y,length=Math.hypot(dx,dy);
   if(length<1e-12||c.width<=0)return null;
   const glow=scene.component(id,"Glow"),pad=c.width/2+(glow?.enabled?4*glow.sigmaWorld:0)+1/view.pixelsPerUnit;
-  if(c.coverage==="camera"){
+  if(c.coverage!=="segment"){
     const coverage=scene.coverage(id,view,pad);if(!coverage)return null;
     const ux=dx/length,uy=dy/length,distances:number[]=[];
     for(const x of [coverage.left,coverage.right])for(const y of [coverage.bottom,coverage.top])distances.push((x-start.x)*ux+(y-start.y)*uy);
-    const lo=Math.min(...distances)-pad,hi=Math.max(...distances)+pad;
+    // A ray retains its authored origin and direction while its positive end
+    // covers the current finite frustum. No arbitrary world-length ceiling.
+    const lo=c.coverage==="ray"?0:Math.min(...distances)-pad,hi=Math.max(...distances)+pad;
+    if(hi<=lo)return null;
     end={x:start.x+hi*ux,y:start.y+hi*uy};start={x:start.x+lo*ux,y:start.y+lo*uy};
   }
   return {start,end,bounds:{left:Math.min(start.x,end.x)-pad,right:Math.max(start.x,end.x)+pad,bottom:Math.min(start.y,end.y)-pad,top:Math.max(start.y,end.y)+pad}};

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "assets"       : {
+    "capital_ship": {
+      "type"          : "Sprite",
+      "file"          : "capital_ship.png",
+      "size"          : {"x": 121, "y": 69},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "colorSourceFrame": 2675,
+        "alphaSourceFrames": [2862, 2919],
+        "nativeCellPixels": 3.254598983665163,
+        "originPixelsAtFrame2675": [123.09853739902115, 76.43961277734229],
+        "opaqueCells": 4735,
+        "unobservedOpaqueCells": 0,
+        "maskMethod": "Native binary cell mask from a registered white flash. Upper contour: 2862; uncropped lower contour: 2919. Smoke above row 40 is rejected.",
+        "closeupColorSourceFrames": [2611, 2628],
+        "closeupColorMethod": "Central 50% means across 18 registered close-up frames. Joint native colors and two-endpoint saturation/black-level reveal separate compression bleed from animated grading; the white-flash alpha mask is preserved.",
+        "closeupCellMeanAbsoluteError": 1.0817689346728365
+      }
+    },
+    "floor_tile"  : {
+      "type"          : "Sprite",
+      "file"          : "floor_tile.png",
+      "size"          : {"x": 10, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [2570, 2604],
+        "sampleMethod": "Central 60% cell means from two calibrated plane projections, weighted by projected cell resolution.",
+        "minimumRepeatCells": {"x": 10, "y": 10},
+        "observedCellsPerSource": 100,
+        "unobservedCells": 0
+      }
+    },
+    "impact_atlas": {
+      "type"          : "Sprite",
+      "file"          : "impact_atlas.png",
+      "size"          : {"x": 880, "y": 83},
+      "pixelsPerUnit" : 113.58483724693068,
+      "pivot"         : {"x": 0.5056151111130943, "y": 0.10971935466609183},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 53, "y": 81},
+        "columns"   : 16,
+        "rows"      : 1,
+        "frameCount": 16,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrameRanges": [
+          [2583, 2593],
+          [2595, 2610],
+          [2794, 2809]
+        ],
+        "gridReferenceFrame": 2588,
+        "framesPerSecond": 30,
+        "sampleMethod": "Central 60% native-cell means from three registered repeats; higher-resolution observations take priority.",
+        "alphaMethod": "Observed warm foreground and unobscured background; no silhouette closing or hole filling.",
+        "palette": [
+          [174,  36, 20],
+          [246, 146, 45],
+          [255, 241, 41]
+        ],
+        "limitations": "The faint final arc shares the last complete cloud projection; compressed and occluded contours remain approximate."
+      }
+    }
+  }
+}

@@ -34,11 +34,17 @@ export class BabylonLine {
   async update(scene:Scene,view:View):Promise<void>{
     const c=scene.requireComponent(this.id,"LineRenderer"),shape=lineGeometry(scene,this.id,view,c),glow=scene.component(this.id,"Glow"),r=this.renderer;
     const world=scene.world.get(this.id)!,dx=M.point(world,{x:1,y:0,z:0},0),dy=M.point(world,{x:0,y:1,z:0},0),scale=Math.max(1e-6,Math.min(Math.hypot(dx.x,dx.y,dx.z),Math.hypot(dy.x,dy.y,dy.z)));
+    const centerDepth=M.point(scene.viewMatrix,M.point(world,{x:(c.start.x+c.end.x)/2,y:(c.start.y+c.end.y)/2,z:0})).z;
     for(let i=0;i<2;i++){
       const {mesh,material}=this.layers[i],isGlow=i===0;
+      // Frustum extension changes mesh bounds, not the physical sorting point.
+      // A long ray can otherwise acquire a centre behind the camera and jump
+      // in front of nearby transparent sprites when the viewport grows.
+      const metadata=(mesh.metadata??={}) as {sortWorldPosition?:import("./types.js").Vec3};
+      metadata.sortWorldPosition=c.coverage==="segment"?undefined:M.point(world,{x:(c.start.x+c.end.x)/2,y:(c.start.y+c.end.y)/2,z:isGlow?.0001:0});
       material.alphaMode=isGlow&&glow?.blend==="additive"?r.B.Engine.ALPHA_ADD:r.B.Engine.ALPHA_COMBINE;
       mesh.setEnabled(c.enabled&&!!scene.active.get(this.id)&&!!shape&&c.color.a>0&&(!isGlow||!!glow?.enabled));if(!shape)continue;
-      const b=shape.bounds;r.rect(mesh,b.left,b.bottom,b.right,b.top);r.vec2(material,"lineStart",shape.start);r.vec2(material,"lineEnd",shape.end);material.setFloat("halfWidth",c.width/2);material.setFloat("pixelWidth",1/(view.pixelsPerUnit*view.dpr*scale));
+      const b=shape.bounds;r.rect(mesh,b.left,b.bottom,b.right,b.top);r.vec2(material,"lineStart",shape.start);r.vec2(material,"lineEnd",shape.end);material.setFloat("halfWidth",c.width/2);material.setFloat("pixelWidth",Math.max(.000001,scene.frustumScale(Math.max(.001,centerDepth)))/(view.pixelsPerUnit*view.dpr*scale));
       material.setFloat("sigma",isGlow?(glow?.sigmaWorld??0):0);material.setFloat("gain",isGlow&&glow?glow.intensity*Math.max(0,Math.min(1,(.2126*c.color.r+.7152*c.color.g+.0722*c.color.b-glow.threshold)/glow.softness)):1);r.tint(material,isGlow&&glow?{...glow.color,a:glow.color.a*c.color.a}:c.color);
     }
   }

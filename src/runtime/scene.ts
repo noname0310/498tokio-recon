@@ -66,6 +66,13 @@ export class Scene {
   isActive(id:string):boolean{return this.active.get(id)??false;}
   component<K extends ComponentType>(id:string,type:K):ComponentMap[K]|undefined {return (this.overlays.get(id)||this.find(id)).components.find(c=>c.type===type) as ComponentMap[K]|undefined;}
   requireComponent<K extends ComponentType>(id:string,type:K):ComponentMap[K] {const component=this.component(id,type);if(!component)throw new Error(`Missing ${type} on ${id}.`);return component;}
+  /** Nearest enabled sprite sorting group. Projection and depth tests still
+   * use each member's real world matrix; only alpha draw order is grouped. */
+  spriteSortAnchor(id:string):Vec3|undefined {
+    let node:Entity|null|undefined=this.find(id);
+    while(node){const group=this.component(node.id,"SortingGroup");if(group?.enabled)return M.point(this.world.get(node.id)!,group.anchor);node=this.parents.get(node.id);}
+    return undefined;
+  }
   asset(id:string):SpriteAsset {const a=this.data.assets[id];if(a?.type!=="Sprite")throw new Error(`Unknown Sprite asset: ${id}`);return a;}
   audioAsset(id:string):AudioAsset {const a=this.data.assets[id];if(a?.type!=="Audio")throw new Error(`Unknown Audio asset: ${id}`);return a;}
   source(id:string):string{const a=this.data.assets[id];if(!a)throw new Error(`Unknown asset: ${id}`);return this.resolveAsset(new URL(a.file,this.baseURL).href);}

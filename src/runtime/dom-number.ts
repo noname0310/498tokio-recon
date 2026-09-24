@@ -29,7 +29,7 @@ export class DOMNumber {
     const asset=scene.asset(c.asset),layout=numberLayout(c,asset),bounds=c.repeatWorld?scene.coverage(this.id,view):layout.bounds;
     if(!bounds){s.hidden(this.element,true);return;}
     const frames=await r.resources.spriteFrames(scene,c.asset);if(rev!==this.revision)return;
-    const u=asset.pixelsPerUnit,clip=scene.clipPlane(this.id,view,bounds,0,{x:0,y:0},u),b={x:bounds.left*u,y:-bounds.top*u,width:(bounds.right-bounds.left)*u,height:(bounds.top-bounds.bottom)*u};
+    const u=asset.pixelsPerUnit,clip=r.depth.clipPlane(scene,this.id,view,bounds,0,{x:0,y:0},u),b={x:bounds.left*u,y:-bounds.top*u,width:(bounds.right-bounds.left)*u,height:(bounds.top-bounds.bottom)*u};
     s.hidden(this.element,!clip.visible);s.style(this.element,{transform:scene.cssMatrix(this.id,view,{x:0,y:0,z:0},u),clipPath:clip.css});
     r.setDepth(this.element,r.viewDepth(scene,this.id,{x:(bounds.left+bounds.right)/2,y:(bounds.top+bounds.bottom)/2,z:0}));
     s.style(this.root,{position:"absolute",left:`${b.x}px`,top:`${b.y}px`,width:`${b.width}px`,height:`${b.height}px`});s.attribute(this.root,"viewBox",`${b.x} ${b.y} ${b.width} ${b.height}`);s.attrs(this.fill,b);

@@ -37,7 +37,7 @@ async function main(){
     const tour=await page.evaluate(async()=>{
      const p=scenePlayer,e=p.renderer.engine,gl=e._gl,create=gl.createProgram.bind(gl),before=new Set(Object.keys(e._compiledEffects));let programs=0;
      gl.createProgram=(...args)=>{programs++;return create(...args);};
-     for(const frame of [15,173,480,547,548,600,800,851,1100,1145,1158,1220,1355,1670,1730,1900,2100,2180,2181,2189,2196,2214,2224,2236,2245])await p.seekFrame(frame,{numerator:30,denominator:1});
+     for(const frame of [15,173,480,547,548,600,800,851,1100,1145,1158,1220,1355,1670,1730,1900,2100,2180,2181,2189,2196,2214,2224,2236,2245,2611,2633,2646])await p.seekFrame(frame,{numerator:30,denominator:1});
      gl.createProgram=create;return {programs,newEffects:Object.keys(e._compiledEffects).filter(k=>!before.has(k))};
     });
     assert.deepEqual(tour,{programs:0,newEffects:[]},'Playback must reuse the prepared GPU programs');

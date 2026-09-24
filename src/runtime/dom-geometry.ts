@@ -20,8 +20,8 @@ export class DOMPlane {
     if(!c.enabled||!scene.active.get(this.id)||c.color.a===0){sync.hidden(this.element,true);return;}
     const bounds=planeBounds(scene,this.id,view,c);
     if(!bounds){sync.hidden(this.element,true);return;}
-    this.renderer.setDepth(this.element,this.renderer.viewDepth(scene,this.id,{x:(bounds.left+bounds.right)/2,y:(bounds.bottom+bounds.top)/2,z:0}));
-    sync.style(this.element,{transform:scene.cssMatrix(this.id,view)});const clip=scene.clipPlane(this.id,view,bounds);sync.hidden(this.element,!clip.visible);sync.style(this.element,{clipPath:clip.css});
+    this.renderer.setDepth(this.element,this.renderer.planeDepth(scene,this.id,bounds));
+    sync.style(this.element,{transform:scene.cssMatrix(this.id,view)});const clip=this.renderer.depth.clipPlane(scene,this.id,view,bounds);sync.hidden(this.element,!clip.visible);sync.style(this.element,{clipPath:clip.css});
     layout(sync,this.fill,bounds,view.pixelsPerUnit);sync.style(this.fill,{backgroundColor:color(c.color),borderRadius:c.shape==="ellipse"?"50%":"0"});sync.style(this.fill,{opacity:String(c.color.a)});
     const pendingNoise=this.noise?.update(this.fill,bounds,view.pixelsPerUnit,scene.component(this.id,"ProceduralNoise"));
     const transition=scene.component(this.id,"Transition");
@@ -61,13 +61,20 @@ export class DOMLine {
     const sync=this.renderer.sync;
     const c=scene.requireComponent(this.id,"LineRenderer");
     if(!scene.active.get(this.id)||!c.enabled||c.color.a===0){this.layers.forEach(l=>sync.hidden(l.element,true));return;}
-    const shape=lineGeometry(scene,this.id,view,c),glow=scene.component(this.id,"Glow"),u=view.pixelsPerUnit;
+    const shape=lineGeometry(scene,this.id,view,c),glow=scene.component(this.id,"Glow");
+    // Keep SVG/filter backing surfaces near display resolution. A distant
+    // plane can span hundreds of world units; using viewport units directly
+    // would create 30,000px SVGs that exceed browser texture limits.
+    const center={x:(c.start.x+c.end.x)/2,y:(c.start.y+c.end.y)/2,z:0};
+    const centerDepth=this.renderer.viewDepth(scene,this.id,center);
+    const extent=shape?Math.max(shape.bounds.right-shape.bounds.left,shape.bounds.top-shape.bounds.bottom):1;
+    const u=Math.min(view.pixelsPerUnit/Math.max(1,scene.frustumScale(Math.max(.001,centerDepth))),4096/Math.max(1,extent));
     for(let i=0;i<2;i++){
       const {element,svg,line}=this.layers[i],isGlow=i===0,offset=isGlow?.0001:0;
       sync.style(element,{mixBlendMode:isGlow&&glow?.blend==="additive"?"plus-lighter":"normal"});
       if(!shape||(isGlow&&!glow?.enabled)){sync.hidden(element,true);continue;}
-      this.renderer.setDepth(element,this.renderer.viewDepth(scene,this.id,{x:(shape.bounds.left+shape.bounds.right)/2,y:(shape.bounds.bottom+shape.bounds.top)/2,z:offset}));
-      const b=shape.bounds;const clip=scene.clipPlane(this.id,view,b,offset);sync.hidden(element,!clip.visible);sync.style(element,{clipPath:clip.css});sync.style(element,{transform:scene.cssMatrix(this.id,view,{x:0,y:0,z:offset})});
+      this.renderer.setDepth(element,this.renderer.viewDepth(scene,this.id,{...center,z:offset}));
+      const b=shape.bounds;const clip=this.renderer.depth.clipPlane(scene,this.id,view,b,offset,{x:0,y:0},u);sync.hidden(element,!clip.visible);sync.style(element,{clipPath:clip.css});sync.style(element,{transform:scene.cssMatrix(this.id,view,{x:0,y:0,z:offset},u)});
       sync.style(svg,{position:"absolute",left:`${b.left*u}px`,top:`${-b.top*u}px`,width:`${(b.right-b.left)*u}px`,height:`${(b.top-b.bottom)*u}px`});sync.attribute(svg,"viewBox",`${b.left*u} ${-b.top*u} ${(b.right-b.left)*u} ${(b.top-b.bottom)*u}`);
       for(const [key,value] of Object.entries({x1:shape.start.x*u,y1:-shape.start.y*u,x2:shape.end.x*u,y2:-shape.end.y*u,"stroke-width":c.width*u,"stroke-opacity":c.color.a*(isGlow?(glow?.color.a??1):1)}))sync.attribute(line,key,String(value));
       sync.attribute(line,"stroke",color(isGlow&&glow?glow.color:c.color));sync.attribute(line,"stroke-linecap","butt");sync.attribute(line,"filter",isGlow?`url(#${this.filter.id})`:"none");

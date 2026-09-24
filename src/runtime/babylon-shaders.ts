@@ -1,5 +1,24 @@
 /* Backend shaders operate on objects or the active camera, never a fixed frame. */
 export function installShaders(B:typeof import("./babylon-library.js").B) {
+    B.Effect.ShadersStore.sceneCylinderVertexShader=`
+      precision highp float;attribute vec3 position,normal;attribute vec2 uv;
+      uniform mat4 worldViewProjection;varying vec2 vUV;varying vec3 localNormal;
+      void main(){vUV=uv;localNormal=normal;gl_Position=worldViewProjection*vec4(position,1.0);}`;
+    B.Effect.ShadersStore.sceneCylinderFragmentShader=`
+      precision highp float;varying vec2 vUV;varying vec3 localNormal;
+      uniform sampler2D spriteTex;uniform vec2 uvOffset;uniform vec4 tint;
+      uniform vec3 lightDirection;uniform float ambient,diffuse;
+      void main(){vec4 art=texture2D(spriteTex,vUV+uvOffset);float light=ambient+diffuse*max(0.0,dot(normalize(localNormal),lightDirection));gl_FragColor=vec4(art.rgb*tint.rgb*light,art.a*tint.a);}`;
+    B.Effect.ShadersStore.sceneCameraBlurFragmentShader=`
+      precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;uniform vec2 blurStep;
+      void main(){
+        vec4 color=vec4(0.0);float total=0.0;
+        for(int i=-8;i<=8;i++){
+          float offset=float(i)*.5,weight=exp(-.5*offset*offset);
+          color+=texture2D(textureSampler,clamp(vUV+offset*blurStep,vec2(0.0),vec2(1.0)))*weight;total+=weight;
+        }
+        gl_FragColor=color/total;
+      }`;
     B.Effect.ShadersStore.sceneNumberFragmentShader=`
       precision highp float;varying vec2 localPoint;uniform sampler2D glyphTex;
       uniform vec4 tint;uniform vec2 cell,atlasSize,period;uniform float units,columns,padding,textLeft,repeated,sigma,gain;
@@ -134,7 +153,7 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
       uniform sampler2D spriteTex,noiseTex,filteredTex;
       uniform vec2 noiseOrigin,noiseSize;
       uniform vec4 tint,uvRect,uvBounds;
-      uniform float maskOnly,intensity,hue,noiseRange,noiseEnabled,saturation,brightness,whiteMix;
+      uniform float maskOnly,intensity,hue,noiseRange,noiseEnabled,saturation,brightness,contrast,whiteMix;
       uniform float opacityGradientEnabled;uniform vec2 opacityGradientStart,opacityGradientEnd;
       uniform vec3 noiseChannelGain;
       vec3 rotateHue(vec3 c){
@@ -163,7 +182,7 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
         vec3 color=mix(t.rgb,vec3(1.0),max(maskOnly,whiteMix))*tint.rgb;
         vec2 noiseUV=vec2(localPoint.x-noiseOrigin.x,noiseOrigin.y-localPoint.y)/noiseSize;
         float grain=(texture2D(noiseTex,noiseUV).r*2.0-1.0)*noiseRange;
-        color=clamp(rotateHue(color),0.0,1.0);if(saturation!=1.0||brightness!=1.0){float luma=dot(color,vec3(.213,.715,.072));color=clamp(clamp(vec3(luma)+(color-vec3(luma))*saturation,0.0,1.0)*brightness,0.0,1.0);}
+        color=clamp(rotateHue(color),0.0,1.0);if(saturation!=1.0||brightness!=1.0){float luma=dot(color,vec3(.213,.715,.072));color=clamp(clamp(vec3(luma)+(color-vec3(luma))*saturation,0.0,1.0)*brightness,0.0,1.0);}if(contrast!=1.0)color=clamp((color-.5)*contrast+.5,0.0,1.0);
         vec2 ramp=opacityGradientEnd-opacityGradientStart;
         float opacity=mix(1.0,clamp(dot(localPoint-opacityGradientStart,ramp)/max(dot(ramp,ramp),1e-18),0.0,1.0),opacityGradientEnabled);
         gl_FragColor=vec4(clamp(color*exp(grain*noiseEnabled*noiseChannelGain),0.0,1.0),mix(t.a,t.r,maskOnly)*tint.a*intensity*opacity);}`;

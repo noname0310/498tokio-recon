@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "assets"       : {
+    "ring_atlas": {
+      "type"          : "Sprite",
+      "file"          : "ring_atlas.png",
+      "size"          : {"x": 174, "y": 29},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 27, "y": 27},
+        "columns"   : 6,
+        "rows"      : 1,
+        "frameCount": 6,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrameRanges": [
+          [2639, 2644],
+          [2644, 2649],
+          [2648, 2653],
+          [2653, 2658],
+          [2657, 2662],
+          [2662, 2667],
+          [2666, 2671]
+        ],
+        "nativeCellPixels": 4.93,
+        "framesPerSecond": 30,
+        "method": "White cell masks pooled from seven registered emissions after subtracting the moving hull. Rotationally equivalent observations fill occlusions; fading is animated separately.",
+        "limitations": "The initial ring is almost entirely occluded by the muzzle; the recovered initial core and subpixel contours are approximate."
+      }
+    }
+  }
+}

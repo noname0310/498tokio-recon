@@ -29,7 +29,10 @@ export interface ViewportFrame {
   insetsWorld:{left:number;right:number;top:number;bottom:number};radiusWorld:number;color:Color;
   innerShadow:{offsetWorld:Vec2;color:Color;opacity:number};
 }
-export interface SpriteRenderer {asset:string;color:Color;hueDegrees:number;saturation:number;brightness:number;whiteMix:number;frame:number}
+export interface SpriteRenderer {asset:string;color:Color;hueDegrees:number;saturation:number;brightness:number;contrast:number;whiteMix:number;frame:number;sortingOrder:number}
+/** Descendant sprites share this local anchor for transparent depth sorting.
+ * Their sortingOrder controls composition without moving their geometry. */
+export interface SortingGroup {anchor:Vec3}
 /** A continuous numeric value selects individual native atlas glyphs only at
  * display time. Repeat distances are local world units, independent of digits. */
 export interface SpriteNumberRenderer {asset:string;value:number;rounding:"round"|"floor"|"ceil";minDigits:number;suffix:string;glyphs:string;advances:number[];alignment:"left"|"center"|"right";repeatWorld:Vec2|null;color:Color}
@@ -39,8 +42,13 @@ export interface OpacityGradient {start:Vec2;end:Vec2}
 export interface Flicker {mode:"periodic"|"random";frequency:number;dutyCycle:number;probability:number;seed:number;start:FrameStamp;phase:number}
 export interface TransformAnimator {position:Key<Vec3>[];rotation:Key<Vec3>[];scale:Key<Vec3>[]}
 export interface TiledSpriteRenderer {asset:string;color:Color;saturation:number;coverage:"camera";clipBounds:ClipBounds|null;wrap:{x:"repeat";y:"clamp"|"clampBottom"|"transparent"|"repeat"|"repeatBottom"};origin:Vec2}
+/** Open cylinder along local +Z. U circles clockwise in XY, V runs toward -Z.
+ * Lighting is local to the cylinder and never baked into the shared sprite. */
+export interface CylindricalSpriteRenderer {asset:string;color:Color;radius:number;length:Range;tileLength:number;segments:number;uvOffset:Vec2;lighting:{ambient:number;diffuse:number;direction:Vec3}}
+/** On Camera, sigma uses the reference projection plane's world units and
+ * filters the composed scene, including camera-attached surfaces. */
 export interface GaussianBlur {sigmaWorld:Vec2}
-export interface SpriteMotionBlur {translationWorld:Vec2;radialAmount:number;center:Vec2;samples:number;dilationPixels:number;softnessPixels:number;alphaGain:number}
+export interface SpriteMotionBlur {translationWorld:Vec2;radialAmount:number;center:Vec2;samples:number;dilationPixels:number;softnessPixels:number;alphaGain:number;clipToSprite:boolean}
 export interface DirectionalBlur {sigmaWorld:number;angleDegrees:number}
 export interface PlaneRenderer {color:Color;coverage:"camera"|"fixed";shape:"rectangle"|"ellipse";size:Vec2;clipBounds:{left:number|null;right:number|null;bottom:number|null;top:number|null}|null}
 export interface GridTransitionSettings {cellSize:Vec2;origin:Vec2;direction:Vec2;feather:number}
@@ -57,7 +65,7 @@ export interface StripeTransition extends TransitionBase {kind:"stripes";stripes
 // Additional kinds extend this discriminated union with their own settings.
 export type Transition=GridTransition|PinwheelTransition|DissolveTransition|StripeTransition;
 export interface ParticleMotionBlur {shutterSeconds:number;maxSigmaWorld:number;dilationPixels:number;softnessPixels:number;alphaGain:number}
-export interface LineRenderer {start:Vec2;end:Vec2;width:number;color:Color;coverage:"segment"|"camera"}
+export interface LineRenderer {start:Vec2;end:Vec2;width:number;color:Color;coverage:"segment"|"camera"|"ray"}
 export interface ProceduralNoise {seed:number;textureSize:Vec2;worldSize:Vec2;origin:Vec2;range:number;channelGain:RGB;bands:{sigmaTexels:Vec2;variance:number}[]}
 export interface DropShadow {offsetWorld:Vec2;sigmaWorld:number;color:Color;opacity:number}
 export interface Glow {threshold:number;softness:number;sigmaWorld:number;intensity:number;color:Color;blend:"alpha"|"additive"}
@@ -69,7 +77,7 @@ export interface ParticleEmitter {
   sizeOverLife:Key<number>[];color:Color;colorPalette:{color:Color;weight:number}[];colorOverLife:Key<Color>[];billboard:"camera"|"local";blend:"alpha"|"additive";sortMode:"depth"|"sizeAscending";
   animation:{mode:"single"|"random"|"fps"|"lifetime";frame:number;frames:number[];framesPerSecond:number;loop:boolean;randomStart:boolean};
 }
-export interface ComponentProperties {Camera:Camera;Vignette:Vignette;ViewportFrame:ViewportFrame;SpriteRenderer:SpriteRenderer;SpriteNumberRenderer:SpriteNumberRenderer;SpriteAnimator:SpriteAnimator;OpacityGradient:OpacityGradient;Flicker:Flicker;TransformAnimator:TransformAnimator;TiledSpriteRenderer:TiledSpriteRenderer;GaussianBlur:GaussianBlur;SpriteMotionBlur:SpriteMotionBlur;DirectionalBlur:DirectionalBlur;PlaneRenderer:PlaneRenderer;Transition:Transition;LineRenderer:LineRenderer;ProceduralNoise:ProceduralNoise;DropShadow:DropShadow;Glow:Glow;ParticleEmitter:ParticleEmitter;ParticleMotionBlur:ParticleMotionBlur;AudioPlayer:AudioPlayerComponent;AnimationPlayer:AnimationPlayerComponent;PlayerControls:PlayerControlsComponent}
+export interface ComponentProperties {Camera:Camera;Vignette:Vignette;ViewportFrame:ViewportFrame;SpriteRenderer:SpriteRenderer;SortingGroup:SortingGroup;SpriteNumberRenderer:SpriteNumberRenderer;SpriteAnimator:SpriteAnimator;OpacityGradient:OpacityGradient;Flicker:Flicker;TransformAnimator:TransformAnimator;TiledSpriteRenderer:TiledSpriteRenderer;CylindricalSpriteRenderer:CylindricalSpriteRenderer;GaussianBlur:GaussianBlur;SpriteMotionBlur:SpriteMotionBlur;DirectionalBlur:DirectionalBlur;PlaneRenderer:PlaneRenderer;Transition:Transition;LineRenderer:LineRenderer;ProceduralNoise:ProceduralNoise;DropShadow:DropShadow;Glow:Glow;ParticleEmitter:ParticleEmitter;ParticleMotionBlur:ParticleMotionBlur;AudioPlayer:AudioPlayerComponent;AnimationPlayer:AnimationPlayerComponent;PlayerControls:PlayerControlsComponent}
 export type ComponentType=keyof ComponentProperties;
 export type ComponentMap={[K in ComponentType]:ComponentProperties[K]&{type:K;enabled:boolean}};
 export type Component=ComponentMap[ComponentType];

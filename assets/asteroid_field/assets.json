@@ -3,7 +3,7 @@
     "background_tile": {
       "type"          : "Sprite",
       "file"          : "background_tile.png",
-      "size"          : {"x": 100, "y": 72},
+      "size"          : {"x": 100, "y": 100},
       "pixelsPerUnit" : 100,
       "pivot"         : {"x": 0.5, "y": 0.5},
       "filter"        : "point",
@@ -14,8 +14,24 @@
         "repeatFrames": 6,
         "scrollPixelsPerSourceFrame": {"x": 83.33333333333333, "y": 0},
         "originPixelsAtFrame2264": [0, 3],
-        "method": "Nine native point cells pooled after the fade-in; horizontal period verified across 147 repeated point pairs.",
-        "verticalRepeat": "Not observed in the source. Repeat the recovered visible-height strip to fill taller viewports without altering the reference crop."
+        "method": "The original nine point cells and their color are preserved. Inverse cylindrical projection recovers three additional cells and the 100-cell axial repeat. Cylinder lighting is excluded from the shared albedo.",
+        "minimumRepeatCells": {"x": 100, "y": 100},
+        "additionalSourceFrameRanges": [
+          [2634, 2682],
+          [3072, 3090]
+        ],
+        "additionalCells": [
+          [ 0, 91],
+          [67, 87],
+          [23, 88]
+        ],
+        "preservedCrop": {"x": 0, "y": 0, "width": 100, "height": 72},
+        "cylinderRegistration": {
+          "observations": 381,
+          "medianPixels":   0.489777634791276,
+          "p90Pixels"   :   1.0321108547878999
+        },
+        "limitations": "Native grid locations are quantized from compressed footage; subpixel projection and light intensity remain fitted estimates."
       }
     },
     "meteor_atlas"   : {

@@ -99,7 +99,9 @@ async function browserChecks(){
    // the central 16:9 crop, while toggling A restores exactly the source crop.
    await seek(2265);const portrait=png(await shot());
    const bright=(a,y0,y1)=>{let count=0;for(let y=y0;y<y1;y++)for(let x=0;x<a.width;x++)if(a.pixels[(y*a.width+x)*a.channels]>100)count++;return count;};
-   assert(bright(portrait,0,260)>100&&bright(portrait,540,800)>100,'Vertical star tiles fill both portrait extensions');
+   // The recovered full 100-cell period is slightly less dense than the
+   // previous 72-row crop; both extensions must still contain multiple stars.
+   assert(bright(portrait,0,260)>50&&bright(portrait,540,800)>50,'Vertical star tiles fill both portrait extensions');
    await page.keyboard.press('a');const constrained=png(await shot());assert.equal(bright(constrained,0,260),0);assert.equal(bright(constrained,540,800),0);await page.keyboard.press('a');
    await page.setViewportSize({width:640,height:360});
    const isolated=fixture({rate:0,bursts:[{time:0,count:1}],speed:{min:0,max:0},startSize:{min:.88,max:.88},animation:{mode:'single',frame:1},color:{r:0,g:1,b:1,a:1}}, {sigmaWorld:.03,intensity:1.8,threshold:0,softness:1,blend:'additive'});

@@ -2,6 +2,7 @@ import type * as Babylon from "@babylonjs/core/pure";
 import {BabylonSceneContext,type BabylonObjectConstructor,type BabylonRenderObject} from "./babylon-context.js";
 import {createDilationEffect,createSoftnessEffect} from "./babylon-particle-filter.js";
 import {createViewportFrameEffect} from "./babylon-viewport-frame.js";
+import {createCameraBlurEffect} from "./babylon-camera-blur.js";
 import {createTransitionMask} from "./babylon-transitions.js";
 import type {ComponentType} from "./types.js";
 import type {LoadingProgress} from "./loading-status.js";
@@ -54,6 +55,7 @@ export class BabylonShaderPreparation {
           wrapper("Motion blur / softness",()=>createSoftnessEffect(r,"Preparation"));
         }
         if(c.type==="Camera")post("Camera / Vignette",()=>r.vignetteEffect(camera));
+        if(c.type==="GaussianBlur"&&node.components.some(c=>c.type==="Camera"))post("Camera / GaussianBlur",()=>createCameraBlurEffect(r));
         if(c.type==="ViewportFrame")post("Camera / ViewportFrame",()=>createViewportFrameEffect(r,camera));
         if(c.type==="Vignette"&&c.depth!==null&&!features.has("depth-vignette")){
           const mesh=r.quad("Camera / depth vignette",null,r.depthVignetteMaterial());material(mesh);
