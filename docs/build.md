@@ -38,3 +38,5 @@ The npm `prebuild` hooks run the project's type checks before Webpack. `ts-loade
 - `scripts/serve.cjs` is the local preview/test HTTP server, including M4A byte ranges and test prefix support. It does not participate in the build.
 
 `check:dist` validates external files and hosting prefixes. `check:standalone` moves the single document to another directory, opens it through `file://` with network requests blocked, and compares Babylon frames with the website in Chromium and Firefox. `check:loading` delays image responses to verify early playback, status text, cached image preparation and persistent worker reuse. `check:startup` covers early and late asset failures and initialization cleanup; `check:images` compares browser-decoded colors and alpha with source PNGs.
+
+On Linux, the standalone check uses headed Firefox for WebGL. CI runs `LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a npm run check:standalone` with a virtual display and software rendering. Chromium and Firefox on other platforms remain headless. Player initialization errors fail the check immediately with the browser name and the displayed error.
