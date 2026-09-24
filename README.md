@@ -1,6 +1,10 @@
 # 498 Tokio reconstruction
 
-Pixel-art animation reconstructed as a shared scene graph, with DOM/SVG and Babylon.js rendering backends. Continuous tracks interpolate at the display refresh rate. Both renderers use the same scene JSON, component model and audio clock.
+The **498 Tokio** music video, reconstructed object by object as animated 3D scenes and rendered in real time with **Babylon.js** or **DOM/SVG**.
+
+Sprites, transforms, keyframe animation and procedural effects are rebuilt from the original video and described in a shared scene format. Both renderers support arbitrary resolutions and dynamic aspect ratios, with continuous animation interpolated at the display refresh rate.
+
+Original music by **ヒゲドライバー (Hige Driver)**; original video by **サーモンラット（クロユキ）**.
 
 [Play on GitHub Pages](https://noname0310.github.io/498tokio-recon/)
 
