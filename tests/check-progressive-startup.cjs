@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),http=require('node:http'),{chromium,firefox}=require('playwright');
 const {makeServer}=require('./serve.cjs'),{png}=require('./pixel-check.cjs');
 const fixture={schemaVersion:1,name:'Progressive scene',timeline:{duration:5},assets:{
-  sound:{type:'Audio',file:'/waiting.mp3'},future:{type:'Sprite',file:'/waiting.png',size:{x:2,y:3},pixelsPerUnit:4},fast:{type:'Sprite',file:'/tests/fixtures/rect_sprite.png',size:{x:2,y:3},pixelsPerUnit:20}
+  sound:{type:'Audio',file:'/waiting.m4a'},future:{type:'Sprite',file:'/waiting.png',size:{x:2,y:3},pixelsPerUnit:4},fast:{type:'Sprite',file:'/tests/fixtures/rect_sprite.png',size:{x:2,y:3},pixelsPerUnit:20}
 },root:{id:'root',children:[
   {id:'camera',transform:{localPosition:{z:-10}},components:[{type:'Camera',referenceVerticalSize:3.6}]},
   {id:'playback',components:[{type:'AudioPlayer',asset:'sound'},{type:'AnimationPlayer',sequence:'main',clock:{entity:'playback',component:'AudioPlayer'}},{type:'PlayerControls',player:{entity:'playback',component:'AnimationPlayer'}}]},
@@ -21,7 +21,7 @@ async function check(type,renderer){
     if(request.url==='/cancel.scene.json')response.on('close',()=>{if(!response.writableEnded)cancelled=true;closed.resolve();});
     void gate.promise.then(()=>{if(!response.destroyed)response.end(body.subarray(Math.floor(body.length/2)));});return;
   }
-  if(request.url==='/waiting.mp3'){void gates.audio.promise.then(()=>{request.url='/assets/soundtrack.mp3';serve(request,response);});return;}
+  if(request.url==='/waiting.m4a'){void gates.audio.promise.then(()=>{request.url='/assets/soundtrack.m4a';serve(request,response);});return;}
   if(request.url==='/waiting.png'){void gates.image.promise.then(()=>{request.url='/tests/fixtures/rect_sprite.png';serve(request,response);});return;}
   if(request.url==='/invalid.scene.json'){response.writeHead(200,{'Content-Type':'application/json'});response.end('not json');return;}
   serve(request,response);

@@ -10,11 +10,12 @@ export class BabylonPlane {
   private noiseKey="";private noiseRevision=0;private noisePending:Promise<void>=Promise.resolve();private noiseTexture?:Babylon.RawTexture;
   readonly id:string;readonly material:Babylon.ShaderMaterial;readonly mesh:Babylon.Mesh;
   constructor(readonly renderer:BabylonSceneContext,node:Entity){
-    this.id=node.id;const B=renderer.B;this.material=new B.ShaderMaterial(`${node.name} / PlaneRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneSolid"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint","ellipse","ellipseSize","ellipseAA","noiseOrigin","noiseSize","noiseRange","noiseEnabled","noiseChannelGain",...transitionUniformNames],samplers:["noiseTex"],defines:["#define PLANE_NOISE"],needAlphaBlending:true});this.material.backFaceCulling=false;this.material.disableDepthWrite=true;this.material.setTexture("noiseTex",renderer.neutralTexture);this.mesh=renderer.quad(node.name,node.id,this.material);
+    this.id=node.id;const B=renderer.B;this.material=new B.ShaderMaterial(`${node.name} / PlaneRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneSolid"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint","ellipse","ellipseSize","ellipseAA","ellipseInnerRatio","noiseOrigin","noiseSize","noiseRange","noiseEnabled","noiseChannelGain",...transitionUniformNames],samplers:["noiseTex"],defines:["#define PLANE_NOISE"],needAlphaBlending:true});this.material.backFaceCulling=false;this.material.disableDepthWrite=true;this.material.setTexture("noiseTex",renderer.neutralTexture);this.mesh=renderer.quad(node.name,node.id,this.material);
   }
   async update(scene:Scene,view:View):Promise<void>{
     const c=scene.requireComponent(this.id,"PlaneRenderer"),b=planeBounds(scene,this.id,view,c);this.mesh.setEnabled(c.enabled&&!!scene.active.get(this.id)&&!!b&&c.color.a>0);if(b)this.renderer.rect(this.mesh,b.left,b.bottom,b.right,b.top);this.renderer.tint(this.material,c.color);
-    this.material.setFloat("ellipse",c.shape==="ellipse"?1:0);this.renderer.vec2(this.material,"ellipseSize",c.size);this.material.setFloat("ellipseAA",1/(view.pixelsPerUnit*Math.min(c.size.x,c.size.y)));
+    this.material.alphaMode=c.blend==="additive"?this.renderer.B.Engine.ALPHA_ADD:this.renderer.B.Engine.ALPHA_COMBINE;
+    this.material.setFloat("ellipse",c.shape==="ellipse"?1:0);this.renderer.vec2(this.material,"ellipseSize",c.size);this.material.setFloat("ellipseAA",1/(view.pixelsPerUnit*Math.max(.000001,Math.min(c.size.x,c.size.y))));this.material.setFloat("ellipseInnerRatio",c.innerRadiusRatio);
     const transition=scene.component(this.id,"Transition");
     this.transitionUniforms.update(this.renderer,this.material,transition,planeBounds(scene,this.id,view,c,0));
     const noise=scene.component(this.id,"ProceduralNoise"),r=this.renderer,m=this.material;
@@ -44,7 +45,7 @@ export class BabylonLine {
       metadata.sortWorldPosition=c.coverage==="segment"?undefined:M.point(world,{x:(c.start.x+c.end.x)/2,y:(c.start.y+c.end.y)/2,z:isGlow?.0001:0});
       material.alphaMode=isGlow&&glow?.blend==="additive"?r.B.Engine.ALPHA_ADD:r.B.Engine.ALPHA_COMBINE;
       mesh.setEnabled(c.enabled&&!!scene.active.get(this.id)&&!!shape&&c.color.a>0&&(!isGlow||!!glow?.enabled));if(!shape)continue;
-      const b=shape.bounds;r.rect(mesh,b.left,b.bottom,b.right,b.top);r.vec2(material,"lineStart",shape.start);r.vec2(material,"lineEnd",shape.end);material.setFloat("halfWidth",c.width/2);material.setFloat("pixelWidth",Math.max(.000001,scene.frustumScale(Math.max(.001,centerDepth)))/(view.pixelsPerUnit*view.dpr*scale));
+      const b=shape.bounds;r.rect(mesh,b.left,b.bottom,b.right,b.top);r.vec2(material,"lineStart",shape.start);r.vec2(material,"lineEnd",shape.end);material.setFloat("halfWidth",shape.width/2);material.setFloat("pixelWidth",Math.max(.000001,scene.frustumScale(Math.max(.001,centerDepth)))/(view.pixelsPerUnit*view.dpr*scale));
       material.setFloat("sigma",isGlow?(glow?.sigmaWorld??0):0);material.setFloat("gain",isGlow&&glow?glow.intensity*Math.max(0,Math.min(1,(.2126*c.color.r+.7152*c.color.g+.0722*c.color.b-glow.threshold)/glow.softness)):1);r.tint(material,isGlow&&glow?{...glow.color,a:glow.color.a*c.color.a}:c.color);
     }
   }

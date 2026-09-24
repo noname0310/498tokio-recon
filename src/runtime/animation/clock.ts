@@ -23,15 +23,15 @@ export abstract class ObservableClock {
 }
 export function playbackRatio(numerator:number,denominator=1):Rational {
   if(!Number.isSafeInteger(numerator)||!Number.isSafeInteger(denominator)||denominator<=0)throw new Error("Playback rate needs an integer numerator and positive denominator.");
-  return Time.rational(BigInt(numerator),BigInt(denominator));
+  return Time.rational(numerator,denominator);
 }
 const secondsRate=frameRate(1),zero=Time.fromFrame(Frame.zero);
 
 /** Rational anchors preserve exact frame seeks; wall time is sampled in microseconds. */
 export class PerformanceClock extends ObservableClock implements AnimationClock {
   readonly kind="performance";readonly seeking=false;readonly buffering=false;
-  private position=zero;private anchor=zero;private wall=0n;private running=false;private disposed=false;
-  private speed=Time.rational(1n,1n);private looping:boolean;private readonly end:FrameTime;
+  private position=zero;private anchor=zero;private wall=0;private running=false;private disposed=false;
+  private speed=Time.rational(1,1);private looping:boolean;private readonly end:FrameTime;
   constructor(duration:FrameTime,rate:FrameRate,loop=false,private readonly now:()=>number=()=>performance.now()){
     super();this.end=Time.convert(duration,rate,secondsRate);if(Time.compare(this.end,zero)<0)throw new Error("Clock duration must be nonnegative.");this.looping=loop;
   }
@@ -40,20 +40,17 @@ export class PerformanceClock extends ObservableClock implements AnimationClock 
   get playing():boolean{return this.running;}
   get playbackRate():number{return Number(this.speed.numerator)/Number(this.speed.denominator);}
   get loop():boolean{return this.looping;}
-  private reanchor():void {this.anchor=this.position;this.wall=BigInt(Math.round(this.now()*1000));}
+  private reanchor():void {this.anchor=this.position;this.wall=Math.round(this.now()*1000);}
   sample(rate:FrameRate,now=this.now()):FrameTime {
     if(this.running){
-      const wall=BigInt(Math.round(now*1000));
+      const wall=Math.round(now*1000);
       // RAF timestamps can predate play() within the same render interval.
-      let position=Time.add(this.anchor,Time.scale(Time.fromMicroseconds(wall>this.wall?wall-this.wall:0n,secondsRate),this.speed));
+      let position=Time.add(this.anchor,Time.scale(Time.fromMicroseconds(Math.max(0,wall-this.wall),secondsRate),this.speed));
       if(Time.compare(position,zero)<0||Time.compare(position,this.end)>=0){
         if(this.looping&&this.duration>0){
           // Work in rational seconds, including fractional duration boundaries.
-          const n=BigInt(position.frame)*position.subframe.denominator+position.subframe.numerator,d=position.subframe.denominator;
-          const en=BigInt(this.end.frame)*this.end.subframe.denominator+this.end.subframe.numerator,ed=this.end.subframe.denominator;
-          const divisor=en*d,value=n*ed;
-          position=Time.fromRatio(((value%divisor)+divisor)%divisor,d*ed);this.anchor=position;this.wall=wall;
-        }else {position=this.speed.numerator<0n?zero:this.end;this.running=false;}
+          position=Time.modulo(position,this.end);this.anchor=position;this.wall=wall;
+        }else {position=this.speed.numerator<0?zero:this.end;this.running=false;}
       }
       this.position=position;
     }
@@ -65,8 +62,8 @@ export class PerformanceClock extends ObservableClock implements AnimationClock 
   }
   play():Promise<void> {
     if(!this.disposed&&!this.running&&this.duration>0){
-      if(this.speed.numerator<0n&&Time.compare(this.position,zero)<=0){this.position=this.end;this.pauseOffsetHint=undefined;}
-      else if(this.speed.numerator>=0n&&Time.compare(this.position,this.end)>=0){this.position=zero;this.pauseOffsetHint=undefined;}
+      if(this.speed.numerator<0&&Time.compare(this.position,zero)<=0){this.position=this.end;this.pauseOffsetHint=undefined;}
+      else if(this.speed.numerator>=0&&Time.compare(this.position,this.end)>=0){this.position=zero;this.pauseOffsetHint=undefined;}
       this.running=true;this.reanchor();this.emit({type:"state"});
     }
     return Promise.resolve();

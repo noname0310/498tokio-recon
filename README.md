@@ -1,6 +1,6 @@
 # 498 Tokio reconstruction
 
-Pixel-art animation reconstructed as a shared scene graph, with DOM/SVG and Babylon.js rendering backends. The animation currently covers frames 0–2536 at the source rate of 30 fps; continuous tracks interpolate at the display refresh rate. Both renderers use the same scene JSON, component model and audio clock.
+Pixel-art animation reconstructed as a shared scene graph, with DOM/SVG and Babylon.js rendering backends. Continuous tracks interpolate at the display refresh rate. Both renderers use the same scene JSON, component model and audio clock.
 
 ## Run
 
@@ -21,7 +21,7 @@ Open http://127.0.0.1:4980/ for DOM or http://127.0.0.1:4980/?renderer=babylon f
 src/
   runtime/          Shared engine, components, animation and both renderers
   player/           HTML, bootstrap and authored CSS
-assets/             Final scene JSON, PNG sprites/atlases and MP3 audio
+assets/             Final scene JSON, PNG sprites/atlases and AAC audio (M4A)
 tests/              Runtime regressions and small test fixtures
 scripts/            Build support, preview server, type and JSON checks
 docs/               Runtime and animation contracts
@@ -41,9 +41,9 @@ npx playwright install chromium firefox
 npm run check
 ```
 
-The build also emits **`dist/standalone/index.html`**: a Babylon.js player with the runtime, scene, PNGs, MP3, styles and worker code embedded. Copy this one file anywhere and open it directly, including offline. `npm run build:standalone` builds only this variant. It uses the same runtime and scene data as the website.
+The build also emits **`dist/standalone/index.html`**: a Babylon.js player with the runtime, scene, PNGs, M4A audio, styles and worker code embedded. Copy this one file anywhere and open it directly, including offline. `npm run build:standalone` builds only this variant. It uses the same runtime and scene data as the website.
 
-`npm run check:dist` verifies external files, standalone image bytes, case-sensitive asset paths, MP3 range requests and both renderers at root and repository-prefixed URLs. `npm run check:loading` checks progressive image preparation and worker reuse; `npm run check:standalone` checks the portable HTML with external requests blocked. `npm run check:lifetimes` verifies sequence ownership and resource reuse. Other checks cover animation, clocks, scene components and rendering behavior.
+`npm run check:dist` verifies external files, standalone image bytes, case-sensitive asset paths, M4A range requests and both renderers at root and repository-prefixed URLs. `npm run check:loading` checks progressive image preparation and worker reuse; `npm run check:standalone` checks the portable HTML with external requests blocked. `npm run check:lifetimes` verifies sequence ownership and resource reuse. Other checks cover animation, clocks, scene components and rendering behavior.
 
 For live edits, run `npm run build:watch` and `node scripts/serve.cjs` in separate terminals. Watch mode builds the website; Webpack watches scene JSON and assets as well as TypeScript, HTML and CSS. Refresh the page after a rebuild. `npm run build -- --env site` builds only the website once.
 

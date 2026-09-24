@@ -43,6 +43,22 @@ async function main(){const server=makeServer();await new Promise(r=>server.list
    const finiteSamples=await page.evaluate(()=>{const s=scenePlayer.scene,v=scenePlayer.view,m=s.viewMatrix;return [-.6,0,.6].map(x=>{const y=-.2,q={x:m[0]*x+m[4]*y+m[12],y:m[1]*x+m[5]*y+m[13],z:m[2]*x+m[6]*y+m[14]},p=s.projectCameraPoint(q);return {x:Math.round(v.width/2+p.x*v.pixelsPerUnit),y:Math.round(v.height/2-p.y*v.pixelsPerUnit),hidden:x===0};});});
    const finiteShot=await page.screenshot({style:'.runtime-loading-status {visibility:hidden!important}'}),finitePixels=png(finiteShot);fs.writeFileSync(path.join('test-results/planar-depth',`${name}_finite.png`),finiteShot);
    for(const p of finiteSamples){const at=(p.y*finitePixels.width+p.x)*finitePixels.channels,rgb=Array.from(finitePixels.pixels.subarray(at,at+3));if(p.hidden)assert(rgb.every(v=>Math.abs(v-80)<=2),`${name}: finite floor leaked: ${rgb}`);else assert(rgb.every(v=>v>230),`${name}: finite floor hid an exposed end: ${rgb}`);}
+   // An alpha-tested hull must hide only the rear half of an intersecting
+   // sprite. A hole exposes rear material, while front material covers the
+   // opaque hull. Moving the plane changes its intersection, not its mask.
+   const hull='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAHklEQVR4nGMMCAj4z4AEmEDEhg0bGFEEkFWBBZABABAkBfcHTWg9AAAAAElFTkSuQmCC';
+   const alphaScene={schemaVersion:1,assets:{solid:{type:'Sprite',file:floor,size:{x:1,y:1},pixelsPerUnit:1},hull:{type:'Sprite',file:hull,size:{x:4,y:4},pixelsPerUnit:2}},root:{id:'root',children:[
+    {id:'camera',transform:{localPosition:{z:-4}},components:[{type:'Camera',projection:'perspective',verticalFovDegrees:45,referenceVerticalSize:3.6,near:.1,far:20}]},
+    {id:'hull',components:[{type:'SpriteRenderer',asset:'hull',depthWrite:true}]},
+    {id:'crossing',transform:{localRotation:{y:60},localScale:{x:2,y:1.5}},components:[{type:'SpriteRenderer',asset:'solid',color:{r:1,g:0,b:0,a:1},brightness:3}]}
+   ]}};
+   await page.evaluate(data=>scenePlayer.loadScene(data),alphaScene);await page.evaluate(()=>scenePlayer.whenIdle());
+   for(const z of [0,-.15,.15]){
+    await page.evaluate(async z=>{await scenePlayer.setTransform('crossing',{localPosition:{z}});await scenePlayer.whenIdle();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));},z);
+    const checks=await page.evaluate(z=>{const s=scenePlayer.scene,v=scenePlayer.view,w=s.world.get('crossing'),m=s.viewMatrix;return [{x:-.3,y:-.23,red:false},{x:-.3,y:.23,red:true},{x:.3,y:-.23,red:true},...(z?[{x:0,y:-.23,red:z<0}]:[])].map(p=>{const q={x:w[0]*p.x+w[4]*p.y+w[12],y:w[1]*p.x+w[5]*p.y+w[13],z:w[2]*p.x+w[6]*p.y+w[14]},r=s.projectCameraPoint({x:m[0]*q.x+m[4]*q.y+m[8]*q.z+m[12],y:m[1]*q.x+m[5]*q.y+m[9]*q.z+m[13],z:m[2]*q.x+m[6]*q.y+m[10]*q.z+m[14]});return {x:Math.round(v.width/2+r.x*v.pixelsPerUnit),y:Math.round(v.height/2-r.y*v.pixelsPerUnit),red:p.red};});},z);
+    const shot=await page.screenshot({style:'.runtime-loading-status {visibility:hidden!important}'}),pixels=png(shot);fs.writeFileSync(path.join('test-results/planar-depth',`${name}_alpha_${z}.png`),shot);
+    for(const p of checks){const at=(p.y*pixels.width+p.x)*pixels.channels,rgb=Array.from(pixels.pixels.subarray(at,at+3));assert(p.red?rgb[0]>200&&rgb[1]<3:rgb.every(v=>Math.abs(v-80)<=2),`${name}: physical alpha-hull intersection at depth ${z}: ${JSON.stringify(p)} ${rgb}`);}
+   }
    assert.deepEqual(errors,[]);console.log(`${name}: real floor intersection clips core and glow after parent motion and viewport changes.`);
   }finally{await browser.close();}
  }}finally{server.close();}}

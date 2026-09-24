@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "assets"       : {
+    "concentric_atlas": {
+      "type"          : "Sprite",
+      "file"          : "concentric_atlas.png",
+      "size"          : {"x": 158, "y": 79},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 77, "y": 77},
+        "columns"   : 2,
+        "rows"      : 1,
+        "frameCount": 2,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames": [3210, 3218, 3224, 3244, 3258, 3295, 3299],
+        "logicalGrid": [13, 13],
+        "cellStride": 6,
+        "solidCellSize": 5,
+        "layers": ["center and inner rings", "outer ring"],
+        "method": "Registered grid centers pooled across three emissions; fourfold consensus rejects passing star sprites. Two binary alpha layers retain independent observed core and rim colors. Screen-wide illumination remains a separate additive plane.",
+        "limitations": "The compressed glow makes subcell edge width uncertain; a 5/6 fill ratio approximates the measured 0.81-0.85 occupancy. Hidden portions share the visible rotational symmetry."
+      }
+    }
+  }
+}

@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,".."),source=JSON.parse(fs.readFileSync(path.j
 const asset=source.assets.exhaust;
 function fixture(emitter={},parent=[]){return {schemaVersion:1,timeline:{duration:8},assets:{art:{...asset,file:"/assets/exhaust/exhaust_atlas.png"}},root:{id:"scene",children:[{id:"camera",transform:{localPosition:{x:0,y:0,z:-10}},components:[{type:"Camera",referenceVerticalSize:3.6}]},{id:"parent",components:parent,children:[{id:"effect",components:[{type:"ParticleEmitter",asset:"art",rate:4,seed:123,lifetime:{min:1,max:1},startSize:{min:.6,max:.6},direction:{x:-1,y:0,z:0},...emitter}]}]}]}};}
 async function numerical(){
-  const {Scene}=await import(pathToFileURL(path.join(root,"dist/runtime/player.js"))),{mulberry32}=await import(pathToFileURL(path.join(root,"dist/runtime/player.js")));
+  const {Scene,Time,mulberry32}=await import(pathToFileURL(path.join(root,"dist/runtime/player.js")));
   const saved=Math.random;Math.random=()=>{throw new Error("Particle code used Math.random");};
   try{
     const random=mulberry32(1);assert.deepEqual(Array.from({length:5},random),[.6270739405881613,.002735721180215478,.5274470399599522,.9810509674716741,.9683778982143849]);
@@ -14,9 +14,21 @@ async function numerical(){
     for(const t of [6,2,.1,4.5,7,1,4.5])at(t);assert.equal(JSON.stringify(at(4.5)),direct);
     scene.setComponent("exhaust","ParticleEmitter",{seed:28036});assert.notEqual(JSON.stringify(at(4.5)),direct);scene.setComponent("exhaust","ParticleEmitter",{seed:28035});assert.equal(JSON.stringify(at(4.5)),direct);
     const s=new Scene(fixture(),"http://localhost/");assert.equal(s.component("effect","ParticleEmitter").space,"local");assert.deepEqual(s.particleStates("effect",.5).map(p=>p.position.x),[-.5,-.25,0]);
+    const fittedRate=9.092915914340317,dense=new Scene(fixture({rate:fittedRate,lifetime:{min:2,max:2}}),'http://localhost/'),birth=Time.fromDecimal(5/fittedRate);
+    assert.equal(dense.particleStates('effect',birth).length,6,'Fractional density emits at its sampled birth');
+    assert.equal(dense.particleStates('effect',Time.subtract(birth,Time.fromRatio(1,1e9))).length,5,'One nanosecond before birth remains outside');
+    const savedDense=dense.particleStates('effect',birth);dense.particleStates('effect',1.37);assert.deepEqual(dense.particleStates('effect',birth),savedDense);
     const accelerating=new Scene(fixture({rate:0,bursts:[{time:0,count:1}],speed:{min:2,max:2},lifetime:{min:2,max:2},speedOverLife:[{time:0,value:0},{time:.5,value:2},{time:1,value:0}]}),'http://localhost/');
     for(const [time,x] of [[.5,-.5],[1,-2],[1.5,-3.5]])assert.equal(accelerating.particleStates('effect',time)[0].position.x,x,'Speed curve position is its exact integral');
     accelerating.setComponent('effect','ParticleEmitter',{speedOverLife:[{time:0,value:1,interpolation:'step'},{time:.5,value:3,interpolation:'step'},{time:1,value:1}]});assert.equal(accelerating.particleStates('effect',1.5)[0].position.x,-5);
+    const relaxed=new Scene(fixture({rate:0,bursts:[{time:0,count:1,velocity:{x:3,y:2,z:0},targetVelocity:{x:-3,y:0,z:0}}],lifetime:{min:3,max:3},velocityRelaxation:{rate:{x:2,y:2,z:0},target:{x:0,y:0,z:0},variation:{x:0,y:0,z:0}}}),'http://localhost/');
+    const r0=relaxed.particleStates('effect',0)[0],r1=relaxed.particleStates('effect',.1)[0],r2=relaxed.particleStates('effect',.4)[0],r3=relaxed.particleStates('effect',1)[0];
+    assert.equal(r0.position.x,0);assert(r1.position.x>0);assert(r2.position.x>r1.position.x);assert(r3.position.x<0,'Velocity relaxation reverses initial ejection');
+    assert(r3.position.y>r2.position.y&&r3.position.y<1,'Vertical motion spreads toward a finite offset');
+    relaxed.particleStates('effect',2);assert.deepEqual(relaxed.particleStates('effect',.1)[0],r1,'Relaxed motion has no integration history');
+    relaxed.setTransform('parent',{localPosition:{x:5,y:2,z:0}});assert.equal(relaxed.particleStates('effect',.1)[0].position.x,r1.position.x+5);
+    const invalidMotion=fixture({velocityRelaxation:{rate:{x:-1,y:1,z:0},target:{x:0,y:0,z:0},variation:{x:0,y:0,z:0}}});assert.throws(()=>new Scene(invalidMotion,'http://localhost/'),/velocity relaxation/);
+    assert.throws(()=>relaxed.setComponent('effect','ParticleEmitter',{cameraContinuation:{padding:1}}),/camera continuation/);
     const blurFixture=fixture({rate:0,bursts:[{time:0,count:1}],speed:{min:2,max:2},lifetime:{min:2,max:2}});
     blurFixture.root.children[1].children[0].components.push({type:'ParticleMotionBlur',shutterSeconds:.3,maxSigmaWorld:1});
     const blurred=new Scene(blurFixture,'http://localhost/'),blurredState=blurred.particleStates('effect',.5)[0];

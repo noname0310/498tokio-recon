@@ -29,7 +29,7 @@ async function main(){
   global.Audio=global.HTMLMediaElement=Media;
   const rate=frameRate(24000),close=(a,b,message)=>assert(Math.abs(a-b)<1e-8,`${message}: ${a} vs ${b}`);
   let now=0;
-  const player=new AudioPlayer("clock-test","test.mp3",{volume:1,muted:false,loop:false,preservesPitch:false,title:"",artist:"",album:""},{append(){}},()=>now);
+  const player=new AudioPlayer("clock-test","test.m4a",{volume:1,muted:false,loop:false,preservesPitch:false,title:"",artist:"",album:""},{append(){}},()=>now);
   const audio=player.element,sample=()=>Time.toSeconds(player.sample(rate),rate);
   try{
     await player.ready;await player.play();
@@ -90,7 +90,7 @@ async function main(){
         now+=1000;audio.send("timeupdate");audio.send("ratechange");audio.pause();
         assert.equal(Time.key(player.sample(sourceRate)),`${frame}:0/1`,"Paused samples and transport events cannot lose the requested frame");
       }
-      const displayRate=frameRate(30),fraction=Time.fromRatio(1703n,2n);
+      const displayRate=frameRate(30),fraction=Time.fromRatio(1703,2);
       await player.seek(fraction,displayRate);assert.equal(Time.compare(player.sample(displayRate),fraction),0,"Subframe seeks are exact, never globally rounded");
       await player.play();now+=200;assert.equal(Time.compare(player.sample(displayRate),fraction),0,"Startup retains the exact seek while the media position is stationary");
       audio.mediaTime+=.01;close(sample(),audio.currentTime,"Actual media progress releases the seek anchor");
@@ -121,7 +121,7 @@ async function main(){
     // by controls. Both wrapper and native pauses must retain that exact pose.
     for(const quantum of [0,.000001,.002,.1])for(const sourceRate of [frameRate(30),frameRate(30000,1001)])for(const native of [false,true])for(const drift of [-.08,.08]){
       audio.quantum=quantum;await player.seekSeconds(10);await player.play();
-      const displayed=Time.fromRatio(1703n,2n),offset=Time.convert(displayed,sourceRate,frameRate(1)),seconds=Time.toSeconds(displayed,sourceRate);
+      const displayed=Time.fromRatio(1703,2),offset=Time.convert(displayed,sourceRate,frameRate(1)),seconds=Time.toSeconds(displayed,sourceRate);
       player.pauseOffsetHint=offset;audio.mediaTime=seconds+drift;sample();now+=10;sample();
       const writes=audio.seekWrites;
       if(native)audio.pause();else player.pause();

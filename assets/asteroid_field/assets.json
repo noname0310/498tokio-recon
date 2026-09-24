@@ -185,6 +185,29 @@
         "samplingFraction": 0.6,
         "method": "Joint grid from the unobstructed first explosion, one union bound, and held-frame occlusion rejection. Pale core colors are retained; alpha excludes the exterior halo."
       }
+    },
+    "rocket_atlas"   : {
+      "type"          : "Sprite",
+      "file"          : "rocket_atlas.png",
+      "size"          : {"x": 58, "y": 15},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 27, "y": 13},
+        "columns"   : 2,
+        "rows"      : 1,
+        "frameCount": 2,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames": [2743, 2744, 2746, 2747, 2754, 2755, 2756, 2757, 2758, 2759],
+        "bodyGridCells": [12, 5],
+        "framesPerSecond": 30,
+        "frameOrder": ["engine-on", "engine-off"],
+        "method": "Registered native grids from eleven large unobstructed observations. Central 60% cell means are pooled across frames; the gray body is shared and the engine alternates. Compression spill is removed from the alpha mask.",
+        "limitations": "The black outline against the black source background is completed with a one-cell, eight-connected perimeter around the opaque hull, filling diagonal notches."
+      }
     }
   }
 }

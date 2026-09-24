@@ -6,6 +6,7 @@ const start={frame:Frame.zero,rate:frameRate(30)};
 const rgba = {r:1,g:1,b:1,a:1};
 const transitionDefaults=new Map<Transition["kind"],Transition>([
   ["grid",{kind:"grid",progress:0,target:null,grid:{cellSize:{x:.36,y:.36},origin:{x:0,y:0},direction:{x:1,y:0},feather:4.8}}],
+  ["radialGrid",{kind:"radialGrid",progress:0,target:null,radialGrid:{cellSize:{x:.6,y:.6},origin:{x:0,y:0},center:{x:0,y:0},curvature:0,inset:0}}],
   ["pinwheel",{kind:"pinwheel",progress:0,target:null,pinwheel:{cellSize:{x:.2666666667,y:.2666666667},origin:{x:0,y:0},profiles:[{fronts:[[0,0],[0,0],[0,0],[0,0]]},{fronts:[[1,2],[1,2],[1,2],[1,2]]}]}}],
   ["dissolve",{kind:"dissolve",progress:0,target:null,dissolve:{cellSize:{x:.3,y:.3},origin:{x:0,y:0},seed:1,direction:{x:0,y:0},feather:1}}],
   ["stripes",{kind:"stripes",progress:0,target:null,stripes:{axis:"x",period:.1,phase:0}}],
@@ -14,23 +15,26 @@ export const componentTypes = new Map<ComponentType,object>([
   ["Camera", {projection:"orthographic",verticalFovDegrees:50,principalPoint:{x:.5,y:.5},referenceVerticalSize:10,referenceAspect:16/9,aspectPolicy:"expandFromReference",near:.1,far:100,clearColor:{r:0,g:0,b:0,a:1}}],
   ["Vignette", {centerViewport:{x:.5,y:.5},quadratic:.2,quartic:.4,verticalWeight:1,depth:null}],
   ["ViewportFrame", {insetsWorld:{left:0,right:0,top:0,bottom:0},radiusWorld:0,color:{r:0,g:0,b:0,a:1},innerShadow:{offsetWorld:{x:0,y:0},color:{r:0,g:0,b:0,a:1},opacity:0}}],
-  ["SpriteRenderer", {asset:null,color:rgba,hueDegrees:0,saturation:1,brightness:1,contrast:1,whiteMix:0,frame:0,sortingOrder:0}],
+  ["SpriteRenderer", {asset:null,color:rgba,hueDegrees:0,saturation:1,brightness:1,contrast:1,whiteMix:0,frame:0,sortingOrder:0,depthWrite:false}],
   ["SortingGroup", {anchor:{x:0,y:0,z:0}}],
   ["SpriteNumberRenderer", {asset:null,value:0,rounding:"round",minDigits:1,suffix:"",glyphs:"0123456789",advances:[],alignment:"left",repeatWorld:null,color:rgba}],
   ["SpriteAnimator", {start,framesPerSecond:15,frames:[],loop:false,hideOutside:true}],
   ["OpacityGradient", {start:{x:0,y:0},end:{x:0,y:-1}}],
   ["Flicker", {mode:"periodic",frequency:15,dutyCycle:.5,probability:.5,seed:1,start,phase:0}],
   ["TransformAnimator", {position:[],rotation:[],scale:[]}],
+  ["TransformNoise", {seed:1,start,duration:1,frequency:15,strength:1,positionAmplitude:{x:0,y:0,z:0},rotationAmplitude:{x:0,y:0,z:0}}],
+  ["CameraMotionBlur", {shutterSeconds:1/60,focusDistance:1,maxSigmaWorld:.1}],
+  ["DepthOfField", {focusDistance:1,apertureSigma:0,maxSigmaWorld:.32}],
   ["ParticleEmitter", particleDefaults],
-  ["TiledSpriteRenderer", {asset:null,color:rgba,saturation:1,coverage:"camera",clipBounds:null,wrap:{x:"repeat",y:"clamp"},origin:{x:0,y:0}}],
+  ["TiledSpriteRenderer", {asset:null,color:rgba,saturation:1,brightness:1,coverage:"camera",clipBounds:null,wrap:{x:"repeat",y:"clamp"},origin:{x:0,y:0}}],
   ["CylindricalSpriteRenderer", {asset:null,color:rgba,radius:1,length:{min:.01,max:100},tileLength:2*Math.PI,segments:100,uvOffset:{x:0,y:0},lighting:{ambient:1,diffuse:0,direction:{x:1,y:0,z:0}}}],
   ["GaussianBlur", {sigmaWorld:{x:0,y:0}}],
   ["SpriteMotionBlur", {translationWorld:{x:0,y:0},radialAmount:0,center:{x:0,y:0},samples:25,dilationPixels:0,softnessPixels:0,alphaGain:1,clipToSprite:false}],
   ["DirectionalBlur", {sigmaWorld:0,angleDegrees:0}],
-  ["PlaneRenderer", {color:rgba,coverage:"fixed",shape:"rectangle",size:{x:1,y:1},clipBounds:null}],
+  ["PlaneRenderer", {color:rgba,blend:"normal",coverage:"fixed",shape:"rectangle",size:{x:1,y:1},innerRadiusRatio:0,clipBounds:null}],
   ["Transition", {kind:"grid",progress:0,target:null}],
   ["ParticleMotionBlur", {shutterSeconds:1/30,maxSigmaWorld:.3,dilationPixels:0,softnessPixels:0,alphaGain:1}],
-  ["LineRenderer", {start:{x:-.5,y:0},end:{x:.5,y:0},width:.01,color:rgba,coverage:"segment"}],
+  ["LineRenderer", {start:{x:-.5,y:0},end:{x:.5,y:0},width:.01,color:rgba,coverage:"segment",viewportExpansion:0}],
   ["ProceduralNoise", {seed:1,textureSize:{x:256,y:256},worldSize:{x:2.56,y:2.56},origin:{x:0,y:0},range:.4,channelGain:{r:1,g:1,b:1},bands:[]}],
   ["DropShadow", {offsetWorld:{x:0,y:0},sigmaWorld:.05,color:{r:0,g:0,b:0,a:1},opacity:1}],
   ["Glow", {threshold:.4,softness:.4,sigmaWorld:.05,intensity:1,color:rgba,blend:"additive"}],
@@ -120,13 +124,14 @@ export function normalizeScene(input:unknown):SceneData {
         vector(c.innerShadow.color,"rgba","ViewportFrame.innerShadow.color",0,1);finite(c.innerShadow.opacity,"ViewportFrame.innerShadow.opacity",0,1);
       }
       if(c.type==="SpriteRenderer"){
+        if(typeof c.depthWrite!=="boolean")fail("SpriteRenderer.depthWrite must be boolean.");
         finite(c.hueDegrees,"hueDegrees");
         if(!Number.isSafeInteger(c.sortingOrder))fail("SpriteRenderer.sortingOrder must be an integer.");
         finite(c.whiteMix,"SpriteRenderer.whiteMix",0,1);
         finite(c.saturation,"SpriteRenderer.saturation",0);finite(c.brightness,"SpriteRenderer.brightness",0);finite(c.contrast,"SpriteRenderer.contrast",0);
         if(!Number.isSafeInteger(c.frame)||c.frame<0||c.frame>=(sprites[c.asset].atlas?.frameCount||1))fail(`Invalid sprite frame: ${node.id}`);
       }
-      if(c.type==="SpriteAnimator"||c.type==="Flicker"||c.type==="ParticleEmitter"){
+      if(c.type==="SpriteAnimator"||c.type==="Flicker"||c.type==="ParticleEmitter"||c.type==="TransformNoise"){
         if("startTime" in c)fail(`${c.type}.startTime has been replaced by start: {frame, rate}.`);
         Frame.from(c.start.frame);frameRate(c.start.rate.numerator,c.start.rate.denominator);
       }
@@ -170,6 +175,13 @@ export function normalizeScene(input:unknown):SceneData {
         if(c.player!==null&&(!c.player||typeof c.player.entity!=="string"||c.player.component!=="AnimationPlayer"))fail("PlayerControls.player must reference an AnimationPlayer component.");
       }
       if(c.type==="TransformAnimator")for(const key of ["position","rotation","scale"] as const){validateKeys(c[key],`TransformAnimator.${key}`,"xyz");if(key==="scale"&&c[key].some(k=>Object.values(k.value).some(v=>v<=0)))fail("Animated scales must be positive.");}
+      if(c.type==="TransformNoise"){
+        if(!Number.isInteger(c.seed))fail("TransformNoise.seed must be an unsigned 32-bit integer.");
+        finite(c.seed,"TransformNoise.seed",0,4294967295);finite(c.duration,"TransformNoise.duration",0);finite(c.frequency,"TransformNoise.frequency",0,10000);finite(c.strength,"TransformNoise.strength",0);
+        vector(c.positionAmplitude,"xyz","TransformNoise.positionAmplitude",0);vector(c.rotationAmplitude,"xyz","TransformNoise.rotationAmplitude",0);
+      }
+      if(c.type==="CameraMotionBlur"){finite(c.shutterSeconds,"CameraMotionBlur.shutterSeconds",0,1);finite(c.focusDistance,"CameraMotionBlur.focusDistance",.0001);finite(c.maxSigmaWorld,"CameraMotionBlur.maxSigmaWorld",0);}
+      if(c.type==="DepthOfField"){finite(c.focusDistance,"DepthOfField.focusDistance",.0001);finite(c.apertureSigma,"DepthOfField.apertureSigma",0);finite(c.maxSigmaWorld,"DepthOfField.maxSigmaWorld",0);}
       if(c.type==="CylindricalSpriteRenderer"){
         if(sprites[c.asset].atlas)fail("CylindricalSpriteRenderer requires a standalone tile.");
         finite(c.radius,"cylinder radius",.000001);finite(c.tileLength,"cylinder tile length",.000001);
@@ -181,6 +193,7 @@ export function normalizeScene(input:unknown):SceneData {
       }
       if(c.type==="TiledSpriteRenderer"){
         finite(c.saturation,"saturation",0);
+        finite(c.brightness,"TiledSpriteRenderer.brightness",0);
         if(sprites[c.asset].atlas)fail("TiledSpriteRenderer needs a standalone tile, not an atlas.");
         if(c.coverage!=="camera"||c.wrap.x!=="repeat"||!["clamp","clampBottom","transparent","repeat","repeatBottom"].includes(c.wrap.y))fail("TiledSpriteRenderer requires camera coverage, repeat X, and a supported Y wrap mode.");
         if(sprites[c.asset].filter!=="point")fail("TiledSpriteRenderer requires point-filtered pixel art.");vector(c.origin,"xy","tile origin");
@@ -191,7 +204,10 @@ export function normalizeScene(input:unknown):SceneData {
       if(c.type==="SortingGroup")vector(c.anchor,"xyz","SortingGroup.anchor");
       if(c.type==="DirectionalBlur"){finite(c.sigmaWorld,"DirectionalBlur.sigmaWorld",0);finite(c.angleDegrees,"DirectionalBlur.angleDegrees");}
       if(c.type==="PlaneRenderer"){
+        if(!["normal","additive"].includes(c.blend))fail("Invalid PlaneRenderer blend mode.");
         if(!["rectangle","ellipse"].includes(c.shape)||c.shape==="ellipse"&&c.coverage!=="fixed")fail("An ellipse requires fixed plane bounds.");
+        finite(c.innerRadiusRatio,"PlaneRenderer.innerRadiusRatio",0,1);
+        if(c.innerRadiusRatio>0&&c.shape!=="ellipse")fail("PlaneRenderer.innerRadiusRatio requires an ellipse.");
         vector(c.size,"xy","PlaneRenderer.size",.000001);if(!["camera","fixed"].includes(c.coverage))fail("Invalid PlaneRenderer coverage.");
         if(c.clipBounds){for(const side of ["left","right","bottom","top"] as const)if(c.clipBounds[side]!==null)finite(c.clipBounds[side],`PlaneRenderer.clipBounds.${side}`);
           if(c.clipBounds.left!==null&&c.clipBounds.right!==null&&c.clipBounds.left>=c.clipBounds.right||c.clipBounds.bottom!==null&&c.clipBounds.top!==null&&c.clipBounds.bottom>=c.clipBounds.top)fail("PlaneRenderer clip bounds must have positive area.");}
@@ -203,6 +219,9 @@ export function normalizeScene(input:unknown):SceneData {
         if(c.kind==="grid"){
           const g=c.grid;vector(g.cellSize,"xy","Transition.grid.cellSize",.0001);vector(g.origin,"xy","Transition.grid.origin");vector(g.direction,"xy","Transition.grid.direction");finite(g.feather,"Transition.grid.feather",.0001);
           if(Math.hypot(g.direction.x,g.direction.y)<1e-9)fail("Transition.grid needs a nonzero direction.");
+        }else if(c.kind==="radialGrid"){
+          const g=c.radialGrid;vector(g.cellSize,"xy","Transition.radialGrid.cellSize",.0001);vector(g.origin,"xy","Transition.radialGrid.origin");vector(g.center,"xy","Transition.radialGrid.center");finite(g.curvature,"Transition.radialGrid.curvature",0);finite(g.inset,"Transition.radialGrid.inset",0,.25);
+          if(g.curvature*(g.cellSize.x*g.cellSize.x+g.cellSize.y*g.cellSize.y)>=1)fail("Radial grid curvature must keep one boundary crossing per cell ray.");
         }else if(c.kind==="dissolve"){
           vector(c.dissolve.direction,"xy","dissolve.direction");finite(c.dissolve.feather,"dissolve.feather",.0001);
           vector(c.dissolve.cellSize,"xy","Transition.dissolve.cellSize",.0001);vector(c.dissolve.origin,"xy","Transition.dissolve.origin");
@@ -222,7 +241,7 @@ export function normalizeScene(input:unknown):SceneData {
         }
       }
       if(c.type==="ParticleMotionBlur")for(const key of ["shutterSeconds","maxSigmaWorld","dilationPixels","softnessPixels","alphaGain"] as const)finite(c[key],`ParticleMotionBlur.${key}`,0);
-      if(c.type==="LineRenderer"){vector(c.start,"xy","LineRenderer.start");vector(c.end,"xy","LineRenderer.end");finite(c.width,"LineRenderer.width",0);if(!["camera","segment","ray"].includes(c.coverage))fail("Invalid LineRenderer coverage.");}
+      if(c.type==="LineRenderer"){vector(c.start,"xy","LineRenderer.start");vector(c.end,"xy","LineRenderer.end");finite(c.width,"LineRenderer.width",0);finite(c.viewportExpansion,"LineRenderer.viewportExpansion",0,1);if(!["camera","segment","ray"].includes(c.coverage))fail("Invalid LineRenderer coverage.");if(c.viewportExpansion>0&&c.coverage!=="camera")fail("LineRenderer viewport expansion requires camera coverage.");}
       if(c.type==="DropShadow"||c.type==="Glow")finite(c.sigmaWorld,"sigmaWorld",0);
       if(c.type==="DropShadow"){vector(c.offsetWorld,"xy","offsetWorld");finite(c.opacity,"opacity",0,1);}
       if(c.type==="Glow"){finite(c.threshold,"threshold",0,1);finite(c.softness,"softness",.0001);finite(c.intensity,"intensity",0);if(!["alpha","additive"].includes(c.blend))fail("Invalid Glow blend.");}
@@ -244,8 +263,10 @@ export function normalizeScene(input:unknown):SceneData {
     if(types.has("ParticleEmitter")&&(types.has("SpriteRenderer")||types.has("TiledSpriteRenderer")))fail(`Use a separate emitter entity: ${node.id}`);
     if(types.has("Glow")&&!types.has("TiledSpriteRenderer")&&!types.has("SpriteNumberRenderer")&&!types.has("SpriteRenderer")&&!types.has("ParticleEmitter")&&!types.has("LineRenderer"))fail(`Glow requires SpriteRenderer, LineRenderer or ParticleEmitter on ${node.id}.`);
     if(types.has("SpriteMotionBlur")&&!types.has("SpriteRenderer"))fail(`SpriteMotionBlur requires SpriteRenderer on ${node.id}.`);
+    if(types.has("DepthOfField")&&!types.has("Camera"))fail(`DepthOfField requires Camera on ${node.id}.`);
     if(types.has("DropShadow")&&!types.has("SpriteRenderer"))fail(`DropShadow requires SpriteRenderer on ${node.id}.`);
     if(types.has("GaussianBlur")&&!types.has("TiledSpriteRenderer")&&!types.has("Camera"))fail(`GaussianBlur requires TiledSpriteRenderer or Camera on ${node.id}.`);
+    if(types.has("CameraMotionBlur")&&!types.has("Camera"))fail(`CameraMotionBlur requires Camera on ${node.id}.`);
     if(types.has("DirectionalBlur")&&!types.has("TiledSpriteRenderer"))fail(`DirectionalBlur requires TiledSpriteRenderer on ${node.id}.`);
     const transition=node.components.find(c=>c.type==="Transition");
     if(transition&&!transition.target&&!types.has("PlaneRenderer"))fail(`Transition requires a target or PlaneRenderer on ${node.id}.`);

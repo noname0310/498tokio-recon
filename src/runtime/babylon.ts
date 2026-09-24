@@ -17,6 +17,7 @@ import {BabylonCameraBlur} from "./babylon-camera-blur.js";
 import {transitionGroups} from "./transitions.js";
 import {clippedBounds} from "./geometry.js";
 import {motionBounds} from "./sprite-motion-blur.js";
+import {spriteFocus} from "./depth-of-field.js";
 import {BabylonParticleFilter} from "./babylon-particle-filter.js";
 import {BabylonShaderPreparation} from "./babylon-preparation.js";
 import type {LoadingProgress} from "./loading-status.js";
@@ -25,6 +26,7 @@ interface SpriteMaskTexture {texture:Babylon.RawTexture;bounds:Bounds;bytes:numb
 
 class Sprite {
   private filter?:BabylonParticleFilter;
+  private depthBody?:{mesh:Babylon.Mesh;material:Babylon.ShaderMaterial};
   private readonly maskTextures=new Map<string,SpriteMaskTexture>();private maskBytes=0;
   readonly renderer:BabylonSceneContext;readonly id:string;
   readonly textures:Map<string,Babylon.RawTexture>;readonly keys:Map<string,string>;readonly jobs:Map<string,Promise<void>>;readonly revisions:Map<string,number>;
@@ -42,7 +44,7 @@ class Sprite {
     const r=this.renderer,B=r.B,sprite=scene.requireComponent(this.id,"SpriteRenderer"),asset=scene.asset(sprite.asset),resolution=scene.data.rendering.texturePixelsPerUnit;
     const state=scene.spriteState(this.id);
     const revision=this.updateRevision=(this.updateRevision||0)+1;
-    if(!scene.active.get(this.id)||!state.visible||!r.resources.isImageReady(sprite.asset)){for(const {mesh}of this.meshes.values())mesh.setEnabled(false);return;}
+    if(!scene.active.get(this.id)||!state.visible||!r.resources.isImageReady(sprite.asset)){for(const {mesh}of this.meshes.values())mesh.setEnabled(false);this.depthBody?.mesh.setEnabled(false);return;}
     const source=await r.resources.image(scene,sprite.asset);if(this.disposed||revision!==this.updateRevision)return;
     const sortAnchor=scene.spriteSortAnchor(this.id);
     for(const [type,{mesh}] of this.meshes){
@@ -59,12 +61,27 @@ class Sprite {
     body.material.setTexture("filteredTex",filtered?this.filter!.texture!:r.neutralTexture);body.material.setFloat("filterPadding",filtered?Math.ceil(dilation+4*softness)+1:0);
     r.vec2(body.material,"filterCell",state.size);r.vec2(body.material,"filterGrid",{x:asset.atlas?.columns??1,y:asset.atlas?.rows??1});body.material.setFloat("filterFrame",state.frame);body.material.setFloat("motionGain",motion?.enabled?motion.alphaGain:1);
     const art={left:-asset.pivot.x*width,right:(1-asset.pivot.x)*width,bottom:-asset.pivot.y*height,top:(1-asset.pivot.y)*height},b=motion?.enabled?motionBounds(art,motion,asset.pixelsPerUnit):art;
-    r.rect(body.mesh,b.left,b.bottom,b.right,b.top);body.material.setVector4("motionArt",new B.Vector4(art.left,art.bottom,width,height));body.material.setFloat("motionEnabled",moving?1:0);body.material.setFloat("motionAmount",motion?.radialAmount??0);body.material.setInt("motionCount",motion?.samples??25);r.vec2(body.material,"motionCenter",motion?.center??{x:0,y:0});r.vec2(body.material,"motionOffset",motion?.translationWorld??{x:0,y:0});
+    const focus=moving?null:spriteFocus(scene,this.id,art),draw=focus?.bounds??b;
+    body.material.setFloat("focusEnabled",focus?1:0);
+    if(focus){r.vec2(body.material,"focusLimit",{x:focus.apertureProjection,y:focus.maxSigmaWorld});body.material.setFloat("focusDistance",focus.focus);for(const [key,v] of [["focusEye",focus.eye],["focusLensX",focus.lensX],["focusLensY",focus.lensY],["focusDepth",focus.depth]] as const)body.material.setVector3(key,new B.Vector3(v.x,v.y,v.z));}
+    r.rect(body.mesh,draw.left,draw.bottom,draw.right,draw.top);body.material.setVector4("motionArt",new B.Vector4(art.left,art.bottom,width,height));body.material.setFloat("motionEnabled",moving?1:0);body.material.setFloat("motionAmount",motion?.radialAmount??0);body.material.setInt("motionCount",motion?.samples??25);r.vec2(body.material,"motionCenter",motion?.center??{x:0,y:0});r.vec2(body.material,"motionOffset",motion?.translationWorld??{x:0,y:0});
     body.mesh.setEnabled(state.visible);r.tint(body.material,sprite.color);body.material.setFloat("hue",sprite.hueDegrees*Math.PI/180);
     body.material.setFloat("saturation",sprite.saturation);body.material.setFloat("brightness",sprite.brightness);body.material.setFloat("contrast",sprite.contrast);body.material.setFloat("whiteMix",sprite.whiteMix);
     const gradient=scene.component(this.id,"OpacityGradient");body.material.setFloat("opacityGradientEnabled",gradient?.enabled?1:0);r.vec2(body.material,"opacityGradientStart",gradient?.start??{x:0,y:0});r.vec2(body.material,"opacityGradientEnd",gradient?.end??{x:0,y:-1});
     const rect=state.rect;body.material.setVector4("uvRect",new B.Vector4(rect.x/source.width,rect.y/source.height,rect.width/source.width,rect.height/source.height));
     body.material.setVector4("uvBounds",asset.atlas?new B.Vector4((rect.x+.5)/source.width,(rect.y+.5)/source.height,(rect.x+rect.width-.5)/source.width,(rect.y+rect.height-.5)/source.height):new B.Vector4(0,0,1,1));
+    const writeDepth=sprite.depthWrite&&sprite.color.a===1&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective";
+    ((body.mesh.metadata??={}) as {depthColor?:boolean}).depthColor=writeDepth;
+    if(writeDepth&&!this.depthBody){
+      const material=r.spriteMaterial(`${this.id}/depth`,false,false);material.needAlphaBlending=()=>false;material.disableDepthWrite=false;material.disableColorWrite=true;material.setFloat("alphaCutoff",.5);
+      const mesh=new B.Mesh(`${this.id}/depth`,r.scene);mesh.parent=body.mesh.parent;mesh.material=material;mesh.alwaysSelectAsActiveMesh=true;r.entityOwners.set(mesh,this.id);
+      // Identical vertices keep both passes' rasterized depth identical. A
+      // separate art-sized quad self-occludes when DoF/motion expands the color
+      // quad, even though both surfaces lie on the same mathematical plane.
+      body.mesh.geometry!.applyToMesh(mesh);this.depthBody={material,mesh};
+    }
+    this.depthBody?.mesh.setEnabled(writeDepth);
+    if(writeDepth&&this.depthBody){const {mesh,material}=this.depthBody;mesh.refreshBoundingInfo();material.setVector4("motionArt",new B.Vector4(art.left,art.bottom,width,height));material.setTexture("spriteTex",this.textures.get("source")!);material.setVector4("uvRect",new B.Vector4(rect.x/source.width,rect.y/source.height,rect.width/source.width,rect.height/source.height));material.setVector4("uvBounds",new B.Vector4((rect.x+.5)/source.width,(rect.y+.5)/source.height,(rect.x+rect.width-.5)/source.width,(rect.y+rect.height-.5)/source.height));r.tint(material,{r:1,g:1,b:1,a:1});}
     const jobs:(Promise<void>|undefined)[]=[];
     const noise=scene.component(this.id,"ProceduralNoise");
     r.vec2(body.material,"noiseOrigin",noise?.origin||{x:0,y:0});r.vec2(body.material,"noiseSize",noise?.worldSize||{x:1,y:1});
@@ -123,7 +140,7 @@ class Sprite {
       this.maskTextures.delete(oldKey);this.maskBytes-=old.bytes;old.texture.dispose();
     }
   }
-  dispose(){this.disposed=true;this.filter?.dispose();for(const type of this.revisions.keys())this.revisions.set(type,(this.revisions.get(type)||0)+1);for(const {mesh,material} of this.meshes.values()){mesh.dispose();material.dispose();}for(const [type,texture] of this.textures)if(type!=="Glow"&&type!=="DropShadow")texture.dispose();for(const mask of this.maskTextures.values())mask.texture.dispose();this.maskTextures.clear();this.maskBytes=0;}
+  dispose(){this.disposed=true;this.depthBody?.mesh.dispose();this.depthBody?.material.dispose();this.filter?.dispose();for(const type of this.revisions.keys())this.revisions.set(type,(this.revisions.get(type)||0)+1);for(const {mesh,material} of this.meshes.values()){mesh.dispose();material.dispose();}for(const [type,texture] of this.textures)if(type!=="Glow"&&type!=="DropShadow")texture.dispose();for(const mask of this.maskTextures.values())mask.texture.dispose();this.maskTextures.clear();this.maskBytes=0;}
 }
 
 class TiledSprite {
@@ -147,7 +164,7 @@ class TiledSprite {
     if(bounds)r.rect(this.mesh,bounds.left-pad,bounds.bottom-pad,bounds.right+pad,bounds.top+pad);
     this.material.setFloat("clipEnabled",c.clipBounds?1:0);this.material.setVector4("clipBounds",new r.B.Vector4(bounds?.left??0,bounds?.bottom??0,bounds?.right??1,bounds?.top??1));r.vec2(this.material,"cropSigma",sigma);this.material.setFloat("glowSigma",halo);this.material.setFloat("glowGain",glow?.enabled?glow.intensity:0);
     r.vec2(this.material,"tileOrigin",c.origin);r.vec2(this.material,"tileSize",{x:asset.size.x/asset.pixelsPerUnit,y:asset.size.y/asset.pixelsPerUnit});
-    r.tint(this.material,c.color);this.material.setFloat("saturation",c.saturation);this.material.setFloat("verticalWrap",{clamp:0,clampBottom:1,transparent:2,repeat:3,repeatBottom:4}[c.wrap.y]);
+    r.tint(this.material,{r:c.color.r*c.brightness,g:c.color.g*c.brightness,b:c.color.b*c.brightness,a:c.color.a});this.material.setFloat("saturation",c.saturation);this.material.setFloat("verticalWrap",{clamp:0,clampBottom:1,transparent:2,repeat:3,repeatBottom:4}[c.wrap.y]);
     const directional=scene.component(this.id,"DirectionalBlur"),angle=(directional?.angleDegrees??0)*Math.PI/180;this.material.setFloat("directionalSigma",enabled(directional)?directional.sigmaWorld:0);r.vec2(this.material,"blurDirection",{x:Math.cos(angle),y:Math.sin(angle)});
     r.vec2(this.material,"noiseOrigin",noise?.origin||{x:0,y:0});r.vec2(this.material,"noiseSize",noise?.worldSize||{x:1,y:1});this.material.setFloat("noiseRange",noise?.range||0);this.material.setFloat("noiseEnabled",enabled(noise)&&noise.bands.some(b=>b.variance>0)?1:0);
     this.material.setVector3("noiseChannelGain",new r.B.Vector3(noise?.channelGain.r??1,noise?.channelGain.g??1,noise?.channelGain.b??1));
@@ -245,6 +262,10 @@ export class BabylonRenderer {
     }
     this.engine.setSize(Math.max(1,Math.round(view.width*view.dpr)),Math.max(1,Math.round(view.height*view.dpr)));
     const camera=this.nodes.get(data.cameraNode.id) as Babylon.TargetCamera,c=data.requireComponent(data.cameraNode.id,"Camera");
+    // Camera.computeWorldMatrix ignores the force argument used by meshes.
+    // Flush its parent pose and view cache before sorting camera-attached
+    // surfaces; scene.render would otherwise update them only after sorting.
+    camera.parent?.computeWorldMatrix(true);camera.getViewMatrix(true);
     scene.clearColor=new B.Color4(c.clearColor.r,c.clearColor.g,c.clearColor.b,c.clearColor.a);
     camera.mode=c.projection==="perspective"?B.Camera.PERSPECTIVE_CAMERA:B.Camera.ORTHOGRAPHIC_CAMERA;
     camera.fovMode=B.Camera.FOVMODE_VERTICAL_FIXED;camera.fov=2*Math.atan(view.worldHeight/(2*data.projectionDistance));
@@ -295,7 +316,9 @@ export class BabylonRenderer {
     this.transitions!.update(transitionGroups(data,view));
     // Transparent component planes use view depth, also for off-center cameras.
     const viewMatrix=M.inverse(data.world.get(data.cameraNode.id)!);
-    const transparent=scene.meshes.filter(mesh=>mesh.isVisible&&mesh.visibility>0&&mesh.isEnabled()&&mesh.material?.needAlphaBlending()).map(mesh=>{mesh.computeWorldMatrix(true);const metadata=mesh.metadata as {sortWorldPosition?:Vec3;sortOrder?:number}|null,p=metadata?.sortWorldPosition||mesh.getBoundingInfo().boundingSphere.centerWorld;return {mesh,z:M.point(viewMatrix,p).z,order:metadata?.sortOrder??0};}).sort((a,b)=>b.z-a.z||a.order-b.order);
+    // Color for depth-writing cutouts precedes translucent geometry. Otherwise
+    // its centre sort could paint over the front half of an intersecting sprite.
+    const transparent=scene.meshes.filter(mesh=>mesh.isVisible&&mesh.visibility>0&&mesh.isEnabled()&&mesh.material?.needAlphaBlending()).map(mesh=>{mesh.computeWorldMatrix(true);const metadata=mesh.metadata as {sortWorldPosition?:Vec3;sortOrder?:number;depthColor?:boolean}|null,p=metadata?.sortWorldPosition||mesh.getBoundingInfo().boundingSphere.centerWorld;return {mesh,z:M.point(viewMatrix,p).z,order:metadata?.sortOrder??0,depthColor:Boolean(metadata?.depthColor)};}).sort((a,b)=>Number(b.depthColor)-Number(a.depthColor)||b.z-a.z||a.order-b.order);
     transparent.forEach(({mesh},index)=>mesh.alphaIndex=index);
   }
   private cancelProgressiveDraw():void {if(this.progressiveDraw!==null)cancelAnimationFrame(this.progressiveDraw);this.progressiveDraw=null;}

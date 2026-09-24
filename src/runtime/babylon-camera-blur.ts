@@ -2,6 +2,7 @@ import type {TargetCamera,PostProcess} from "@babylonjs/core/pure";
 import type {BabylonSceneContext} from "./babylon-context.js";
 import type {Scene} from "./scene.js";
 import type {View} from "./types.js";
+import {cameraBlurSigma} from "./camera-motion-blur.js";
 
 /** One shared program for both axes; sampling is specified in screen UVs. */
 export function createCameraBlurEffect(r:BabylonSceneContext):PostProcess {
@@ -18,9 +19,9 @@ export class BabylonCameraBlur {
     if(this.camera!==camera){
       this.detach();this.camera=camera;
     }
-    const blur=scene.component(scene.cameraNode.id,"GaussianBlur");
-    this.x=blur?.enabled?blur.sigmaWorld.x/view.worldWidth:0;
-    this.y=blur?.enabled?blur.sigmaWorld.y/view.worldHeight:0;
+    const blur=cameraBlurSigma(scene);
+    this.x=blur.x/view.worldWidth;
+    this.y=blur.y/view.worldHeight;
     for(let axis=0;axis<2;axis++){
       const active=(axis===0?this.x:this.y)>0;
       if(active&&!this.passes[axis]){

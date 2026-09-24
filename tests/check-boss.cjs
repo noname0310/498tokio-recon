@@ -29,7 +29,7 @@ async function main(){
  const out=path.join(root,'test-results/boss');fs.mkdirSync(out,{recursive:true});
  const server=makeServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
  try{for(const [name,type,renderer]of [['dom',chromium,'dom'],['firefox-dom',firefox,'dom'],['babylon',chromium,'babylon']]){
-  const browser=await type.launch({headless:true});try{
+  const browser=await type.launch({headless:true,...type===chromium?{executablePath:chromium.executablePath()}:{}});try{
    const page=await browser.newPage({viewport:{width:640,height:360}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.goto(`${base}/?renderer=${renderer}&controls=0&frame=2640`);await page.waitForFunction(()=>window.scenePlayer?.ready);await page.evaluate(()=>scenePlayer.whenIdle());
    const seek=n=>page.evaluate(async n=>{await scenePlayer.seekFrame(n*4,{numerator:120,denominator:1});await scenePlayer.whenIdle();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));},n);
@@ -46,7 +46,7 @@ async function main(){
    for(const n of [2640.25,2641,2646,2668,2684,2633,2611,2640])await seek(n);
    const retained=await page.evaluate(()=>{const x=window.retainedCylinder;window.cylinderObserver.disconnect();return {same:scenePlayer.renderer.objects.find(o=>o.id==='boss-background')===x.o,nodes:x.nodes.every(n=>n.isConnected),count:x.nodes.length,uploads:x.uploads,added:x.added};});
    assert(retained.same&&retained.nodes);assert.equal(retained.uploads,0,'UV scrolling must not upload vertex buffers');assert.equal(retained.added,0,'UV scrolling must reuse DOM facets');if(renderer==='dom'){assert.equal(retained.count,100);assert.equal(await page.locator('canvas').count(),0);}
-   assert(compare(initial,await shot()).mae<.001,`${name}: deterministic cylinder and weapons after seek`);
+   const replayDifference=compare(initial,await shot());assert(replayDifference.mae<.001,`${name}: deterministic cylinder and weapons after seek: ${JSON.stringify(replayDifference)}`);
    await seek(2633);
    const spriteBounds=await page.evaluate(async()=>{
     const p=scenePlayer,s=p.scene,{Math3D:M}=await import('/runtime/player.js');

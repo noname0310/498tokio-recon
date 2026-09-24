@@ -11,6 +11,7 @@ function layout(sync:DOMRenderer["sync"],element:HTMLElement,b:Bounds,u:number){
 export class DOMPlane {
   readonly id:string;readonly element:HTMLDivElement;readonly fill=document.createElement("div");
   private grid?:SVGSVGElement;private gridPath?:SVGPathElement;
+  private shape?:HTMLDivElement;private ringClip?:SVGClipPathElement;private ringPath?:SVGPathElement;
   private readonly pathGeometry=new DOMTransitionPath();private gridKey="";
   private readonly noise?:DOMPlaneNoise;
   constructor(readonly renderer:DOMRenderer,node:Entity){this.id=node.id;this.element=renderer.createSurface(node.id,"PlaneRenderer");this.element.append(this.fill);if(node.components.some(c=>c.type==="ProceduralNoise"))this.noise=new DOMPlaneNoise(renderer);}
@@ -21,8 +22,21 @@ export class DOMPlane {
     const bounds=planeBounds(scene,this.id,view,c);
     if(!bounds){sync.hidden(this.element,true);return;}
     this.renderer.setDepth(this.element,this.renderer.planeDepth(scene,this.id,bounds));
-    sync.style(this.element,{transform:scene.cssMatrix(this.id,view)});const clip=this.renderer.depth.clipPlane(scene,this.id,view,bounds);sync.hidden(this.element,!clip.visible);sync.style(this.element,{clipPath:clip.css});
-    layout(sync,this.fill,bounds,view.pixelsPerUnit);sync.style(this.fill,{backgroundColor:color(c.color),borderRadius:c.shape==="ellipse"?"50%":"0"});sync.style(this.fill,{opacity:String(c.color.a)});
+    sync.style(this.element,{transform:scene.cssMatrix(this.id,view),mixBlendMode:c.blend==="additive"?"plus-lighter":"normal"});const clip=this.renderer.depth.clipPlane(scene,this.id,view,bounds);sync.hidden(this.element,!clip.visible);sync.style(this.element,{clipPath:clip.css});
+    const ring=c.shape==="ellipse"&&c.innerRadiusRatio>0;
+    if(ring){
+      if(!this.shape){
+        this.shape=document.createElement("div");this.shape.style.position="absolute";
+        this.ringClip=document.createElementNS(NS,"clipPath");this.ringClip.id=`plane-ring-${++serial}`;this.ringClip.setAttribute("clipPathUnits","userSpaceOnUse");
+        this.ringPath=document.createElementNS(NS,"path");this.ringPath.setAttribute("clip-rule","evenodd");this.ringClip.append(this.ringPath);this.renderer.defs.append(this.ringClip);
+        this.shape.append(this.fill);if(this.grid)this.shape.append(this.grid);this.element.append(this.shape);
+      }
+      const x=c.size.x*view.pixelsPerUnit/2,y=c.size.y*view.pixelsPerUnit/2,k=c.innerRadiusRatio;
+      const ellipse=(x:number,y:number)=>`M ${x} 0 A ${x} ${y} 0 1 0 ${-x} 0 A ${x} ${y} 0 1 0 ${x} 0 Z`;
+      sync.attribute(this.ringPath!,"d",`${ellipse(x,y)} ${ellipse(x*k,y*k)}`);
+    }
+    if(this.shape)sync.style(this.shape,{clipPath:ring?`url(#${this.ringClip!.id})`:"none"});
+    layout(sync,this.fill,bounds,view.pixelsPerUnit);sync.style(this.fill,{backgroundColor:color(c.color),borderRadius:c.shape==="ellipse"&&!ring?"50%":"0"});sync.style(this.fill,{opacity:String(c.color.a)});
     const pendingNoise=this.noise?.update(this.fill,bounds,view.pixelsPerUnit,scene.component(this.id,"ProceduralNoise"));
     const transition=scene.component(this.id,"Transition");
     if(!transition?.enabled||transition.progress>=1){sync.hidden(this.fill,false);if(this.grid)sync.hidden(this.grid,true);await pendingNoise;return;}
@@ -30,7 +44,7 @@ export class DOMPlane {
     if(transition.progress<=0){if(this.grid)sync.hidden(this.grid,true);await pendingNoise;return;}
     if(!this.grid){
       this.grid=document.createElementNS(NS,"svg");this.grid.classList.add("transition-grid");this.grid.setAttribute("aria-hidden","true");this.grid.setAttribute("preserveAspectRatio","none");
-      this.gridPath=document.createElementNS(NS,"path");this.gridPath.setAttribute("fill-rule","nonzero");this.grid.append(this.gridPath);this.element.append(this.grid);
+      this.gridPath=document.createElementNS(NS,"path");this.gridPath.setAttribute("fill-rule","nonzero");this.grid.append(this.gridPath);(this.shape??this.element).append(this.grid);
     }
     const grid=this.grid,u=view.pixelsPerUnit;sync.hidden(grid,false);
     sync.style(grid,{filter:this.fill.style.filter});
@@ -46,7 +60,7 @@ export class DOMPlane {
     // well, so a paused transition needs no extra animation tick to show noise.
     sync.style(grid,{filter:this.fill.style.filter});
   }
-  dispose():void{this.noise?.dispose();this.renderer.removeSurface(this.element);}
+  dispose():void{this.noise?.dispose();this.ringClip?.remove();this.renderer.removeSurface(this.element);}
 }
 export class DOMLine {
   readonly id:string;readonly layers:{element:HTMLDivElement;svg:SVGSVGElement;line:SVGLineElement}[]=[];
@@ -76,7 +90,7 @@ export class DOMLine {
       this.renderer.setDepth(element,this.renderer.viewDepth(scene,this.id,{...center,z:offset}));
       const b=shape.bounds;const clip=this.renderer.depth.clipPlane(scene,this.id,view,b,offset,{x:0,y:0},u);sync.hidden(element,!clip.visible);sync.style(element,{clipPath:clip.css});sync.style(element,{transform:scene.cssMatrix(this.id,view,{x:0,y:0,z:offset},u)});
       sync.style(svg,{position:"absolute",left:`${b.left*u}px`,top:`${-b.top*u}px`,width:`${(b.right-b.left)*u}px`,height:`${(b.top-b.bottom)*u}px`});sync.attribute(svg,"viewBox",`${b.left*u} ${-b.top*u} ${(b.right-b.left)*u} ${(b.top-b.bottom)*u}`);
-      for(const [key,value] of Object.entries({x1:shape.start.x*u,y1:-shape.start.y*u,x2:shape.end.x*u,y2:-shape.end.y*u,"stroke-width":c.width*u,"stroke-opacity":c.color.a*(isGlow?(glow?.color.a??1):1)}))sync.attribute(line,key,String(value));
+      for(const [key,value] of Object.entries({x1:shape.start.x*u,y1:-shape.start.y*u,x2:shape.end.x*u,y2:-shape.end.y*u,"stroke-width":shape.width*u,"stroke-opacity":c.color.a*(isGlow?(glow?.color.a??1):1)}))sync.attribute(line,key,String(value));
       sync.attribute(line,"stroke",color(isGlow&&glow?glow.color:c.color));sync.attribute(line,"stroke-linecap","butt");sync.attribute(line,"filter",isGlow?`url(#${this.filter.id})`:"none");
       if(isGlow&&glow){sync.attribute(this.blur,"stdDeviation",String(glow.sigmaWorld*u));sync.attribute(this.gain,"slope",String(glow.intensity*Math.max(0,Math.min(1,(.2126*c.color.r+.7152*c.color.g+.0722*c.color.b-glow.threshold)/glow.softness))));for(const [key,value] of Object.entries({x:b.left*u,y:-b.top*u,width:(b.right-b.left)*u,height:(b.top-b.bottom)*u}))sync.attribute(this.filter,key,String(value));}
     }

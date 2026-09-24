@@ -1,7 +1,7 @@
 // Preview the Webpack artifact; tests can supply additional static mounts.
 const http=require("node:http"),fs=require("node:fs"),path=require("node:path"),{spawn}=require("node:child_process");
 const root=path.resolve(__dirname,".."),port=Number(process.env.TOKIO_PREVIEW_PORT||4980);
-const types={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json; charset=utf-8",".css":"text/css; charset=utf-8",".png":"image/png",".mp4":"video/mp4",".mp3":"audio/mpeg"};
+const types={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json; charset=utf-8",".css":"text/css; charset=utf-8",".png":"image/png",".mp4":"video/mp4",".m4a":"audio/mp4"};
 function makeServer({mounts=[],basePath="/"}={}){
   const prefix="/"+basePath.split("/").filter(Boolean).join("/");
   const mount=prefix==="/"?"/":prefix+"/";

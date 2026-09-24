@@ -1,17 +1,17 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),{pathToFileURL}=require("node:url");
 const {chromium,firefox}=require("playwright"),{makeServer,root}=require("./serve.cjs");
-const soundtrack=path.join(root,"assets/soundtrack.mp3");
+const soundtrack=path.join(root,"assets/soundtrack.m4a");
 async function clocks(){
   const {PerformanceClock,Frame,Time,frameRate,Scene}=await import(pathToFileURL(path.join(root,"dist/runtime/player.js")));
   const rate=frameRate(30000,1001);let now=0;
   const clock=new PerformanceClock(Time.fromFrame(Frame.from(10)),rate,true,()=>now);
-  await clock.seek(Time.fromRatio(19n,2n),rate);assert.equal(Time.key(clock.sample(rate)),"9:1/2");
+  await clock.seek(Time.fromRatio(19,2),rate);assert.equal(Time.key(clock.sample(rate)),"9:1/2");
   await clock.play();now=1001/30;assert.equal(Time.key(clock.sample(rate)),"0:50051/100100");
   // Microsecond sampling has bounded quantization; exact seeks are not rounded.
   clock.pause();await clock.seek(Time.fromFrame(Frame.from(2147483000)),frameRate(24000));
   assert.equal(clock.sample(frameRate(24000)).frame,2147483000);clock.dispose();
   const heldClock=new PerformanceClock(Time.fromFrame(Frame.from(120)),frameRate(1),false,()=>now);
-  await heldClock.seek(Time.fromRatio(1703n,2n),rate);await heldClock.play();now+=16;
+  await heldClock.seek(Time.fromRatio(1703,2),rate);await heldClock.play();now+=16;
   const displayed=heldClock.sample(rate);heldClock.pauseOffsetHint=Time.convert(displayed,rate,frameRate(1));
   now+=10;heldClock.sample(rate);heldClock.pause();
   assert.equal(Time.compare(heldClock.sample(rate),displayed),0,"Performance pause retains the evaluated pose despite later clock samples");
@@ -26,13 +26,13 @@ async function clocks(){
   console.log("Clocks: rational looping, exact large frame seek and component/asset reference validation passed.");
 }
 async function rangeChecks(origin){
-  const url=origin+"/assets/soundtrack.mp3",bytes=fs.readFileSync(soundtrack),head=await fetch(url,{method:"HEAD"});
-  assert.equal(head.status,200);assert.equal(head.headers.get("content-type"),"audio/mpeg");assert.equal(Number(head.headers.get("content-length")),bytes.length);assert.equal(head.headers.get("accept-ranges"),"bytes");
+  const url=origin+"/assets/soundtrack.m4a",bytes=fs.readFileSync(soundtrack),head=await fetch(url,{method:"HEAD"});
+  assert.equal(head.status,200);assert.equal(head.headers.get("content-type"),"audio/mp4");assert.equal(Number(head.headers.get("content-length")),bytes.length);assert.equal(head.headers.get("accept-ranges"),"bytes");
   for(const [header,start,end] of [["bytes=100-199",100,199],["bytes=-100",bytes.length-100,bytes.length-1],[`bytes=${bytes.length-100}-`,bytes.length-100,bytes.length-1]]){
     const response=await fetch(url,{headers:{Range:header}});assert.equal(response.status,206);assert.equal(response.headers.get("content-range"),`bytes ${start}-${end}/${bytes.length}`);assert.deepEqual(Buffer.from(await response.arrayBuffer()),bytes.subarray(start,end+1));
   }
   for(const range of ["bytes=-0",`bytes=${bytes.length}-`,"bytes=50-10","bytes=x-y","bytes=0-1,4-5"]){const response=await fetch(url,{headers:{Range:range}});assert.equal(response.status,416);await response.arrayBuffer();}
-  console.log("Audio HTTP: MP3 MIME, HEAD, exact byte ranges, suffix ranges and invalid range handling passed.");
+  console.log("Audio HTTP: M4A MIME, HEAD, exact byte ranges, suffix ranges and invalid range handling passed.");
 }
 async function buttonChecks(page){
   await page.evaluate(()=>scenePlayer.pause());
@@ -122,7 +122,7 @@ async function browserChecks(origin){
     assert.equal(await page.evaluate(()=>scenePlayer.playerControls.element.parentElement===document.body),true);
     await buttonChecks(page);
     await pauseChecks(page,`Chromium ${renderer}`);
-    const duration=await page.evaluate(()=>scenePlayer.duration);assert(duration>230&&duration<230.1,"Gapless decoded duration matches AAC source, not padded MP3 container");
+    const duration=await page.evaluate(()=>scenePlayer.duration);assert(duration>230&&duration<230.1,"Decoded M4A duration matches the source AAC timeline");
     const controls=page.locator(".player-controls"),bar=await controls.boundingBox();
     await page.locator('[data-action="play"]').click();await page.mouse.move(480,200);await page.waitForFunction(()=>scenePlayer.time>.15);
     await page.waitForFunction(()=>document.querySelector(".player-controls").dataset.visible==="false");await page.waitForTimeout(200);

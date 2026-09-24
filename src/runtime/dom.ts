@@ -1,4 +1,5 @@
 import {DOMNumber} from "./dom-number.js";
+import {cameraBlurSigma} from "./camera-motion-blur.js";
 import type { Scene } from "./scene.js";
 import type { Resources } from "./resources.js";
 import type { Entity, View, ComponentType, RenderObject, PixelImage, Vec3, RGB, Bounds } from "./types.js";
@@ -18,6 +19,8 @@ import {transitionGroups} from "./transitions.js";
 import {Math3D as M} from "./math.js";
 import {clippedBounds} from "./geometry.js";
 import {motionBounds,motionSamples} from "./sprite-motion-blur.js";
+import {DOMSpriteFocus} from './dom-sprite-focus.js';
+import {spriteFocus} from "./depth-of-field.js";
 const NS="http://www.w3.org/2000/svg";
 function svg<K extends keyof SVGElementTagNameMap>(tag:K,attrs:Record<string,string|number>={},parent?:Element):SVGElementTagNameMap[K]{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));parent?.append(e);return e;}
 function div(className:string,parent?:Element){const e=document.createElement("div");e.className=className;parent?.append(e);return e;}
@@ -38,6 +41,7 @@ let serial=0;
 
 class Sprite {
   private readonly motionImages:HTMLImageElement[]=[];
+  private readonly focus=new DOMSpriteFocus();
   private readonly shapeFilter:SVGFilterElement;private readonly shapeDilation:SVGFEMorphologyElement;private readonly shapeSoftness:SVGFEGaussianBlurElement;
   private readonly motionGainFilter:SVGFilterElement;private readonly motionGain:SVGFEFuncAElement;
   readonly renderer:DOMRenderer;readonly id:string;readonly elements:Map<"SpriteRenderer"|"DropShadow"|"Glow",SpriteElement>;
@@ -94,8 +98,17 @@ class Sprite {
     // decode on each newly spawned surface (or each atlas frame).
     if(this.sourceKey!==source){this.sourceKey=source;for(const {image} of this.elements.values()){image.decoding="sync";image.src=source;}}
     // The prepared source has fixed cell bounds, independent of atlas position.
-    const motion=scene.component(this.id,"SpriteMotionBlur"),filtered=motion?.enabled&&(motion.dilationPixels>0||motion.softnessPixels>0),rasterScale=filtered||this.renderer.depth.enabled?8:1;
+    const motion=scene.component(this.id,"SpriteMotionBlur"),filtered=motion?.enabled&&(motion.dilationPixels>0||motion.softnessPixels>0);
+    const graded=sprite.whiteMix!==0||sprite.color.r!==1||sprite.color.g!==1||sprite.color.b!==1||sprite.hueDegrees!==0||sprite.saturation!==1||sprite.brightness!==1||sprite.contrast!==1;
+    // Gecko rasterizes a filtered image before its perspective transform. A
+    // native-sized tint surface would then be magnified with linear sampling,
+    // softening pixel art even when no blur is enabled. Keep live grading at
+    // the same fixed working resolution already used for clipped sprites.
+    const rasterScale=filtered||this.renderer.depth.enabled||(graded&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective")?Math.max(8,2**Math.ceil(Math.log2(256/Math.max(state.size.x,state.size.y)))):1;
     const units=asset.pixelsPerUnit*rasterScale,width=state.size.x*rasterScale,height=state.size.y*rasterScale;
+    const artBounds={left:-asset.pivot.x*state.size.x/asset.pixelsPerUnit,right:(1-asset.pivot.x)*state.size.x/asset.pixelsPerUnit,bottom:-asset.pivot.y*state.size.y/asset.pixelsPerUnit,top:(1-asset.pivot.y)*state.size.y/asset.pixelsPerUnit};
+    const focus=motion?.enabled&&(motion.radialAmount>0||motion.translationWorld.x!==0||motion.translationWorld.y!==0)?null:spriteFocus(scene,this.id,artBounds);
+    let bodyProjection="none",bodyClip="none";
     // Compose the pivot into the projected transform. Chromium rounds an
     // image's fractional layout offset before scaling its parent (e.g. -6.5
     // at 6x became a 3px shift). Keep integer native bounds at a zero origin;
@@ -112,12 +125,16 @@ class Sprite {
       const c=scene.component(this.id,type);
       sync.style(element,{mixBlendMode:c?.type==="Glow"&&c.blend==="additive"?"plus-lighter":"normal"});
       const offsetZ=type==="DropShadow"?.0002:type==="Glow"?.0001:0;
-      sync.style(element,{transform:scene.cssMatrix(this.id,view,{...origin,z:offsetZ},units)});
+      const projection=scene.cssMatrix(this.id,view,{...origin,z:offsetZ},units);
+      if(type==="SpriteRenderer")bodyProjection=projection;
+      if(type!=="SpriteRenderer"||!focus)sync.style(element,{transform:projection});
       const pad=c&&"sigmaWorld" in c?4*c.sigmaWorld:0,dx=c?.type==="DropShadow"?c.offsetWorld.x:0,dy=c?.type==="DropShadow"?c.offsetWorld.y:0;
       this.renderer.setDepth(element,groupDepth??this.renderer.viewDepth(scene,this.id,{x:(.5-asset.pivot.x)*width/units+dx,y:(.5-asset.pivot.y)*height/units+dy,z:offsetZ}),sprite.sortingOrder*4+(sortAnchor?(type==="DropShadow"?-2:type==="Glow"?-1:0):0));
       const bounds={left:-asset.pivot.x*width/units-pad+Math.min(0,dx),right:(1-asset.pivot.x)*width/units+pad+Math.max(0,dx),bottom:-asset.pivot.y*height/units-pad+Math.min(0,dy),top:(1-asset.pivot.y)*height/units+pad+Math.max(0,dy)};
-      const clipping=this.renderer.depth.clipPlane(scene,this.id,view,motion?.enabled&&type==="SpriteRenderer"?motionBounds(bounds,motion,asset.pixelsPerUnit):bounds,offsetZ,origin,units);
-      sync.hidden(element,!enabled(c)||!clipping.visible);sync.style(element,{clipPath:clipping.visible?clipping.css:"none"});
+      const clipping=this.renderer.depth.clipPlane(scene,this.id,view,type==="SpriteRenderer"&&focus?focus.bounds:motion?.enabled&&type==="SpriteRenderer"?motionBounds(bounds,motion,asset.pixelsPerUnit):bounds,offsetZ,origin,units);
+      sync.hidden(element,!enabled(c)||!clipping.visible);
+      if(type==="SpriteRenderer")bodyClip=clipping.visible?clipping.css:"none";
+      if(type!=="SpriteRenderer"||!focus)sync.style(element,{clipPath:clipping.visible?clipping.css:"none"});
       sync.style(surface,{left:"0px",top:"0px",width:`${width}px`,height:`${height}px`});
       sync.style(image,{imageRendering:asset.filter==="point"?"crisp-edges":"auto"});
       if(filter)sync.style(surface,{filter:type==="Glow"&&sprite.hueDegrees?`${filter} hue-rotate(${sprite.hueDegrees}deg)`:filter});
@@ -177,7 +194,8 @@ class Sprite {
     }
     if(this.disposed||revision!==this.updateRevision)return;
     const bodyElement=this.elements.get("SpriteRenderer")!.element;
-    sync.style(bodyElement,{width:`${width}px`,height:`${height}px`,overflow:motion?.enabled&&motion.clipToSprite?"hidden":"visible"});
+    if(!focus)sync.style(bodyElement,{width:`${width}px`,height:`${height}px`});
+    sync.style(bodyElement,{overflow:motion?.enabled&&motion.clipToSprite?"hidden":"visible"});
     const gain=motion?.enabled?motion.alphaGain:1;sync.attribute(this.motionGain,"slope",gain);sync.style(bodyElement,{opacity:String(opacity),filter:gain!==1?`url(#${this.motionGainFilter.id})`:"none"});
     const gainBounds=motion?.enabled?motionBounds({left:0,right:width/units,bottom:-height/units,top:0},{...motion,center:{x:motion.center.x-origin.x,y:motion.center.y-origin.y}},asset.pixelsPerUnit):null;
     if(gainBounds)sync.attrs(this.motionGainFilter,{filterUnits:"userSpaceOnUse",x:gainBounds.left*units,y:-gainBounds.top*units,width:(gainBounds.right-gainBounds.left)*units,height:(gainBounds.top-gainBounds.bottom)*units});
@@ -192,8 +210,9 @@ class Sprite {
         const t=samples[i*2],weight=samples[i*2+1];sync.style(image,{mixBlendMode:"plus-lighter",opacity:String(weight),transformOrigin:`${(motion.center.x-origin.x)*units}px ${(origin.y-motion.center.y)*units}px`,transform:`translate(${t*motion.translationWorld.x*units}px, ${-t*motion.translationWorld.y*units}px) scale(${1+t*motion.radialAmount})`});
       }
     }else{
-      this.motionImages.forEach(image=>sync.hidden(image,true));sync.style(bodyElement,{isolation:"auto"});sync.style(body,{mixBlendMode:"normal",transform:"none",opacity:"1"});
+      this.motionImages.forEach(image=>sync.hidden(image,true));sync.style(bodyElement,{isolation:focus?"isolate":"auto"});sync.style(body,{mixBlendMode:"normal",transform:"none",opacity:"1"});
     }
+    this.focus.apply(sync,bodyElement,body,focus,view,bodyProjection,bodyClip);
   }
   dispose(){this.disposed=true;this.noiseRevision++;this.filters.forEach(f=>f.remove());this.elements.forEach(({element})=>this.renderer.removeSurface(element));}
 }
@@ -306,12 +325,12 @@ class TiledSprite {
       sync.attrs(this.cropRect,{x,y,width:(clip.right===null?right:clip.right*units)-x,height:(clip.bottom===null?bottom:-clip.bottom*units)-y});
     }
     const width=right-left,height=bottom-top,hasNoise=enabled(noise)&&noise.bands.some(b=>b.variance>0);
-    const color=c.color,gray=color.r===color.g&&color.g===color.b,s=c.saturation,luma=[.213,.715,.072];
+    const color=c.color,gray=color.r===color.g&&color.g===color.b,s=c.saturation,luma=[.213,.715,.072],brightness=c.brightness;
     // One sRGB matrix applies saturation, then RGB gain, with a single clamp.
     // This matches the shader even when oversaturation makes a channel negative.
-    const colorMatrix=[color.r,color.g,color.b].flatMap((gain,row)=>[...luma.map((v,col)=>gain*((1-s)*v+(row===col?s:0))),0,0]);
+    const colorMatrix=[color.r,color.g,color.b].flatMap((gain,row)=>[...luma.map((v,col)=>brightness*gain*((1-s)*v+(row===col?s:0))),0,0]);
     sync.attribute(this.tintMatrix,"values",String([...colorMatrix,0,0,0,1,0].join(" ")));
-    const tint=gray&&s===1?(color.r===1?"":`brightness(${color.r})`):`url(#${this.artID}-tint)`;
+    const gain=color.r*brightness,tint=gray&&s===1?(gain===1?"":`brightness(${gain})`):`url(#${this.artID}-tint)`;
     sync.style(this.surface,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,opacity:color.a,filter:[hasNoise?"brightness(2)":"",tint].filter(Boolean).join(" ")||"none"});sync.attribute(this.svg,"viewBox",`${left} ${top} ${width} ${height}`);
     const cell=units/asset.pixelsPerUnit,tileWidth=asset.size.x*cell,tileHeight=asset.size.y*cell,y0=-c.origin.y*units,y1=y0+tileHeight,bleed=cell/2;
     // One spare tile covers every scroll phase. Geometry must not alternate
@@ -506,7 +525,7 @@ export class DOMRenderer {
   async update(scene:Scene,view:View){
     const sync=this.sync;
     const revision=++this.updateRevision;this.viewMatrix=M.inverse(scene.world.get(scene.cameraNode.id)!);
-    const blur=scene.component(scene.cameraNode.id,"GaussianBlur"),sx=blur?.enabled?blur.sigmaWorld.x*view.pixelsPerUnit:0,sy=blur?.enabled?blur.sigmaWorld.y*view.pixelsPerUnit:0;
+    const blur=cameraBlurSigma(scene),sx=blur.x*view.pixelsPerUnit,sy=blur.y*view.pixelsPerUnit;
     if(sx>0||sy>0){
       sync.attrs(this.cameraBlurFilter!,{x:-4*sx,y:-4*sy,width:view.width+8*sx,height:view.height+8*sy});
       sync.attribute(this.cameraBlur!,"stdDeviation",`${sx} ${sy}`);

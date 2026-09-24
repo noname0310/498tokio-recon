@@ -42,7 +42,7 @@ const site = {
     new CopyWebpackPlugin({ patterns: [
     { from: "src/player/styles", to: "styles" },
     { from: "LICENSE{,-MIT,-APACHE}", to: "[name][ext]" },
-    { from: "**/*.{json,png,mp3}", context: path.resolve(__dirname, "assets"), to: "assets/[path][name][ext]" }
+    { from: "**/*.{json,png,m4a}", context: path.resolve(__dirname, "assets"), to: "assets/[path][name][ext]" }
   ] })],
   optimization: { splitChunks: { chunks: "async", cacheGroups: {
     babylon: { test: /[\\/]node_modules[\\/]@babylonjs[\\/]/, name: "babylon-core", enforce: true }
@@ -60,7 +60,8 @@ const standalone = {
   module: { rules: [
     { resourceQuery: /^\?inline-worker$/, use: { loader: "worker-rspack-loader", options: { inline: "no-fallback" } } },
     ...shared.module.rules,
-    { test: /\.(png|mp3)$/, type: "asset/inline" },
+    { test: /\.png$/, type: "asset/inline" },
+    { test: /\.m4a$/, type: "asset/inline", generator: { dataUrl: { mimetype: "audio/mp4" } } },
     { resourceQuery: /^\?source$/, type: "asset/source" }
   ] },
   plugins: [

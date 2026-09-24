@@ -14,11 +14,12 @@ The contracts are defined in [types.ts](../src/runtime/types.ts) and defaults/va
 | --- | --- |
 | Camera | Orthographic or perspective projection, reference aspect fitting and camera selection |
 | SpriteRenderer / TiledSpriteRenderer | Native pixel artwork, padded atlas selection, live tint/saturation/hue and repeated coverage |
-| PlaneRenderer / LineRenderer | Analytic planes, ellipses and lines with camera or fixed coverage |
+| PlaneRenderer / LineRenderer | Analytic planes, filled or hollow ellipses, and lines with camera or fixed coverage |
 | SpriteNumberRenderer | Individual atlas glyphs, continuous numeric values and repeated number layout |
 | SpriteAnimator / Flicker | Independent sprite cadence or periodic/seeded visibility |
 | Glow / DropShadow / GaussianBlur | Component effects attached to a rendered entity |
 | SpriteMotionBlur / ParticleMotionBlur | Translation/radial sampling, dilation and directional blur |
+| DepthOfField | Camera focus and aperture-driven blur on projected sprite planes |
 | ProceduralNoise / OpacityGradient | Seeded secondary texture and live alpha fields |
 | ParticleEmitter | Deterministic local or world particle simulation, shape, velocity, lifetime, color and atlas animation |
 | Transition | Procedural masks and scene reveals selected by transition kind |
@@ -35,6 +36,12 @@ Babylon uploads particle instance buffers only for visible draws; size-sorted ru
 
 The camera expands the visible world beyond the reference aspect: a taller viewport preserves reference width, and a wider viewport preserves reference height. Reference-aspect mode adds letterboxing. Camera fitting, tiled coverage and procedural transition geometry account for dynamic viewport dimensions.
 
+`PlaneRenderer.shape: "ellipse"` supports `innerRadiusRatio` from 0 to 1. Zero (the default) fills the ellipse; a positive ratio makes a concentric hole, and 1 leaves no visible area. DOM uses a retained SVG even-odd clip over the live plane and its transition geometry. Babylon evaluates inner and outer contours analytically with screen-derivative antialiasing. Size, hole ratio and color remain animatable; no ring image is generated.
+
+`PlaneRenderer.blend` defaults to `"normal"`; `"additive"` adds the plane's color, weighted by alpha, to surfaces behind it. Camera coverage can represent an animated light flash across any viewport aspect.
+
+`LineRenderer.coverage: "camera"` extends a world-space line through the finite camera frustum. Its optional `viewportExpansion` (0–1, default 0) adds the extra perpendicular span exposed beyond the camera's reference aspect. Animating it to 1 lets a widening beam cover taller viewports while preserving the authored reference-view width. The line retains its world transform, perspective and camera shake.
+
 ## Time and playback
 
 Integer FrameNumber, rational FrameTime and FrameRate distinguish discrete frame addresses from continuous time. Tracks, binding containers, nested sequences, interpolation packing and weighted Bezier curves are documented in [animation.md](animation.md).
@@ -42,6 +49,16 @@ Integer FrameNumber, rational FrameTime and FrameRate distinguish discrete frame
 AudioPlayer wraps an Audio element and provides the animation clock. Playback uses performance.now() between media hints, resynchronizing at transport events and actual media advancement. Pause, seek, playback rate and native media controls update the animation. Without an audio clock, AnimationPlayer uses PerformanceClock. Exact frame seeks preserve the frame/rate pair.
 
 SpriteAnimator, Flicker and ParticleEmitter origins use start: {frame, rate}; frame origins are not stored as Float32 seconds. A particle birth ordinal seeds its own Mulberry32 stream, so random access and replay do not depend on rendering cadence. Local particles follow the current parent transform throughout their lifetime.
+
+`TransformNoise` adds seeded local position and rotation offsets after authored tracks. It uses continuous quintic value noise at an explicit frequency, with a frame-based start, duration and animatable strength. Random access has no accumulated simulation state. A camera can inherit an orbit pivot while receiving its own local shake.
+
+`CameraMotionBlur` samples five camera poses across its shutter interval. Projected variance at `focusDistance` drives the shared screen Gaussian in both renderers; `maxSigmaWorld` caps its footprint, and an existing `GaussianBlur` adds in variance. This is a separable approximation at one focal plane, not per-pixel depth blur. The camera hierarchy evaluates each sampled sequence once. Babylon prepares the shared blur shader with the scene's other materials.
+
+`DepthOfField` on a perspective camera uses `focusDistance` and `apertureSigma` in camera world units. `maxSigmaWorld` caps its radius on the reference projection plane in both backends. Defocus varies across a tilted sprite: the signed screen blur is proportional to inverse depth minus inverse focus distance. Babylon samples a fixed Gaussian aperture in the sprite shader. DOM blends a small set of retained Gaussian layers after projection, using the plane's affine inverse-depth field as CSS gradient weights. Filtering is bounded to visible regions and needs no generated frames. The DOM Gaussian levels approximate the continuous aperture kernel. It currently filters SpriteRenderer bodies; camera motion blur still filters the composed scene.
+
+`SpriteRenderer.depthWrite` enables alpha-tested plane occlusion in perspective scenes once the sprite is fully opaque. Babylon draws a colorless depth mesh with an alpha cutoff of 0.5. DOM caches opaque cell runs and clips other surfaces against the same camera rays and plane intersection. Material in front of the plane remains visible, and transparent holes expose material behind it. The atlas itself remains intact; moving or rotating either plane changes the intersection. Defocus softens color separately from this central-ray depth boundary.
+
+`SortingGroup` also applies to particle emitters. It preserves each particle's physical transform and internal depth order while using the group's anchor for composition against other objects. DOM surfaces and Babylon instance batches share this anchor, so tilted billboards can consistently appear over an opaque sprite.
 
 Particle bursts accept `time: {frame, rate}` for exact relative frame offsets (numeric seconds remain supported), plus optional `sizeScale` and `color`. This describes a group followed by smaller satellites without separate clocks or simulations. `cameraContinuation: {padding}` extends a planar local stream through the current camera bounds. Positions, birth IDs and animation phases inside the authored lifetime stay unchanged; the paths continue with endpoint velocity outside it, while size and color curves clamp. This mode requires zero spread, positive speed, planar non-reversing acceleration and no speed-over-life curve. Padding includes the sprite, glow and motion-blur footprint. A reference-sized camera is used when querying particle states without a viewport.
 
@@ -53,13 +70,15 @@ Tiled DOM artwork merges adjacent cells of identical RGBA into exact rectangles.
 
 PlayerControls belongs to the scene and references AnimationPlayer. Its fixed screen overlay retains the full display size when the scene is letterboxed. Buttons reuse their icons; fading, layout and menus use HTML/CSS. Hidden controls stop timeline updates. Clicking the scene reveals controls without toggling playback.
 
+`Transition.kind: "radialGrid"` uses `max(abs((p - cellCenter) / halfCellSize)) <= progress - inset + curvature * squaredDistance(p, center)`. The distance is evaluated at each boundary point, producing curved, asymmetric tile outlines. `cellSize`, `origin` and `center` use local world units; `curvature` uses inverse squared units. `inset` (0–0.25, default zero) lets center cells disappear before outer cells. Zero progress hides the plane and full progress covers it. Curvature must be nonnegative and satisfy `curvature * (cellSize.x² + cellSize.y²) < 1`, keeping each cell boundary connected. DOM solves the quadratic contour into one retained union path with shared edges; Babylon evaluates the same field in the fragment shader. Both extend across the current frustum. Run `npm run check:paper-return` for field classification, half-opacity joins, sparse source fits, reverse seeks and expanded viewports.
+
 ## Entry points
 
 createPlayer creates the complete engine and transport. Its optional onError callback is registered before image preparation begins. createRenderer creates a standalone backend. Scene compiles and validates the shared data model; Resources owns cached textures and jobs. Disposal releases renderer surfaces, resources, clocks and controls.
 
-The built index.html accepts renderer=dom or renderer=babylon, a scene URL, an exact frame address, and a controls visibility option. The website loads JSON, PNG and MP3 files by URL; it has no bundled image map. Images resolve relative to the loaded JSON, so an external scene can provide its own assets.
+The built index.html accepts renderer=dom or renderer=babylon, a scene URL, an exact frame address, and a controls visibility option. The website loads JSON, PNG and M4A files by URL; it has no bundled image map. Images resolve relative to the loaded JSON, so an external scene can provide its own assets.
 
-The standalone entry imports the final scene and Babylon backend, embeds PNGs and MP3 using `asset/inline`, and supplies `resolveAsset(url)` to map original scene paths to embedded data. The worker uses the loader's inline mode. Its single HTML needs no server or companion files. Exported scene JSON retains its original paths; scene evaluation, resource preparation and rendering stay shared. See [build pipeline](build.md).
+The standalone entry imports the final scene and Babylon backend, embeds PNGs and M4A using `asset/inline`, and supplies `resolveAsset(url)` to map original scene paths to embedded data. The worker uses the loader's inline mode. Its single HTML needs no server or companion files. Exported scene JSON retains its original paths; scene evaluation, resource preparation and rendering stay shared. See [build pipeline](build.md).
 
 ## Resource preparation and progress
 

@@ -85,7 +85,8 @@ export class DOMParticles {
     }
     if(this.disposed||revision!==this.revision)return;
     this.count=states.length;
-    const sortBySize=c.sortMode==="sizeAscending",sortDepth=sortBySize?this.renderer.viewDepth(scene,this.id,{x:0,y:0,z:0}):0;
+    const sortAnchor=scene.spriteSortAnchor(this.id),sortBySize=c.sortMode==="sizeAscending",grouped=Boolean(sortAnchor);
+    const sortDepth=sortAnchor?M.point(scene.viewMatrix,sortAnchor).z:sortBySize?this.renderer.viewDepth(scene,this.id,{x:0,y:0,z:0}):0;
     const slots=this.assign(states);
     const motion=scene.component(this.id,"ParticleMotionBlur"),dilation=motion?.enabled?motion.dilationPixels:0,softness=motion?.enabled?motion.softnessPixels:0,alphaGain=motion?.enabled?motion.alphaGain:1;
     for(let i=0;i<states.length;i++){
@@ -142,7 +143,7 @@ export class DOMParticles {
         if(!masked&&entry.source!==frameSource){entry.source=frameSource;sync.attribute(image,"src",frameSource);entry.pending=image.decode().then(()=>{if(entry.source===frameSource&&(image.naturalWidth!==cell.x||image.naturalHeight!==cell.y))throw new Error(`Asset dimensions do not match the scene: ${c.asset}`);});}
         loading.push(entry.pending);
         const pr=isGlow?glowProjection:bodyProjection;
-        this.renderer.setDepth(element,sortBySize?sortDepth:s.depth,sortBySize?s.projectedArea:0,this.sortGroup*40002+i*2+(isGlow?0:1));
+        this.renderer.setDepth(element,sortBySize||grouped?sortDepth:s.depth,sortBySize?s.projectedArea:grouped?-s.depth:0,this.sortGroup*40002+i*2+(isGlow?0:1));
         sync.hidden(element,!pr.visible||(isGlow&&!glow?.enabled));sync.attribute(element,"data-particle",s.id);sync.attribute(element,"data-frame",s.frame);
         sync.style(element,{transform:pr.transform,clipPath:pr.clip,opacity:t.a,mixBlendMode:(isGlow?glow?.blend==="additive":c.blend==="additive")?"plus-lighter":"normal"});
         if(blurFrame&&p.motion)sync.style(blurFrame,{position:"absolute",left:"0px",top:"0px",width:`${display.x}px`,height:`${display.y}px`,transformOrigin:"50% 50%",transform:`rotate(${degrees}deg)`,filter:filterActive?`url(#${p.motion.filter.id})`:"none"});

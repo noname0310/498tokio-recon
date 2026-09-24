@@ -14,7 +14,7 @@ async function check(browser,base,renderer){
   const audioGate=new Promise(resolve=>releaseAudio=resolve),early=await browser.newPage(),errors=[];
   early.on('pageerror',error=>errors.push(error.message));
   await early.route('**/moon.png',route=>route.fulfill({status:404,body:'Missing image'}));
-  await early.route('**/soundtrack.mp3',async route=>{await audioGate;await route.continue();});
+  await early.route('**/soundtrack.m4a',async route=>{await audioGate;await route.continue();});
   try{
     await early.goto(`${base}/?renderer=${renderer}&controls=0`,{waitUntil:'domcontentloaded'});
     await alert(early,/moon\.png.*HTTP 404/);

@@ -125,12 +125,12 @@ export class BabylonParticles {
     const glowSigma=glow?.enabled?glow.sigmaWorld*asset.pixelsPerUnit:0,glowSoftness=Math.hypot(glowSigma,shapeSoftness),glowPadding=Math.ceil(dilation+4*glowSoftness)+1;
     if(glow?.enabled){this.glowFilter??=new BabylonParticleFilter(r,`${this.id}/glow`);await this.glowFilter.update(asset,this.texture!,dilation,glowSoftness,glow);if(this.disposed||revision!==this.revision)return;}
     const states=this.states=scene.particleStates(this.id,scene.timelineTime,view);this.count=states.length;this.allocate(this.count);this.sortBySize=c.sortMode==="sizeAscending";
-    const origin=scene.world.get(this.id)!;this.sortOrigin={x:origin[12],y:origin[13],z:origin[14]};
+    const origin=scene.world.get(this.id)!,sortAnchor=scene.spriteSortAnchor(this.id);this.sortOrigin=sortAnchor||{x:origin[12],y:origin[13],z:origin[14]};
     const center={x:0,y:0,z:0},camera=scene.world.get(scene.cameraNode.id)!;for(const s of states)for(const k of ["x","y","z"] as const)center[k]+=s.position[k]/this.count;
     states.forEach((s,i)=>{this.matrices.set(s.matrix,i*16);this.colors.set([s.color.r,s.color.g,s.color.b,s.color.a],i*4);this.rects.set([s.rect.x,s.rect.y,s.rect.width,s.rect.height],i*4);this.blurs.set([s.blurUV.x,s.blurUV.y],i*2);});
     for(const entry of this.entries){
       const {mesh,material,glow:isGlow}=entry;
-      mesh.metadata={sortWorldPosition:Object.fromEntries((["x","y","z"] as const).map((k,i)=>[k,center[k]+(isGlow?camera[8+i]*.0001:0)]))};
+      mesh.metadata={sortWorldPosition:Object.fromEntries((["x","y","z"] as const).map((k,i)=>[k,(sortAnchor||center)[k]+(isGlow?camera[8+i]*.0001:0)]))};
       mesh.isVisible=!this.sortBySize&&this.count>0&&(!isGlow||Boolean(glow?.enabled));
       if(mesh.isVisible)uploadInstances(entry,this.matrices,this.colors,this.rects,this.blurs,this.count);
       material.alphaMode=(isGlow?glow?.blend==="additive":c.blend==="additive")?B.Engine.ALPHA_ADD:B.Engine.ALPHA_COMBINE;

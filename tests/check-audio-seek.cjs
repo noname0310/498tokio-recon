@@ -1,7 +1,7 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const {chromium,firefox}=require("playwright"),{makeServer}=require("./serve.cjs");
 
-// Verify decoded sound, not just currentTime: a wrong MP3 byte seek can report
+// Verify decoded sound, not just currentTime: a wrong compressed-audio seek can report
 // the requested timestamp while playing an entirely different part of the song.
 async function main(){
   const server=makeServer();await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));

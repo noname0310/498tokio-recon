@@ -3,6 +3,7 @@ import { normalizeScene, merge } from "./components.js";
 import { sampleKeys, particleStates } from "./particles.js";
 import { spriteRect } from "./atlas.js";
 import { flickerVisible } from "./flicker.js";
+import { applyTransformNoise } from "./transform-noise.js";
 import { SequenceRuntime, propertyRoot, readProperty, writeProperty, type SequenceEvaluation } from "./animation/sequence.js";
 import { Frame, Time, frameRate, type FrameTime, type FrameRate } from "./animation/time.js";
 import type { SceneData, Entity, EntityInput, Component, ComponentType, ComponentMap, DeepPartial, Transform, Matrix, View, Vec3, Bounds, SpriteState, SpriteAsset, AudioAsset } from "./types.js";
@@ -87,7 +88,7 @@ export class Scene {
     }
     return {frame,visible,size:atlas?.cellSize||asset.size,rect:spriteRect(asset,frame)};
   }
-  animationSignature():string {if(this.sequence)return `${this.animationEnabled}:${Time.key(this.frameTime!)}`;return [...this.nodes.values()].map(n=>{if(n.components.some(c=>c.enabled&&(c.type==="ParticleEmitter"||c.type==="TransformAnimator")))return `${n.id}:${Time.key(this.timelineTime)}`;let key="";if(this.component(n.id,"SpriteAnimator")?.enabled){const s=this.spriteState(n.id);key=`${n.id}:${s.frame}:${s.visible}`;}const flicker=this.component(n.id,"Flicker");if(flicker?.enabled)key+=`${n.id}:flicker:${flickerVisible(flicker,this.timelineTime)}`;return key;}).join("|");}
+  animationSignature():string {if(this.sequence)return `${this.animationEnabled}:${Time.key(this.frameTime!)}`;return [...this.nodes.values()].map(n=>{if(n.components.some(c=>c.enabled&&(c.type==="ParticleEmitter"||c.type==="TransformAnimator"||c.type==="TransformNoise")))return `${n.id}:${Time.key(this.timelineTime)}`;let key="";if(this.component(n.id,"SpriteAnimator")?.enabled){const s=this.spriteState(n.id);key=`${n.id}:${s.frame}:${s.visible}`;}const flicker=this.component(n.id,"Flicker");if(flicker?.enabled)key+=`${n.id}:flicker:${flickerVisible(flicker,this.timelineTime)}`;return key;}).join("|");}
   private baseTransform(node:Entity,time:number):Transform {const a=node.components.find(c=>c.type==="TransformAnimator"),t=node.transform;if(!a?.enabled)return t;return {localPosition:sampleKeys(a.position,time,t.localPosition),localRotation:sampleKeys(a.rotation,time,t.localRotation),localScale:sampleKeys(a.scale,time,t.localScale)};}
   private evaluateOverlays(snapshot:SequenceEvaluation|undefined,time:number):Map<string,Entity> {
     const result=new Map<string,Entity>();
@@ -108,13 +109,28 @@ export class Scene {
     return result;
   }
   transformAt(id:string,time:FrameTime|number=this.timelineTime):Transform {
-    if(time===this.timelineTime||time===this.time)return this.overlays.get(id)?.transform||this.baseTransform(this.find(id),this.time);
+    if(time===this.timelineTime||time===this.time){const node=this.overlays.get(id)||this.find(id),transform=this.overlays.get(id)?.transform||this.baseTransform(node,this.time),noise=node.components.find(c=>c.type==="TransformNoise");return noise?.enabled?applyTransformNoise(transform,noise,this.timelineTime):transform;}
     const seconds=typeof time==="number"?time:Time.toDecimal(time),sequence=this.sequence;
     const phase=sequence?(typeof time==="number"?sequence.fromSeconds(time):Time.add(Time.fromFrame(sequence.master.start),Time.convert(time,frameRate(1),sequence.tickResolution))):undefined;
     const overlay=this.animationEnabled&&sequence?this.evaluateOverlays(sequence.evaluate(phase!),seconds).get(id):undefined;
-    return overlay?.transform||this.baseTransform(this.find(id),seconds);
+    const node=overlay||this.find(id),transform=overlay?.transform||this.baseTransform(node,seconds),noise=node.components.find(c=>c.type==="TransformNoise");
+    return noise?.enabled?applyTransformNoise(transform,noise,typeof time==="number"?Time.fromDecimal(time):time):transform;
   }
-  matrixAt(id:string,time:FrameTime|number=this.timelineTime):Matrix {const parent=this.parents.get(id),local=M.trs(this.transformAt(id,time));return parent?M.multiply(this.matrixAt(parent.id,time),local):local;}
+  matrixAt(id:string,time:FrameTime|number=this.timelineTime):Matrix {
+    const current=time===this.timelineTime||time===this.time,seconds=typeof time==="number"?time:Time.toDecimal(time),exact=typeof time==="number"?Time.fromDecimal(time):time,sequence=this.sequence;
+    const phase=sequence?(typeof time==="number"?sequence.fromSeconds(time):Time.add(Time.fromFrame(sequence.master.start),Time.convert(time,frameRate(1),sequence.tickResolution))):undefined;
+    // A hierarchy sample evaluates its sequence once, not once per ancestor.
+    const overlays=current?this.overlays:this.animationEnabled&&sequence?this.evaluateOverlays(sequence.evaluate(phase!),seconds):undefined;
+    const chain:Entity[]=[];let node:Entity|null|undefined=this.find(id);
+    while(node){chain.push(node);node=this.parents.get(node.id);}
+    let matrix=M.identity();
+    for(let i=chain.length-1;i>=0;i--){
+      const base=chain[i],overlay=overlays?.get(base.id),entity=overlay||base,noise=entity.components.find(c=>c.type==="TransformNoise");
+      let transform=overlay?.transform||this.baseTransform(base,seconds);if(noise?.enabled)transform=applyTransformNoise(transform,noise,exact);
+      matrix=M.multiply(matrix,M.trs(transform));
+    }
+    return matrix;
+  }
   particleStates(id:string,time:FrameTime|number=this.timelineTime,view?:Pick<View,"worldWidth"|"worldHeight">){return particleStates(this,id,time,view);}
   updateWorld():void {
     this.snapshot=this.animationEnabled?this.sequence?.evaluate(this.frameTime!):undefined;this.index();this.overlays=this.evaluateOverlays(this.snapshot,this.time);this.world.clear();this.active.clear();

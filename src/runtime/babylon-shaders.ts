@@ -90,9 +90,9 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
         gl_FragColor=vec4(color*exp(grain*noiseEnabled*noiseChannelGain),texel.a*tint.a);
       }`;
     B.Effect.ShadersStore.sceneSolidFragmentShader=`precision highp float;
-      varying vec2 localPoint;uniform vec4 tint;uniform vec2 gridSize,gridOrigin,gridDirection;uniform float gridFront,gridFeather,transitionKind,transitionProgress,dissolveSeed;uniform float pinwheelFronts[64];
+      varying vec2 localPoint;uniform vec4 tint;uniform vec2 gridSize,gridOrigin,gridDirection,radialCenter;uniform float gridFront,gridFeather,transitionKind,transitionProgress,dissolveSeed,radialCurvature,radialInset;uniform float pinwheelFronts[64];
       #ifdef PLANE_NOISE
-      uniform float ellipse,ellipseAA;uniform vec2 ellipseSize;
+      uniform float ellipse,ellipseAA,ellipseInnerRatio;uniform vec2 ellipseSize;
       uniform sampler2D noiseTex;uniform vec2 noiseOrigin,noiseSize;uniform float noiseRange,noiseEnabled;uniform vec3 noiseChannelGain;
       #endif
       float dissolveThreshold(vec2 cell){
@@ -103,6 +103,7 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
       }
       void main(){
         if(transitionKind>0.5&&transitionProgress<=0.0)discard;
+        float transitionAlpha=1.0;
         if(transitionKind==1.0&&transitionProgress<1.0){
           vec2 cell=floor((localPoint-gridOrigin)/gridSize),center=gridOrigin+(cell+.5)*gridSize;
           float size=(gridFront-dot(localPoint,gridDirection))/gridFeather;
@@ -125,9 +126,25 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
           else if(n>=transitionProgress)discard;
         }
         if(transitionKind==4.0&&transitionProgress<1.0&&mod(dot(localPoint,gridDirection)-gridFront,gridFeather)>=gridFeather*transitionProgress)discard;
+        if(transitionKind==5.0&&transitionProgress<1.0){
+          vec2 tile=abs(fract((localPoint-gridOrigin)/gridSize)-.5)*2.0,radial=localPoint-radialCenter;
+          float field=transitionProgress-radialInset+radialCurvature*dot(radial,radial)-max(tile.x,tile.y);
+          #ifdef PLANE_NOISE
+          float aa=max(length(vec2(dFdx(field),dFdy(field))),.000001);
+          transitionAlpha=clamp(field/aa+.5,0.0,1.0);if(transitionAlpha<=0.0)discard;
+          #else
+          if(field<0.0)discard;
+          #endif
+        }
         gl_FragColor=tint;
+        gl_FragColor.a*=transitionAlpha;
         #ifdef PLANE_NOISE
-        if(ellipse>.5)gl_FragColor.a*=1.0-smoothstep(1.0-ellipseAA,1.0+ellipseAA,length(localPoint*2.0/ellipseSize));
+        if(ellipse>.5){
+          float radius=length(localPoint*2.0/max(ellipseSize,vec2(.000001)));
+          float aa=ellipseInnerRatio>0.0?max(.5*length(vec2(dFdx(radius),dFdy(radius))),.000001):ellipseAA;
+          gl_FragColor.a*=1.0-smoothstep(1.0-aa,1.0+aa,radius);
+          if(ellipseInnerRatio>0.0)gl_FragColor.a*=ellipseInnerRatio>=1.0?0.0:smoothstep(ellipseInnerRatio-aa,ellipseInnerRatio+aa,radius);
+        }
         if(noiseEnabled>.5){
           vec2 noiseUV=vec2(localPoint.x-noiseOrigin.x,noiseOrigin.y-localPoint.y)/noiseSize;
           float grain=(texture2D(noiseTex,noiseUV).r*2.0-1.0)*noiseRange;
@@ -155,6 +172,9 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
       uniform vec4 tint,uvRect,uvBounds;
       uniform float maskOnly,intensity,hue,noiseRange,noiseEnabled,saturation,brightness,contrast,whiteMix;
       uniform float opacityGradientEnabled;uniform vec2 opacityGradientStart,opacityGradientEnd;
+      uniform float alphaCutoff,focusEnabled,focusDistance;
+      uniform vec3 focusEye,focusLensX,focusLensY,focusDepth;
+      uniform vec2 focusLimit;
       uniform vec3 noiseChannelGain;
       vec3 rotateHue(vec3 c){
         float co=cos(hue),si=sin(hue);
@@ -176,8 +196,22 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
         return texture2D(spriteTex,clamp(uvRect.xy+uv*uvRect.zw,uvBounds.xy,uvBounds.zw));
       }
       void main(){vec2 uv=clamp(uvRect.xy+textureUV*uvRect.zw,uvBounds.xy,uvBounds.zw);vec4 t=texture2D(spriteTex,uv);
+        // The depth pass shares the expanded color quad but tests the original
+        // artwork's alpha, leaving blur margins and transparent holes open.
+        if(alphaCutoff>0.0)t=sampleArt(localPoint);
         if(motionEnabled>.5){vec4 sum=vec4(0.0);float total=0.0;for(int i=0;i<33;i++){if(i>=motionCount)break;float phase=2.0*float(i)/float(motionCount-1)-1.0,w=exp(-2.0*phase*phase);vec2 p=motionCenter+(localPoint-motionCenter-motionOffset*phase)/(1.0+phase*motionAmount);vec4 s=sampleArt(p);sum+=vec4(s.rgb*s.a,s.a)*w;total+=w;}t=vec4(sum.rgb/max(sum.a,.000001),sum.a/total);}
         else if(filterPadding>0.0)t=sampleArt(localPoint);
+        if(focusEnabled>.5){
+          vec4 sum=vec4(0.0);float z=dot(vec3(localPoint,1.0),focusDepth),limit=min(1.0,focusLimit.y/max(focusLimit.x*abs(1.0/z-1.0/focusDistance),1e-12));
+          for(int i=0;i<49;i++){
+            float radius=i==0?0.0:sqrt(-2.0*log((float(i)-.5)/48.0)),angle=float(i)*2.399963229728653;
+            vec3 lens=limit*radius*(cos(angle)*focusLensX+sin(angle)*focusLensY),eye=focusEye+lens;
+            vec3 ray=vec3(localPoint,0.0)-focusEye-lens*(z/focusDistance);
+            vec2 p=eye.xy-ray.xy*(eye.z/ray.z);vec4 s=sampleArt(p);sum+=vec4(s.rgb*s.a,s.a);
+          }
+          t=vec4(sum.rgb/max(sum.a,.000001),sum.a/49.0);
+        }
+        if(t.a<alphaCutoff)discard;
         t.a=clamp(t.a*motionGain,0.0,1.0);
         vec3 color=mix(t.rgb,vec3(1.0),max(maskOnly,whiteMix))*tint.rgb;
         vec2 noiseUV=vec2(localPoint.x-noiseOrigin.x,noiseOrigin.y-localPoint.y)/noiseSize;

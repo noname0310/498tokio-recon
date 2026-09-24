@@ -4,7 +4,7 @@
   "license": "(MIT OR Apache-2.0)",
   "description": "Pixel-art scene reconstruction with a shared component model and DOM/Babylon renderers",
   "scripts": {
-    "check": "npm run build && npm run check:dist && npm run check:loading && npm run check:preparation && npm run check:startup && npm run check:images && npm run check:standalone && npm run check:lifetimes && node tests/check-animation.cjs && node tests/check-player.cjs && node tests/check-audio-seek.cjs && node tests/check-runtime.cjs && npm run check:noise && npm run check:atlas && node tests/check-particles.cjs && node tests/check-intro.cjs && node tests/check-starfield.cjs && node tests/check-forward.cjs && node tests/check-transitions.cjs && node tests/check-paper.cjs && node tests/check-landscape.cjs && node tests/check-pinwheel.cjs && node tests/check-viewport-frame.cjs && node tests/check-dom-depth.cjs && node tests/check-interior.cjs && node tests/check-perspective.cjs && npm run check:helmet && npm run check:asteroid && npm run check:deck && npm run check:boss && npm run check:babylon-reuse && node scripts/format-json.cjs --check",
+    "check": "npm run build && npm run check:dist && npm run check:loading && npm run check:preparation && npm run check:startup && npm run check:images && npm run check:standalone && npm run check:lifetimes && node tests/check-animation.cjs && node tests/check-player.cjs && node tests/check-audio-seek.cjs && node tests/check-runtime.cjs && npm run check:noise && npm run check:atlas && node tests/check-particles.cjs && node tests/check-intro.cjs && node tests/check-starfield.cjs && node tests/check-forward.cjs && node tests/check-transitions.cjs && node tests/check-paper.cjs && node tests/check-landscape.cjs && node tests/check-pinwheel.cjs && node tests/check-viewport-frame.cjs && node tests/check-dom-depth.cjs && node tests/check-interior.cjs && node tests/check-perspective.cjs && npm run check:helmet && npm run check:asteroid && npm run check:deck && npm run check:boss && npm run check:evasion && npm run check:destruction && npm run check:return && npm run check:paper-return && npm run check:babylon-reuse && node scripts/format-json.cjs --check",
     "preview": "node scripts/serve.cjs",
     "check:runtime": "node tests/check-runtime.cjs",
     "check:noise": "node tests/check-procedural.cjs && node tests/check-noise.cjs",
@@ -50,7 +50,11 @@
     "check:sorting-group": "node tests/check-sorting-group.cjs",
     "check:camera-blur": "node tests/check-camera-blur.cjs",
     "check:planar-depth": "node tests/check-planar-depth.cjs",
-    "check:boss": "node tests/check-boss.cjs"
+    "check:boss": "node tests/check-boss.cjs",
+    "check:evasion": "node tests/check-evasion.cjs",
+    "check:destruction": "node tests/check-destruction.cjs && node tests/check-depth-of-field.cjs && node tests/check-annulus.cjs",
+    "check:return": "node tests/check-return.cjs",
+    "check:paper-return": "node tests/check-paper-return.cjs"
   },
   "dependencies": {
     "@babylonjs/core": "9.27.1"

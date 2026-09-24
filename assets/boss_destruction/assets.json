@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "assets"       : {
+    "smoke_atlas": {
+      "type"          : "Sprite",
+      "file"          : "smoke_atlas.png",
+      "size"          : {"x": 170, "y": 34},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "atlas"         : {
+        "cellSize"  : {"x": 32, "y": 32},
+        "columns"   : 5,
+        "rows"      : 1,
+        "frameCount": 5,
+        "padding"   : 1
+      },
+      "reconstruction": {
+        "sourceFrames": [2879, 2880, 2881, 2882, 2883, 2884, 2885, 2886, 2887, 2888],
+        "frameCount": 5,
+        "framesPerSecond": 15,
+        "nativeCellSize": [32, 32],
+        "sourcePixelScale": 2.7326105287946802,
+        "observations": [
+          {"phase": 0, "opaquePixels": 208, "unobservedOpaquePixels":  0},
+          {"phase": 1, "opaquePixels": 300, "unobservedOpaquePixels":  0},
+          {"phase": 2, "opaquePixels": 364, "unobservedOpaquePixels":  8},
+          {"phase": 3, "opaquePixels": 287, "unobservedOpaquePixels": 32},
+          {"phase": 4, "opaquePixels": 210, "unobservedOpaquePixels": 84}
+        ],
+        "method": "32-pixel union cell, central-cell pooling over two observations per phase. One white RGB value and binary alpha. The growing inner cut is transparent, including both crescent frames.",
+        "limitations": "A few bottom-edge cells are outside the source viewport; only these cells use the outer/inner silhouette fit. Resolution is the compact fitted grid, not independently known source-file metadata."
+      }
+    }
+  }
+}

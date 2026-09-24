@@ -31,7 +31,7 @@ Frame.add(first,2);
 Time.fromFrame(1.5);
 
 declare const clock:AnimationClock;
-clock.pauseOffsetHint=Time.fromRatio(2236n,30n);
+clock.pauseOffsetHint=Time.fromRatio(2236,30);
 // @ts-expect-error Pause hints retain rational time rather than untyped seconds.
 clock.pauseOffsetHint=2236/30;
 clock.pauseOffsetHint=undefined;

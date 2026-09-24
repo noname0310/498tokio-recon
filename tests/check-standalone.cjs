@@ -3,7 +3,7 @@ const {chromium,firefox}=require('playwright'),{makeServer,root}=require('./serv
 async function main(){
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'tokio-standalone-')),portable=path.join(directory,'player.html'),html=fs.readFileSync(path.join(root,'dist/standalone/index.html'));
  fs.writeFileSync(portable,html);assert.deepEqual(fs.readdirSync(path.join(root,'dist/standalone')),['index.html']);
- assert(html.includes(Buffer.from(fs.readFileSync(path.join(root,'assets/soundtrack.mp3')).toString('base64'))),'Audio bytes are embedded unchanged');
+ assert(html.includes(Buffer.from(fs.readFileSync(path.join(root,'assets/soundtrack.m4a')).toString('base64'))),'Audio bytes are embedded unchanged');
  const server=makeServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
  try{for(const [name,type]of [['chromium',chromium],['firefox',firefox]]){
   const browser=await type.launch({headless:true});
@@ -18,7 +18,7 @@ async function main(){
     const diff=compare(await file.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),await normal.screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}));assert(diff.max<=2&&diff.mae<.001,`${name} frame ${frame}: ${JSON.stringify(diff)}`);
    }
    await file.evaluate(async()=>{await scenePlayer.seekFrame(360,{numerator:30,denominator:1});await scenePlayer.play();});await file.waitForFunction(()=>scenePlayer.time>12.15);await file.evaluate(()=>scenePlayer.pause());
-   assert(await file.evaluate(()=>scenePlayer.audioPlayer.element.src.startsWith('data:audio/mpeg;base64,')));
+   assert(await file.evaluate(()=>scenePlayer.audioPlayer.element.src.startsWith('data:audio/mp4;base64,')));
    assert.deepEqual(network,[],'Portable HTML must not request companion files or network resources');assert.deepEqual(errors,[]);
    const unsupported=await browser.newPage(),unsupportedErrors=[];
    unsupported.on('pageerror',error=>unsupportedErrors.push(error.message));

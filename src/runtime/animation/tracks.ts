@@ -88,10 +88,10 @@ export abstract class AnimationTrack<T extends number|boolean,V extends Values=V
     if(Time.compare(time,Time.fromFrame(Frame.from(this.frameNumber[0])))<=0)return this.value[0];
     if(Time.compare(time,Time.fromFrame(Frame.from(this.frameNumber[n-1])))>=0)return this.value[n-1];
     const i=this.interval(time),a=Frame.from(this.frameNumber[i]),b=Frame.from(this.frameNumber[i+1]),start=this.value[i],end=this.value[i+1];
-    if(Frame.compare(time.frame,a)===0&&time.subframe.numerator===0n)return start;
+    if(Frame.compare(time.frame,a)===0&&time.subframe.numerator===0)return start;
     const bits=this.interpolation[i*2],out=(bits>>>2)&3,incoming=this.interpolation[(i+1)*2]&3;
     if(out===Interpolation.Step||incoming===Interpolation.Step)return start;
-    const alpha=Time.fractionBetween(time,a,b),dt=Number(BigInt(b)-BigInt(a));
+    const alpha=Time.fractionBetween(time,a,b),dt=b-a;
     if(out===Interpolation.Linear&&incoming===Interpolation.Linear)return start+(end-start)*alpha;
     const seconds=dt*rate.denominator/rate.numerator,chord=(end-start)/dt;
     const handle=(mode:number,index:number)=>{

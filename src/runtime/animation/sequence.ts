@@ -117,7 +117,7 @@ export class SequenceRuntime {
         const innerStart=Frame.add(child.start,Frame.from(section.startOffset??0)),innerEnd=Frame.subtract(child.end,Frame.from(section.endOffset??0));
         if(Frame.compare(innerStart,innerEnd)>=0)throw new Error("Subsequence offsets remove the playback range.");
         const speed=section.timeScale??{numerator:1,denominator:1};checkInt(speed.numerator,"Time scale numerator");checkInt(speed.denominator,"Time scale denominator");if(speed.denominator<=0)throw new Error("Time scale denominator must be positive.");
-        instance.sections.push({definition:section,instance:child,start:first,end:last,innerStart,innerEnd,firstOffset:Frame.from(section.firstLoopOffset??0),scale:Time.rational(BigInt(speed.numerator),BigInt(speed.denominator)),bias:checkInt(section.hierarchicalBias??100,"Hierarchical bias")});
+        instance.sections.push({definition:section,instance:child,start:first,end:last,innerStart,innerEnd,firstOffset:Frame.from(section.firstLoopOffset??0),scale:Time.rational(speed.numerator,speed.denominator),bias:checkInt(section.hierarchicalBias??100,"Hierarchical bias")});
       }
       return instance;
     };

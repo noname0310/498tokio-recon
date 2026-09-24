@@ -23,11 +23,19 @@ function timeAndTracks(){
   for(const bad of [NaN,Infinity,-Infinity,.5,-.5,2236/30,2147483648,-2147483649,"12",null,undefined])assert.throws(()=>n(bad));
   assert.throws(()=>F.next(F.max));assert.throws(()=>F.previous(F.min));assert.throws(()=>F.divide(n(3),2));
   assert.equal(F.add(n(2147483000),n(647)),F.max);assert.equal(F.multiply(n(10),3),30);assert.equal(F.divide(n(-12),3),-4);
-  assert.deepEqual(t(-.5),{frame:-1,subframe:{numerator:1n,denominator:2n}});
+  assert.deepEqual(t(-.5),{frame:-1,subframe:{numerator:1,denominator:2}});
   assert.equal(T.key(T.add(t(-.5),t(.75))),"0:1/4");assert.equal(T.ceil(t(-.5)),0);assert.equal(T.floor(t(-.5)),-1);
-  const r=frameRate(30000,1001),ticks=frameRate(24000),large=T.fromRatio(4294966000001n,2000n);
+  const r=frameRate(30000,1001),ticks=frameRate(24000),large=T.fromRatio(4294966000001,2000);
   const converted=T.convert(large,ticks,r);assert.equal(T.compare(T.convert(converted,r,ticks),large),0);assert.throws(()=>T.convert(large,r,ticks));
   assert.equal(T.key(T.convert(T.fromFrame(n(1)),r,ticks)),"800:4/5");
+  assert.equal(typeof T.rational(1,3).numerator,'number');
+  assert.throws(()=>T.rational(Number.MAX_SAFE_INTEGER+1,1),/safe integer/);
+  assert.throws(()=>T.fromParts(.5,T.rational(1,2)),/safe integer/);
+  assert.equal(T.key(T.scale(T.fromParts(F.min,T.rational(1,2)),T.rational(-1))),"2147483647:1/2");
+  const nearOne=T.fromRatio(Number.MAX_SAFE_INTEGER-1,Number.MAX_SAFE_INTEGER);
+  assert.equal(T.floor(T.add(nearOne,nearOne)),1,'Fraction carry cannot overflow an otherwise representable result');
+  const largestDenominator=T.fromParts(n(2235),T.rational(Number.MAX_SAFE_INTEGER-1,Number.MAX_SAFE_INTEGER));
+  assert(T.compare(largestDenominator,T.fromFrame(n(2236)))<0,'Comparison must not form unsafe cross products');
   for(let frame=0;frame<=2256;frame++){
     const exact=T.convert(T.fromFrame(n(frame)),rate,ticks);
     assert.equal(T.key(exact),`${frame*800}:0/1`);
@@ -35,17 +43,17 @@ function timeAndTracks(){
   }
   for(const frame of [2225,2236,2245]){
     const gate=new Bool({frameNumber:[0,frame*800],value:[0,1]});
-    const before=T.convert(T.fromRatio(BigInt(frame)*10n**18n-1n,10n**18n),rate,ticks);
+    const before=T.convert(T.fromParts(n(frame-1),T.rational(10**12-1,10**12)),rate,ticks);
     assert.equal(gate.evaluate(before),false,"A true subframe cannot be snapped across a key");
     assert.equal(gate.evaluate(T.convert(T.fromFrame(n(frame)),rate,ticks)),true);
   }
   assert(T.compare(T.fromSeconds(2236/30,ticks),T.convert(T.fromFrame(n(2236)),rate,ticks))<0,"Rounded seconds stay seconds; exact frame callers use convert/seekFrame");
   for(const bad of [.5,NaN,Infinity,2147483648])assert.throws(()=>new Float({frameNumber:[bad],value:[1]}),"Validate before Int32Array can truncate key times");
   assert.equal(T.key(T.wrap(t(-.25),n(0),n(10))),"9:3/4");
-  assert.equal(T.compare(T.fromMicroseconds(1000000n,ticks),T.fromFrame(n(24000))),0);
+  assert.equal(T.compare(T.fromMicroseconds(1000000,ticks),T.fromFrame(n(24000))),0);
   const f=new Float({frameNumber:[2147483640,2147483644,2147483647],value:[0,4,7]});
   assert(f.frameNumber instanceof Int32Array&&f.value instanceof Float32Array&&f.interpolation instanceof Int32Array&&f.interpolationParameters instanceof Float32Array);
-  assert.equal(f.byteLength,3*(4+4+8));assert.equal(f.interpolationParameters.byteLength,0);assert.equal(f.evaluate(T.fromRatio(4294967283n,2n)),1.5);
+  assert.equal(f.byteLength,3*(4+4+8));assert.equal(f.interpolationParameters.byteLength,0);assert.equal(f.evaluate(T.fromRatio(4294967283,2)),1.5);
   for(const frame of [2147483646,2147483641,2147483647,2147483640])assert.equal(f.evaluate(T.fromFrame(n(frame))),frame-2147483640);
   assert(!("binding" in f)&&!("object" in f));
   const i=new Int({frameNumber:[0,10],value:[0,5]});assert(i.value instanceof Int32Array);assert.equal(i.evaluate(t(3)),2);
@@ -96,7 +104,7 @@ function hierarchyChecks(){
   timed.root.children.push({id:"flicker",components:[{type:"Flicker",start:origin,frequency:15,dutyCycle:.5}]});
   timed.root.children.push({id:"emitter",components:[{type:"ParticleEmitter",asset:"art",start:origin,rate:30,lifetime:{min:1,max:1},animation:{mode:"fps",framesPerSecond:30,frames:[0,1,2,3]}}]});
   const exactScene=new Scene(timed,base),atExact=frame=>{exactScene.setFrameTime(frame,frameRate(30));exactScene.updateWorld();};
-  atExact(T.fromRatio(2236n*10n**18n-1n,10n**18n));
+  atExact(T.fromParts(F.from(2235),T.rational(10**12-1,10**12)));
   assert.equal(exactScene.spriteState("actor").visible,false);assert.equal(exactScene.active.get("flicker"),false);assert.equal(exactScene.particleStates("emitter").length,0);
   for(const frame of [2236,2237,2238,2239,2236]){
     atExact(T.fromFrame(F.from(frame)));assert.equal(exactScene.spriteState("actor").frame,frame-2236);

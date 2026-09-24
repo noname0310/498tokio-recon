@@ -44,7 +44,7 @@ async function main() {
       for (const local of ['src/runtime/index.ts', 'tests/fixtures/rect_sprite.png', 'package.json', 'player.html']) {
         assert.equal((await fetch(new URL(local, base))).status, 404, `Local file leaked into preview: ${local}`);
       }
-      const range = await fetch(new URL('assets/soundtrack.mp3', base), { headers: { Range: 'bytes=128-255' } });
+      const range = await fetch(new URL('assets/soundtrack.m4a', base), { headers: { Range: 'bytes=128-255' } });
       assert.equal(range.status, 206); assert.equal((await range.arrayBuffer()).byteLength, 128);
       for (const [name, type, renderer] of [['chromium-dom', chromium, 'dom'], ['chromium-babylon', chromium, 'babylon'], ['firefox-dom', firefox, 'dom']]) {
         const browser = await type.launch({ headless: true });
