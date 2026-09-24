@@ -26,6 +26,7 @@ The contracts are defined in [types.ts](../src/runtime/types.ts) and defaults/va
 | Vignette / ViewportFrame | Camera viewport effects that adapt to aspect ratio |
 | ViewportTransform | Scale, normalized center and opacity of the clipped camera image |
 | ColorGrade | Camera color transform with an animatable blend strength |
+| ScanlineJitter | Seeded horizontal screen displacement with two row samples |
 | AudioPlayer / AnimationPlayer / PlayerControls | Playback transport, sequence clock binding and screen controls |
 
 ## Rendering
@@ -111,3 +112,22 @@ with the original color using `strength`; alpha is preserved. DOM uses a retaine
 the viewport, while Babylon uses a prepared post-process shader. A zero
 strength bypasses the filter/pass. Both components restore their authored
 values when a sequence stops owning their animation bindings.
+
+`ScanlineJitter` attaches to a camera. `amplitudeWorld` is the maximum horizontal
+offset, and `lineHeightWorld` is the height of one noise row at the camera's
+reference plane. Both scale with the fitted view rather than device pixels.
+`seed`, `start: {frame, rate}` and `frequency` define deterministic noise time;
+adjacent noise patterns interpolate at the display refresh rate. Reverse seeks
+evaluate the same exact frame time without advancing a random stream.
+
+Both backends share a generated 1 × 2048 RGBA strip. R and G encode independent
+uniform offsets; two displaced image samples are averaged. Consecutive patterns
+read the strip 127 rows apart, repeating after 2048 pattern intervals. DOM uses
+retained SVG image, displacement and arithmetic-composite primitives, with
+explicitly neutral vertical displacement. Thin boundary strips extend the source
+image to match Babylon's clamped sampling. No scene snapshots or per-frame image
+generation are involved. Babylon prepares its two-sample postprocess program
+with the other camera shaders. Jitter follows camera blur and precedes vignette,
+viewport frame and color grading; player controls remain outside the effect.
+Zero amplitude or a disabled component bypasses the filter/pass. SVG resampling
+can differ slightly between browsers at fractional pixel boundaries.

@@ -1,5 +1,15 @@
 /* Backend shaders operate on objects or the active camera, never a fixed frame. */
 export function installShaders(B:typeof import("./babylon-library.js").B) {
+    B.Effect.ShadersStore.sceneScanlineJitterFragmentShader=`
+      precision highp float;varying vec2 vUV;uniform sampler2D textureSampler,noiseSampler;
+      uniform float rowCount,noiseRows,amplitude;uniform vec3 noisePhase;
+      void main(){
+        float row=floor((.5-vUV.y)*rowCount);
+        vec2 a=texture2D(noiseSampler,vec2(.5,(mod(row+noisePhase.x,noiseRows)+.5)/noiseRows)).rg;
+        vec2 b=texture2D(noiseSampler,vec2(.5,(mod(row+noisePhase.y,noiseRows)+.5)/noiseRows)).rg;
+        vec2 d=(mix(a,b,noisePhase.z)-.5)*amplitude;
+        gl_FragColor=.5*(texture2D(textureSampler,clamp(vUV+vec2(d.x,0.0),vec2(0.0),vec2(1.0)))+texture2D(textureSampler,clamp(vUV+vec2(d.y,0.0),vec2(0.0),vec2(1.0))));
+      }`;
     B.Effect.ShadersStore.sceneCylinderVertexShader=`
       precision highp float;attribute vec3 position,normal;attribute vec2 uv;
       uniform mat4 worldViewProjection;varying vec2 vUV;varying vec3 localNormal;

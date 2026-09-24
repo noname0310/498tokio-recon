@@ -55,7 +55,7 @@
     "check:destruction": "node tests/check-destruction.cjs && node tests/check-depth-of-field.cjs && node tests/check-annulus.cjs",
     "check:return": "node tests/check-return.cjs",
     "check:paper-return": "node tests/check-paper-return.cjs",
-    "check:flashback": "node tests/check-flashback.cjs"
+    "check:flashback": "node tests/check-flashback.cjs && node tests/check-scanline-jitter.cjs"
   },
   "dependencies": {
     "@babylonjs/core": "9.27.1"

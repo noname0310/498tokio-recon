@@ -1,4 +1,5 @@
 import {BabylonColorGrade} from "./babylon-color-grade.js";
+import {BabylonScanlineJitter} from "./babylon-scanline-jitter.js";
 import {BabylonNumber} from "./babylon-number.js";
 import type * as Babylon from "@babylonjs/core/pure";
 import { B, registerBabylon } from "./babylon-library.js";
@@ -211,6 +212,7 @@ export class BabylonRenderer {
   private frame?:BabylonViewportFrame;
   private colorGrade?:BabylonColorGrade;
   private cameraBlur?:BabylonCameraBlur;
+  private scanlineJitter?:BabylonScanlineJitter;
   private progressiveDraw:number|null=null;
   readonly viewport:HTMLElement;readonly B= B;readonly canvas:HTMLCanvasElement;readonly engine:Babylon.Engine;
   readonly registry:Map<ComponentType,BabylonObjectConstructor>;
@@ -234,6 +236,7 @@ export class BabylonRenderer {
   async createScene(data:Scene,resources:Resources){
     this.context=new BabylonSceneContext(this.engine,data,resources,()=>this.render());
     this.transitions=new BabylonTransitions(this.context);this.frame=new BabylonViewportFrame(this.context);this.colorGrade=new BabylonColorGrade(this.context);this.cameraBlur=new BabylonCameraBlur(this.context);
+    this.scanlineJitter=new BabylonScanlineJitter(this.context);
     this.reconcile(data);
   }
   async prepare(progress:LoadingProgress):Promise<void>{
@@ -294,6 +297,7 @@ export class BabylonRenderer {
       this.context!.rect(mesh,-view.worldWidth*scale/2,-view.worldHeight*scale/2,view.worldWidth*scale/2,view.worldHeight*scale/2);this.context!.vec2(material,"halfSize",{x:view.worldWidth*scale/2,y:view.worldHeight*scale/2});this.context!.vec2(material,"center",v.centerViewport);material.setVector3("shape",new B.Vector3(v.quadratic,v.quartic,v.verticalWeight));
     }else if(this.vignettePlane){this.vignettePlane.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;}
     this.cameraBlur!.update(data,view,camera);
+    this.scanlineJitter!.update(data,view,camera);
     this.frame!.update(data,view,camera);
     this.colorGrade!.update(data,camera);
     let completed=false;
@@ -326,6 +330,6 @@ export class BabylonRenderer {
   }
   private cancelProgressiveDraw():void {if(this.progressiveDraw!==null)cancelAnimationFrame(this.progressiveDraw);this.progressiveDraw=null;}
   render(){this.scene.render();this.renderCount++;}
-  disposeScene(){this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.colorGrade?.dispose();this.colorGrade=undefined;this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
+  disposeScene(){this.scanlineJitter?.dispose();this.scanlineJitter=undefined;this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.colorGrade?.dispose();this.colorGrade=undefined;this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
   dispose(){this.disposeScene();this.engine.dispose();this.canvas.remove();}
 }

@@ -1709,6 +1709,18 @@
             "matrix"  : [0.299, 0.587, 0.114, 0.0, 0.299, 0.587, 0.114, 0.0, 0.299, 0.587, 0.114, 0.0],
             "midpoint": {"r": 0.8197598771827679, "g": 0.49038711004701835, "b": 0.1351101908424012},
             "strength": 0
+          },
+          {
+            "type"           : "ScanlineJitter",
+            "enabled"        : false,
+            "seed"           : 4983708,
+            "start"          : {
+              "frame": 3708,
+              "rate" : {"numerator": 30, "denominator": 1}
+            },
+            "frequency"      : 30,
+            "amplitudeWorld" : 0,
+            "lineHeightWorld": 0.01
           }
         ],
         "children"  : []
@@ -8691,19 +8703,8 @@
       },
       "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-strength": {
         "type"       : "AnimationTrackFloat32",
-        "frameNumber": [0, 8000, 184800, 185600],
-        "value"      : [0.75, 0, 0, 1]
-      },
-      "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-sigmaWorld.x": {
-        "type"       : "AnimationTrackFloat32",
-        "frameNumber": [0, 8000],
-        "value"      : [0.065, 0]
-      },
-      "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-enabled": {
-        "type"         : "AnimationTrackBoolean",
-        "frameNumber"  : [0, 8000],
-        "value"        : [1, 0],
-        "interpolation": [0, -1, 0, -1]
+        "frameNumber": [0, 7200, 184800, 185600],
+        "value"      : [0.97259469, 0, 0, 1]
       },
       "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-enabled": {
         "type"         : "AnimationTrackBoolean",
@@ -8721,6 +8722,45 @@
         "type"       : "AnimationTrackFloat32",
         "frameNumber": [0, 236800, 267200],
         "value"      : [1, 1, 0]
+      },
+      "flashback-flashback-meeting-root-flashback-red-pilot-SpriteRenderer-color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [128000, 132000],
+        "value"      : [1, 0]
+      },
+      "flashback-flashback-meeting-root-flashback-blue-ship-SpriteRenderer-color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [132000, 136800],
+        "value"      : [0, 1]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ScanlineJitter-amplitudeWorld": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 7200],
+        "value"      : [0.217, 0]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ScanlineJitter-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 7200],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.r": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 185600],
+        "value"        : [0.57208104, 0.8197598771827679],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.g": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 185600],
+        "value"        : [0.43596072, 0.49038711004701835],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.b": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 185600],
+        "value"        : [0.30780067, 0.1351101908424012],
+        "interpolation": [0, -1, 0, -1]
       }
     },
     "sequences": {
@@ -32167,6 +32207,21 @@
             "id"    : "helmet-flat-camera",
             "kind"  : "possessable",
             "target": {"entity": "helmet-flat-camera"}
+          },
+          {
+            "id"    : "flashback-ship-pilot",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-ship-pilot"}
+          },
+          {
+            "id"    : "flashback-ship-thruster",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-ship-thruster"}
+          },
+          {
+            "id"    : "flashback-ship-exhaust",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-ship-exhaust"}
           }
         ],
         "bindings"      : [
@@ -32237,16 +32292,16 @@
             "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-strength"
           },
           {
-            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-sigmaWorld.x",
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ScanlineJitter-amplitudeWorld",
             "object"  : "helmet-flat-camera",
-            "property": {"component": "GaussianBlur", "path": "sigmaWorld.x"},
-            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-sigmaWorld.x"
+            "property": {"component": "ScanlineJitter", "path": "amplitudeWorld"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ScanlineJitter-amplitudeWorld"
           },
           {
-            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-enabled",
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ScanlineJitter-enabled",
             "object"  : "helmet-flat-camera",
-            "property": {"component": "GaussianBlur", "path": "enabled"},
-            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-enabled"
+            "property": {"component": "ScanlineJitter", "path": "enabled"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ScanlineJitter-enabled"
           },
           {
             "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-enabled",
@@ -32265,6 +32320,54 @@
             "object"  : "helmet-flat-camera",
             "property": {"component": "ViewportTransform", "path": "opacity"},
             "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-opacity"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-red-pilot-SpriteRenderer-color.a",
+            "object"  : "flashback-red-pilot",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "flashback-flashback-meeting-root-flashback-red-pilot-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-blue-ship-SpriteRenderer-color.a",
+            "object"  : "flashback-blue-ship",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "flashback-flashback-meeting-root-flashback-blue-ship-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-ship-pilot-SpriteRenderer-color.a",
+            "object"  : "flashback-ship-pilot",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "flashback-flashback-meeting-root-flashback-blue-ship-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-ship-thruster-SpriteRenderer-color.a",
+            "object"  : "flashback-ship-thruster",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "flashback-flashback-meeting-root-flashback-blue-ship-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-ship-exhaust-ParticleEmitter-color.a",
+            "object"  : "flashback-ship-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "color.a"},
+            "track"   : "flashback-flashback-meeting-root-flashback-blue-ship-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.r",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "ColorGrade", "path": "midpoint.r"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.r"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.g",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "ColorGrade", "path": "midpoint.g"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.g"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.b",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "ColorGrade", "path": "midpoint.b"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-midpoint.b"
           }
         ],
         "sequences"     : []
@@ -33902,7 +34005,9 @@
         "pilotLeaves"     : 3798,
         "adultLooksUp"    : 3880,
         "sepiaRetreat"    : 3940,
-        "fade"            : [4004, 4042]
+        "fade"            : [4004, 4042],
+        "pilotFadeOut"    : [3868, 3873],
+        "shipFadeIn"      : [3873, 3879]
       },
       "viewportRetreat": {
         "sourceFrames": [3940, 3949, 3958, 3967, 3977, 3986, 3995],
@@ -33918,8 +34023,22 @@
       "notes": [
         "Existing reviewed child, adult, red pilot, blue-engine ship and landscape sprites are reused.",
         "The ship continues linearly through the retreat; particles remain deterministic and live.",
-        "The short cut uses a decaying horizontal blur and color grade; codec noise is not baked into assets."
-      ]
+        "The meeting cut uses seeded horizontal scanline jitter with two equally weighted image samples and a linear amplitude envelope; color grading fades independently."
+      ],
+      "scanlineJitter": {
+        "sourceFrames": [3708, 3717],
+        "amplitudeReferencePixels": 21.7,
+        "referencePixelsPerWorldUnit": 100,
+        "lineHeightReferencePixels": 1,
+        "noiseFrequency": 30,
+        "seed": 4983708,
+        "method": "Procedural approximation to measured row displacements; original random samples are not baked.",
+        "colorCast": {
+          "midpoint"  : {"r": 0.57208104, "g": 0.43596072, "b": 0.30780067},
+          "strength"  : 0.97259469,
+          "fitRgbRmse": 2.9476424741464475
+        }
+      }
     }
   }
 }

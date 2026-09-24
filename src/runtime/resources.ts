@@ -4,6 +4,7 @@ import { loadPixels, grayscalePng, rgbaPng } from "./png.js";
 import { spriteRect } from "./atlas.js";
 import {TextureProcessor,type TextureWorkerFactory} from "./texture-processor.js";
 import type {LoadingProgress} from "./loading-status.js";
+import {scanlineNoise} from "./scanline-jitter.js";
 
 export class Resources {
   readonly images=new Map<string,Promise<PixelImage>>();
@@ -11,6 +12,8 @@ export class Resources {
   readonly atlasFrames=new Map<string,Promise<readonly HTMLImageElement[]>>();
   readonly decodedImages=new Map<string,Promise<HTMLImageElement>>();
   private readonly noiseImages=new Map<string,Promise<{url:string;result:PixelImage;image:HTMLImageElement}>>();
+  private readonly scanlines=new Map<number,PixelImage>();
+  private readonly scanlineImages=new Map<number,Promise<string>>();
   readonly urls=new Set<string>();
   private readonly processor:TextureProcessor;
   private preloading=false;private readonly prepared=new Set<string>();
@@ -46,6 +49,12 @@ export class Resources {
         const finish=this.progress?.begin("Textures",`${name} / noise`);
         try{if(domFrames)await this.noiseURL(component);else await this.noise(component);}
         finally{finish?.();}
+      }));
+      const seeds=new Set<number>();
+      for(const node of scene.declaredEntities())for(const c of node.components)if(c.type==="ScanlineJitter")seeds.add(c.seed);
+      await Promise.all([...seeds].map(async seed=>{
+        const finish=this.progress?.begin("Textures","Scanline jitter");
+        try{if(domFrames)await this.scanlineURL(seed);else this.scanline(seed);}finally{finish?.();}
       }));
     });
   }
@@ -122,5 +131,20 @@ export class Resources {
     return pending;
   }
   releaseURL(url:string){if(this.urls.delete(url))URL.revokeObjectURL(url);}
-  dispose(){this.disposed=true;this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.decodedImages.clear();this.noiseImages.clear();this.prepared.clear();}
+  scanline(seed:number):PixelImage {
+    let pixels=this.scanlines.get(seed);if(!pixels){pixels=scanlineNoise(seed);this.scanlines.set(seed,pixels);}return pixels;
+  }
+  scanlineURL(seed:number):Promise<string> {
+    let pending=this.scanlineImages.get(seed);
+    if(!pending){
+      pending=rgbaPng(this.scanline(seed)).then(async blob=>{
+        if(this.disposed)throw new Error("Resources have been disposed.");
+        const url=URL.createObjectURL(blob);this.urls.add(url);const image=new Image();image.src=url;
+        try{await image.decode();return url;}catch(error){this.releaseURL(url);throw error;}
+      });
+      this.scanlineImages.set(seed,pending);pending.catch(()=>{if(this.scanlineImages.get(seed)===pending)this.scanlineImages.delete(seed);});
+    }
+    return pending;
+  }
+  dispose(){this.disposed=true;this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.decodedImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
 }

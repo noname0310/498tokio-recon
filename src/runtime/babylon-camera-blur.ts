@@ -12,6 +12,7 @@ export function createCameraBlurEffect(r:BabylonSceneContext):PostProcess {
 export class BabylonCameraBlur {
   private readonly passes:(PostProcess|undefined)[]=[undefined,undefined];
   private readonly attached=[false,false];
+  private readonly indices=[0,0];
   private camera?:TargetCamera;
   private x=0;private y=0;
   constructor(private readonly renderer:BabylonSceneContext){}
@@ -28,11 +29,15 @@ export class BabylonCameraBlur {
         const pass=this.passes[axis]=createCameraBlurEffect(this.renderer);
         pass.onApply=e=>e.setFloat2("blurStep",axis===0?this.x:0,axis===1?this.y:0);
       }
+      const index=axis===0?0:(this.attached[0]?1:0);
+      // Detaching X leaves a hole in Babylon's pass list. Keep Y at the front
+      // so subsequent camera effects always follow all active blur axes.
+      if(active&&this.attached[axis]&&this.indices[axis]!==index){camera.detachPostProcess(this.passes[axis]!);this.attached[axis]=false;}
       if(active===this.attached[axis])continue;
       const pass=this.passes[axis]!;
       // Camera blur precedes viewport masks and display overlays. Reuse the
       // passes when the measured shake reaches zero; no sharp-frame GPU pass.
-      if(active)camera.attachPostProcess(pass,axis===0?0:(this.attached[0]?1:0));
+      if(active){camera.attachPostProcess(pass,index);this.indices[axis]=index;}
       else camera.detachPostProcess(pass);
       this.attached[axis]=active;
     }

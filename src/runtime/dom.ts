@@ -1,4 +1,5 @@
 import {DOMNumber} from "./dom-number.js";
+import {DOMScanlineJitter} from "./dom-scanline-jitter.js";
 import {cameraBlurSigma} from "./camera-motion-blur.js";
 import type { Scene } from "./scene.js";
 import type { Resources } from "./resources.js";
@@ -450,6 +451,7 @@ export class DOMRenderer {
   private vignetteKey="";
   private cameraBlurFilter?:SVGFilterElement;
   private cameraBlur?:SVGFEGaussianBlurElement;
+  private scanlineJitter?:DOMScanlineJitter;
   private colorGradeFilter?:SVGFilterElement;private colorGradeMatrix?:SVGFEColorMatrixElement;private colorGradeMix?:SVGFECompositeElement;private colorGradeCurves?:NoiseChannels;
   private viewMatrix=M.identity();private updateRevision=0;
   private readonly depths=new Map<HTMLDivElement,{depth:number;order:number;tie:number}>();private depthDirty=false;private depthCommitQueued=false;
@@ -507,6 +509,7 @@ export class DOMRenderer {
     this.colorGradeMatrix=svg("feColorMatrix",{in:"SourceGraphic",result:"matrix"},this.colorGradeFilter);
     this.colorGradeCurves=noiseChannels(this.colorGradeFilter,"matrix","graded");
     this.colorGradeMix=svg("feComposite",{in:"SourceGraphic",in2:"graded",operator:"arithmetic",k1:0,k4:0},this.colorGradeFilter);
+    this.scanlineJitter=new DOMScanlineJitter(this);
     this.screen=div("screen-effect",this.viewport);this.screen.dataset.component="Vignette";this.screenFill=div("screen-effect",this.screen);
     this.reconcile(scene);
   }
@@ -535,7 +538,8 @@ export class DOMRenderer {
       sync.attrs(this.cameraBlurFilter!,{x:-4*sx,y:-4*sy,width:view.width+8*sx,height:view.height+8*sy});
       sync.attribute(this.cameraBlur!,"stdDeviation",`${sx} ${sy}`);
     }
-    sync.style(this.world,{filter:sx>0||sy>0?`url(#${this.cameraBlurFilter!.id})`:"none"});
+    const jitter=await this.scanlineJitter!.update(scene,view);if(revision!==this.updateRevision)return;
+    sync.style(this.world,{filter:[sx>0||sy>0?`url(#${this.cameraBlurFilter!.id})`:null,jitter].filter(Boolean).join(" ")||"none"});
     const grade=scene.component(scene.cameraNode.id,"ColorGrade");
     if(grade?.enabled&&grade.strength>0){
       const m=grade.matrix;
@@ -577,6 +581,6 @@ export class DOMRenderer {
     await Promise.all(updates);
     if(revision===this.updateRevision)this.commitDepths();
   }
-  disposeScene(){this.sync.style(this.viewport,{filter:"none"});this.updateRevision++;this.vignetteKey="";this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions.dispose();this.frame.dispose();this.records.clear();this.surfaces.clear();this.depths.clear();this.depth.clear();this.depthDirty=false;this.world?.remove();this.screen?.remove();this.definitionSVG?.remove();this.particleGlow?.dispose();this.preparationScene=undefined;}
+  disposeScene(){this.scanlineJitter?.dispose();this.scanlineJitter=undefined;this.sync.style(this.viewport,{filter:"none"});this.updateRevision++;this.vignetteKey="";this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions.dispose();this.frame.dispose();this.records.clear();this.surfaces.clear();this.depths.clear();this.depth.clear();this.depthDirty=false;this.world?.remove();this.screen?.remove();this.definitionSVG?.remove();this.particleGlow?.dispose();this.preparationScene=undefined;}
   dispose(){this.disposeScene();}
 }

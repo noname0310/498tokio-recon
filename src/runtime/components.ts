@@ -17,6 +17,7 @@ export const componentTypes = new Map<ComponentType,object>([
   ["ViewportFrame", {insetsWorld:{left:0,right:0,top:0,bottom:0},radiusWorld:0,color:{r:0,g:0,b:0,a:1},innerShadow:{offsetWorld:{x:0,y:0},color:{r:0,g:0,b:0,a:1},opacity:0}}],
   ["ViewportTransform", {scale:1,centerViewport:{x:.5,y:.5},opacity:1}],
   ["ColorGrade", {matrix:[1,0,0,0, 0,1,0,0, 0,0,1,0],midpoint:{r:.5,g:.5,b:.5},strength:1}],
+  ["ScanlineJitter", {seed:1,start,frequency:30,amplitudeWorld:0,lineHeightWorld:.01}],
   ["SpriteRenderer", {asset:null,color:rgba,hueDegrees:0,saturation:1,brightness:1,contrast:1,whiteMix:0,frame:0,sortingOrder:0,depthWrite:false}],
   ["SortingGroup", {anchor:{x:0,y:0,z:0}}],
   ["SpriteNumberRenderer", {asset:null,value:0,rounding:"round",minDigits:1,suffix:"",glyphs:"0123456789",advances:[],alignment:"left",repeatWorld:null,color:rgba}],
@@ -135,7 +136,7 @@ export function normalizeScene(input:unknown):SceneData {
         finite(c.saturation,"SpriteRenderer.saturation",0);finite(c.brightness,"SpriteRenderer.brightness",0);finite(c.contrast,"SpriteRenderer.contrast",0);
         if(!Number.isSafeInteger(c.frame)||c.frame<0||c.frame>=(sprites[c.asset].atlas?.frameCount||1))fail(`Invalid sprite frame: ${node.id}`);
       }
-      if(c.type==="SpriteAnimator"||c.type==="Flicker"||c.type==="ParticleEmitter"||c.type==="TransformNoise"){
+      if(c.type==="SpriteAnimator"||c.type==="Flicker"||c.type==="ParticleEmitter"||c.type==="TransformNoise"||c.type==="ScanlineJitter"){
         if("startTime" in c)fail(`${c.type}.startTime has been replaced by start: {frame, rate}.`);
         Frame.from(c.start.frame);frameRate(c.start.rate.numerator,c.start.rate.denominator);
       }
@@ -150,6 +151,10 @@ export function normalizeScene(input:unknown):SceneData {
         finite(c.frequency,"Flicker.frequency",.001,10000);finite(c.dutyCycle,"Flicker.dutyCycle",0,1);finite(c.probability,"Flicker.probability",0,1);
         finite(c.phase,"Flicker.phase",0,1);
         if(!Number.isSafeInteger(c.seed)||c.seed<0||c.seed>0xffffffff)fail("Invalid Flicker seed.");
+      }
+      if(c.type==="ScanlineJitter"){
+        if(!Number.isSafeInteger(c.seed)||c.seed<0||c.seed>0xffffffff)fail("ScanlineJitter.seed must be an unsigned 32-bit integer.");
+        finite(c.frequency,"ScanlineJitter.frequency",.001,10000);finite(c.amplitudeWorld,"ScanlineJitter.amplitudeWorld",0);finite(c.lineHeightWorld,"ScanlineJitter.lineHeightWorld",.0001);
       }
       if(c.type==="SpriteNumberRenderer"){
         finite(c.value,"SpriteNumberRenderer.value",-1e15,1e15);
@@ -279,7 +284,7 @@ export function normalizeScene(input:unknown):SceneData {
     if(types.has("ProceduralNoise")&&!types.has("TiledSpriteRenderer")&&!types.has("SpriteRenderer")&&!types.has("PlaneRenderer"))fail(`ProceduralNoise requires a sprite or plane renderer on ${node.id}.`);
     if(types.has("Vignette")&&!types.has("Camera"))fail(`Vignette requires Camera on ${node.id}.`);
     if(types.has("OpacityGradient")&&!types.has("SpriteRenderer"))fail(`OpacityGradient requires SpriteRenderer on ${node.id}.`);
-    for(const type of ["ViewportTransform","ColorGrade"] as const)if(types.has(type)&&!types.has("Camera"))fail(`${type} requires Camera on ${node.id}.`);
+    for(const type of ["ViewportTransform","ColorGrade","ScanlineJitter"] as const)if(types.has(type)&&!types.has("Camera"))fail(`${type} requires Camera on ${node.id}.`);
     if(types.has("ViewportFrame")&&!types.has("Camera"))fail(`ViewportFrame requires Camera on ${node.id}.`);
     node.children.forEach(visit);
   }
