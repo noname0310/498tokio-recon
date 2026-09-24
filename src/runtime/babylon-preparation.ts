@@ -1,3 +1,4 @@
+import {createColorGradeEffect} from "./babylon-color-grade.js";
 import type * as Babylon from "@babylonjs/core/pure";
 import {BabylonSceneContext,type BabylonObjectConstructor,type BabylonRenderObject} from "./babylon-context.js";
 import {createDilationEffect,createSoftnessEffect} from "./babylon-particle-filter.js";
@@ -56,6 +57,7 @@ export class BabylonShaderPreparation {
         }
         if(c.type==="Camera")post("Camera / Vignette",()=>r.vignetteEffect(camera));
         if((c.type==="GaussianBlur"||c.type==="CameraMotionBlur")&&node.components.some(c=>c.type==="Camera"))post("Camera / GaussianBlur",()=>createCameraBlurEffect(r));
+        if(c.type==="ColorGrade")post("Camera / ColorGrade",()=>createColorGradeEffect(r));
         if(c.type==="ViewportFrame")post("Camera / ViewportFrame",()=>createViewportFrameEffect(r,camera));
         if(c.type==="Vignette"&&c.depth!==null&&!features.has("depth-vignette")){
           const mesh=r.quad("Camera / depth vignette",null,r.depthVignetteMaterial());material(mesh);

@@ -9,6 +9,13 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
       uniform sampler2D spriteTex;uniform vec2 uvOffset;uniform vec4 tint;
       uniform vec3 lightDirection;uniform float ambient,diffuse;
       void main(){vec4 art=texture2D(spriteTex,vUV+uvOffset);float light=ambient+diffuse*max(0.0,dot(normalize(localNormal),lightDirection));gl_FragColor=vec4(art.rgb*tint.rgb*light,art.a*tint.a);}`;
+    B.Effect.ShadersStore.sceneColorGradeFragmentShader=`
+      precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;
+      uniform vec4 redRow,greenRow,blueRow;uniform vec3 midpoint;uniform float strength;
+      void main(){vec4 c=texture2D(textureSampler,vUV),v=vec4(c.rgb,1.0);
+        vec3 graded=clamp(vec3(dot(v,redRow),dot(v,greenRow),dot(v,blueRow)),0.0,1.0);
+        graded=mix(2.0*graded*midpoint,midpoint+2.0*(graded-.5)*(1.0-midpoint),step(vec3(.5),graded));
+        gl_FragColor=vec4(mix(c.rgb,graded,strength),c.a);}`;
     B.Effect.ShadersStore.sceneCameraBlurFragmentShader=`
       precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;uniform vec2 blurStep;
       void main(){

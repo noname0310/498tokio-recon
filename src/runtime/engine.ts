@@ -97,6 +97,9 @@ export class Engine {
   }
   calculateView(){
     const c=this.scene.requireComponent(this.scene.cameraNode.id,"Camera"),availableWidth=this.availableWidth,availableHeight=this.availableHeight,dpr=window.devicePixelRatio||1;
+    const presentation=this.scene.component(this.scene.cameraNode.id,"ViewportTransform");
+    const p=presentation?.enabled?presentation:undefined;
+    this.viewportSync.style(this.viewport,{transform:p?`translate(${(p.centerViewport.x-.5)*100}%,${(.5-p.centerViewport.y)*100}%) scale(${p.scale})`:"none",transformOrigin:"50% 50%",opacity:p?.opacity??1});
     const key=JSON.stringify([availableWidth,availableHeight,dpr,this.scene.data.presentation.referenceAspect,c.referenceAspect,c.referenceVerticalSize,c.projection,c.verticalFovDegrees,c.principalPoint,c.aspectPolicy,c.clearColor]);
     if(this.viewKey===key)return;this.viewKey=key;
     let width=availableWidth,height=availableHeight;

@@ -450,6 +450,7 @@ export class DOMRenderer {
   private vignetteKey="";
   private cameraBlurFilter?:SVGFilterElement;
   private cameraBlur?:SVGFEGaussianBlurElement;
+  private colorGradeFilter?:SVGFilterElement;private colorGradeMatrix?:SVGFEColorMatrixElement;private colorGradeMix?:SVGFECompositeElement;private colorGradeCurves?:NoiseChannels;
   private viewMatrix=M.identity();private updateRevision=0;
   private readonly depths=new Map<HTMLDivElement,{depth:number;order:number;tie:number}>();private depthDirty=false;private depthCommitQueued=false;
   private readonly surfaces=new Set<HTMLDivElement>();
@@ -502,6 +503,10 @@ export class DOMRenderer {
     this.resources=resources;this.world=div("scene-world",this.viewport);this.definitionSVG=svg("svg",{class:"filter-definitions","aria-hidden":"true"},this.viewport);this.defs=svg("defs",{},this.definitionSVG);
     this.cameraBlurFilter=svg("filter",{id:`camera-blur-${++serial}`,filterUnits:"userSpaceOnUse","color-interpolation-filters":"sRGB"},this.defs);
     this.cameraBlur=svg("feGaussianBlur",{stdDeviation:"0 0"},this.cameraBlurFilter);
+    this.colorGradeFilter=svg("filter",{id:`camera-grade-${++serial}`,x:0,y:0,width:"100%",height:"100%","color-interpolation-filters":"sRGB"},this.defs);
+    this.colorGradeMatrix=svg("feColorMatrix",{in:"SourceGraphic",result:"matrix"},this.colorGradeFilter);
+    this.colorGradeCurves=noiseChannels(this.colorGradeFilter,"matrix","graded");
+    this.colorGradeMix=svg("feComposite",{in:"SourceGraphic",in2:"graded",operator:"arithmetic",k1:0,k4:0},this.colorGradeFilter);
     this.screen=div("screen-effect",this.viewport);this.screen.dataset.component="Vignette";this.screenFill=div("screen-effect",this.screen);
     this.reconcile(scene);
   }
@@ -531,6 +536,16 @@ export class DOMRenderer {
       sync.attribute(this.cameraBlur!,"stdDeviation",`${sx} ${sy}`);
     }
     sync.style(this.world,{filter:sx>0||sy>0?`url(#${this.cameraBlurFilter!.id})`:"none"});
+    const grade=scene.component(scene.cameraNode.id,"ColorGrade");
+    if(grade?.enabled&&grade.strength>0){
+      const m=grade.matrix;
+      sync.attribute(this.colorGradeMatrix!,"values",`${m[0]} ${m[1]} ${m[2]} 0 ${m[3]} ${m[4]} ${m[5]} ${m[6]} 0 ${m[7]} ${m[8]} ${m[9]} ${m[10]} 0 ${m[11]} 0 0 0 1 0`);
+      for(const [i,value]of [grade.midpoint.r,grade.midpoint.g,grade.midpoint.b].entries())sync.attrs(this.colorGradeCurves![i],{type:"table",tableValues:`0 ${value} 1`});
+      sync.attrs(this.colorGradeMix!,{k2:1-grade.strength,k3:grade.strength});
+    }
+    // Grade the completed camera image, including its clear color and frame.
+    // The transport UI is mounted outside this element.
+    sync.style(this.viewport,{filter:grade?.enabled&&grade.strength>0?`url(#${this.colorGradeFilter!.id})`:"none"});
     this.reconcile(scene);
     // Install masks before an async image/filter update can expose a surface.
     // Ownership includes surfaces which have never acquired a depth rank yet.
@@ -562,6 +577,6 @@ export class DOMRenderer {
     await Promise.all(updates);
     if(revision===this.updateRevision)this.commitDepths();
   }
-  disposeScene(){this.updateRevision++;this.vignetteKey="";this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions.dispose();this.frame.dispose();this.records.clear();this.surfaces.clear();this.depths.clear();this.depth.clear();this.depthDirty=false;this.world?.remove();this.screen?.remove();this.definitionSVG?.remove();this.particleGlow?.dispose();this.preparationScene=undefined;}
+  disposeScene(){this.sync.style(this.viewport,{filter:"none"});this.updateRevision++;this.vignetteKey="";this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions.dispose();this.frame.dispose();this.records.clear();this.surfaces.clear();this.depths.clear();this.depth.clear();this.depthDirty=false;this.world?.remove();this.screen?.remove();this.definitionSVG?.remove();this.particleGlow?.dispose();this.preparationScene=undefined;}
   dispose(){this.disposeScene();}
 }

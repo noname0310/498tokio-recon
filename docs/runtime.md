@@ -24,6 +24,8 @@ The contracts are defined in [types.ts](../src/runtime/types.ts) and defaults/va
 | ParticleEmitter | Deterministic local or world particle simulation, shape, velocity, lifetime, color and atlas animation |
 | Transition | Procedural masks and scene reveals selected by transition kind |
 | Vignette / ViewportFrame | Camera viewport effects that adapt to aspect ratio |
+| ViewportTransform | Scale, normalized center and opacity of the clipped camera image |
+| ColorGrade | Camera color transform with an animatable blend strength |
 | AudioPlayer / AnimationPlayer / PlayerControls | Playback transport, sequence clock binding and screen controls |
 
 ## Rendering
@@ -93,3 +95,19 @@ Procedural noise declarations are collected from authored entities and nested sp
 Babylon adds a `Shaders` stage after image and procedural texture preparation. An isolated Babylon scene on the same engine reuses the live component constructors and material factories, including particle thin-instance buffers. Representative materials use `forceCompilationAsync`; postprocess and morphology passes use the same shared effect factories as playback. Animated dilation bounds include weighted-Bezier control points and additive bindings, so intermediate shader loop sizes are prepared without sampling every frame. Prepared programs stay referenced until scene disposal. New scenes restart preparation; runtime edits outside the loaded declarations can still introduce new variants.
 
 `engine.loadingProgress.begin(stage, item)` returns an idempotent completion function with an `update(item)` method for changing task details. Stages accumulate completed/total counts and pending item names; `subscribe` reports changes, `complete` marks the end of the preparation pipeline, and `reset` invalidates callbacks from the old scene. `LoadingStatus` shows the source and renderer during download, then adds the scene name, declared asset counts and reference frame rate. It retains the complete loading log for the current scene in a stable-width HTML/CSS overlay. Native scrolling remains available on short screens while the scrollbar is hidden. When preparation finishes before first playback, a successful completion line remains until playback starts. If playback has already started, the overlay disappears as soon as preparation finishes. This belongs to the runtime, outside camera and component lifetimes. Additional preparation stages use the same interface without per-frame UI updates.
+
+`ViewportTransform` belongs to a camera. Its uniform `scale`, `centerViewport`
+(+Y up, default 0.5/0.5), and `opacity` affect the completed camera image. Scaling
+retains the currently fitted viewport aspect, clips scene content before the
+transform, and leaves the player controls unchanged. The shared presentation
+layer uses a retained CSS transform for both backends; it does not change the
+camera projection or bake the scene into an image.
+
+`ColorGrade` applies a row-major 3×4 affine matrix to sRGB: each row contains
+three RGB coefficients followed by a constant offset. Output RGB is clamped
+then passed through per-channel piecewise linear curves with fixed black/white
+endpoints and an editable `midpoint` (default 0.5). The graded result is mixed
+with the original color using `strength`; alpha is preserved. DOM uses a retained SVG color matrix and arithmetic composite on
+the viewport, while Babylon uses a prepared post-process shader. A zero
+strength bypasses the filter/pass. Both components restore their authored
+values when a sequence stops owning their animation bindings.

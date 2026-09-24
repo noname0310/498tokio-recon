@@ -15,6 +15,8 @@ export const componentTypes = new Map<ComponentType,object>([
   ["Camera", {projection:"orthographic",verticalFovDegrees:50,principalPoint:{x:.5,y:.5},referenceVerticalSize:10,referenceAspect:16/9,aspectPolicy:"expandFromReference",near:.1,far:100,clearColor:{r:0,g:0,b:0,a:1}}],
   ["Vignette", {centerViewport:{x:.5,y:.5},quadratic:.2,quartic:.4,verticalWeight:1,depth:null}],
   ["ViewportFrame", {insetsWorld:{left:0,right:0,top:0,bottom:0},radiusWorld:0,color:{r:0,g:0,b:0,a:1},innerShadow:{offsetWorld:{x:0,y:0},color:{r:0,g:0,b:0,a:1},opacity:0}}],
+  ["ViewportTransform", {scale:1,centerViewport:{x:.5,y:.5},opacity:1}],
+  ["ColorGrade", {matrix:[1,0,0,0, 0,1,0,0, 0,0,1,0],midpoint:{r:.5,g:.5,b:.5},strength:1}],
   ["SpriteRenderer", {asset:null,color:rgba,hueDegrees:0,saturation:1,brightness:1,contrast:1,whiteMix:0,frame:0,sortingOrder:0,depthWrite:false}],
   ["SortingGroup", {anchor:{x:0,y:0,z:0}}],
   ["SpriteNumberRenderer", {asset:null,value:0,rounding:"round",minDigits:1,suffix:"",glyphs:"0123456789",advances:[],alignment:"left",repeatWorld:null,color:rgba}],
@@ -123,6 +125,8 @@ export function normalizeScene(input:unknown):SceneData {
         vector(c.innerShadow.offsetWorld,"xy","ViewportFrame.innerShadow.offsetWorld");
         vector(c.innerShadow.color,"rgba","ViewportFrame.innerShadow.color",0,1);finite(c.innerShadow.opacity,"ViewportFrame.innerShadow.opacity",0,1);
       }
+      if(c.type==="ViewportTransform"){finite(c.scale,"ViewportTransform.scale",0);vector(c.centerViewport,"xy","ViewportTransform.centerViewport");finite(c.opacity,"ViewportTransform.opacity",0,1);}
+      if(c.type==="ColorGrade"){if(!Array.isArray(c.matrix)||c.matrix.length!==12)fail("ColorGrade.matrix requires 12 coefficients.");for(const v of c.matrix)finite(v,"ColorGrade.matrix");vector(c.midpoint,"rgb","ColorGrade.midpoint",0,1);finite(c.strength,"ColorGrade.strength",0,1);}
       if(c.type==="SpriteRenderer"){
         if(typeof c.depthWrite!=="boolean")fail("SpriteRenderer.depthWrite must be boolean.");
         finite(c.hueDegrees,"hueDegrees");
@@ -275,6 +279,7 @@ export function normalizeScene(input:unknown):SceneData {
     if(types.has("ProceduralNoise")&&!types.has("TiledSpriteRenderer")&&!types.has("SpriteRenderer")&&!types.has("PlaneRenderer"))fail(`ProceduralNoise requires a sprite or plane renderer on ${node.id}.`);
     if(types.has("Vignette")&&!types.has("Camera"))fail(`Vignette requires Camera on ${node.id}.`);
     if(types.has("OpacityGradient")&&!types.has("SpriteRenderer"))fail(`OpacityGradient requires SpriteRenderer on ${node.id}.`);
+    for(const type of ["ViewportTransform","ColorGrade"] as const)if(types.has(type)&&!types.has("Camera"))fail(`${type} requires Camera on ${node.id}.`);
     if(types.has("ViewportFrame")&&!types.has("Camera"))fail(`ViewportFrame requires Camera on ${node.id}.`);
     node.children.forEach(visit);
   }

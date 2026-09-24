@@ -1,3 +1,4 @@
+import {BabylonColorGrade} from "./babylon-color-grade.js";
 import {BabylonNumber} from "./babylon-number.js";
 import type * as Babylon from "@babylonjs/core/pure";
 import { B, registerBabylon } from "./babylon-library.js";
@@ -208,6 +209,7 @@ export class BabylonRenderer {
   private preparation?:BabylonShaderPreparation;
   private transitions?:BabylonTransitions;
   private frame?:BabylonViewportFrame;
+  private colorGrade?:BabylonColorGrade;
   private cameraBlur?:BabylonCameraBlur;
   private progressiveDraw:number|null=null;
   readonly viewport:HTMLElement;readonly B= B;readonly canvas:HTMLCanvasElement;readonly engine:Babylon.Engine;
@@ -231,7 +233,7 @@ export class BabylonRenderer {
   }
   async createScene(data:Scene,resources:Resources){
     this.context=new BabylonSceneContext(this.engine,data,resources,()=>this.render());
-    this.transitions=new BabylonTransitions(this.context);this.frame=new BabylonViewportFrame(this.context);this.cameraBlur=new BabylonCameraBlur(this.context);
+    this.transitions=new BabylonTransitions(this.context);this.frame=new BabylonViewportFrame(this.context);this.colorGrade=new BabylonColorGrade(this.context);this.cameraBlur=new BabylonCameraBlur(this.context);
     this.reconcile(data);
   }
   async prepare(progress:LoadingProgress):Promise<void>{
@@ -293,6 +295,7 @@ export class BabylonRenderer {
     }else if(this.vignettePlane){this.vignettePlane.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;}
     this.cameraBlur!.update(data,view,camera);
     this.frame!.update(data,view,camera);
+    this.colorGrade!.update(data,camera);
     let completed=false;
     const partial=()=>{
       if(completed||current!==this.updateRevision||this.progressiveDraw!==null)return;
@@ -323,6 +326,6 @@ export class BabylonRenderer {
   }
   private cancelProgressiveDraw():void {if(this.progressiveDraw!==null)cancelAnimationFrame(this.progressiveDraw);this.progressiveDraw=null;}
   render(){this.scene.render();this.renderCount++;}
-  disposeScene(){this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
+  disposeScene(){this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.colorGrade?.dispose();this.colorGrade=undefined;this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
   dispose(){this.disposeScene();this.engine.dispose();this.canvas.remove();}
 }

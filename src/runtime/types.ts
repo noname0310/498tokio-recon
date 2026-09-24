@@ -29,6 +29,10 @@ export interface ViewportFrame {
   insetsWorld:{left:number;right:number;top:number;bottom:number};radiusWorld:number;color:Color;
   innerShadow:{offsetWorld:Vec2;color:Color;opacity:number};
 }
+/** Presentation of the clipped camera image, relative to the fitted viewport. */
+export interface ViewportTransform {scale:number;centerViewport:Vec2;opacity:number}
+/** Row-major 3x4 affine RGB transform in sRGB; alpha is preserved. */
+export interface ColorGrade {matrix:number[];midpoint:RGB;strength:number}
 export interface SpriteRenderer {asset:string;color:Color;hueDegrees:number;saturation:number;brightness:number;contrast:number;whiteMix:number;frame:number;sortingOrder:number;depthWrite:boolean}
 /** Descendant sprites share this local anchor for transparent depth sorting.
  * Their sortingOrder controls composition without moving their geometry. */
@@ -86,7 +90,7 @@ export interface ParticleEmitter {
   sizeOverLife:Key<number>[];color:Color;colorPalette:{color:Color;weight:number}[];colorOverLife:Key<Color>[];billboard:"camera"|"local";blend:"alpha"|"additive";sortMode:"depth"|"sizeAscending";
   animation:{mode:"single"|"random"|"fps"|"lifetime";timeSource:"age"|"scene";frame:number;frames:number[];framesPerSecond:number;loop:boolean;randomStart:boolean};
 }
-export interface ComponentProperties {Camera:Camera;Vignette:Vignette;ViewportFrame:ViewportFrame;SpriteRenderer:SpriteRenderer;SortingGroup:SortingGroup;SpriteNumberRenderer:SpriteNumberRenderer;SpriteAnimator:SpriteAnimator;OpacityGradient:OpacityGradient;Flicker:Flicker;TransformAnimator:TransformAnimator;TransformNoise:TransformNoise;CameraMotionBlur:CameraMotionBlur;DepthOfField:DepthOfField;TiledSpriteRenderer:TiledSpriteRenderer;CylindricalSpriteRenderer:CylindricalSpriteRenderer;GaussianBlur:GaussianBlur;SpriteMotionBlur:SpriteMotionBlur;DirectionalBlur:DirectionalBlur;PlaneRenderer:PlaneRenderer;Transition:Transition;LineRenderer:LineRenderer;ProceduralNoise:ProceduralNoise;DropShadow:DropShadow;Glow:Glow;ParticleEmitter:ParticleEmitter;ParticleMotionBlur:ParticleMotionBlur;AudioPlayer:AudioPlayerComponent;AnimationPlayer:AnimationPlayerComponent;PlayerControls:PlayerControlsComponent}
+export interface ComponentProperties {Camera:Camera;Vignette:Vignette;ViewportFrame:ViewportFrame;ViewportTransform:ViewportTransform;ColorGrade:ColorGrade;SpriteRenderer:SpriteRenderer;SortingGroup:SortingGroup;SpriteNumberRenderer:SpriteNumberRenderer;SpriteAnimator:SpriteAnimator;OpacityGradient:OpacityGradient;Flicker:Flicker;TransformAnimator:TransformAnimator;TransformNoise:TransformNoise;CameraMotionBlur:CameraMotionBlur;DepthOfField:DepthOfField;TiledSpriteRenderer:TiledSpriteRenderer;CylindricalSpriteRenderer:CylindricalSpriteRenderer;GaussianBlur:GaussianBlur;SpriteMotionBlur:SpriteMotionBlur;DirectionalBlur:DirectionalBlur;PlaneRenderer:PlaneRenderer;Transition:Transition;LineRenderer:LineRenderer;ProceduralNoise:ProceduralNoise;DropShadow:DropShadow;Glow:Glow;ParticleEmitter:ParticleEmitter;ParticleMotionBlur:ParticleMotionBlur;AudioPlayer:AudioPlayerComponent;AnimationPlayer:AnimationPlayerComponent;PlayerControls:PlayerControlsComponent}
 export type ComponentType=keyof ComponentProperties;
 export type ComponentMap={[K in ComponentType]:ComponentProperties[K]&{type:K;enabled:boolean}};
 export type Component=ComponentMap[ComponentType];

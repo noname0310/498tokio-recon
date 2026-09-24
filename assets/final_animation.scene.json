@@ -1702,6 +1702,13 @@
             "type"      : "GaussianBlur",
             "enabled"   : false,
             "sigmaWorld": {"x": 0, "y": 0}
+          },
+          {"type": "ViewportTransform", "enabled": false},
+          {
+            "type"    : "ColorGrade",
+            "matrix"  : [0.299, 0.587, 0.114, 0.0, 0.299, 0.587, 0.114, 0.0, 0.299, 0.587, 0.114, 0.0],
+            "midpoint": {"r": 0.8197598771827679, "g": 0.49038711004701835, "b": 0.1351101908424012},
+            "strength": 0
           }
         ],
         "children"  : []
@@ -8550,6 +8557,170 @@
            5.632121336647565e-06,   0.06665924577003143,    -9.815263366130643e-06,   0.11719370837526877,
           -2.834896639775668e-06,   0.022273597325022973,   -1.4939586530421171e-05,  0.023607470647690258
         ]
+      },
+      "flashback-flashback-children-root-flashback-child-0-body-SpriteRenderer-frame": {
+        "type"         : "AnimationTrackInt32",
+        "frameNumber"  : [0, 58400, 74400],
+        "value"        : [4, 6, 4],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-children-root-flashback-child-0-body-Transform-localScale.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 137600, 177600],
+        "value"        : [-2.5, 2.5, -2.5],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-children-root-flashback-child-0-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 58400, 80800, 137600, 177600, 221600],
+        "value"      : [3.9002700000000003, -0.26, -0.26, -1.7394, -1.7394, -3.9273000000000002]
+      },
+      "flashback-flashback-children-root-flashback-child-0-body-SpriteAnimator-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 58400, 80800, 137600, 177600],
+        "value"        : [1, 0, 1, 0, 1],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-children-root-flashback-child-1-body-Transform-localScale.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 155200],
+        "value"        : [-2.5, 2.5],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-children-root-flashback-child-1-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 58400, 80800, 116800, 155200, 221600],
+        "value"      : [4.22027, 0.06, 0.06, -0.8778999999999999, -0.8778999999999999, 3.43395]
+      },
+      "flashback-flashback-children-root-flashback-child-1-body-SpriteAnimator-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 58400, 80800, 116800, 155200],
+        "value"        : [1, 0, 1, 0, 1],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-children-root-flashback-free-paper-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 24800, 44800],
+        "value"      : [2.6815547652500005, 0.4696724400000005, -0.51]
+      },
+      "flashback-flashback-children-root-flashback-free-paper-Transform-localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 24800, 44800],
+        "value"      : [-0.2045786000000001, -0.2045786000000001, -0.885]
+      },
+      "flashback-flashback-children-root-flashback-free-paper-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 74400],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-children-root-flashback-carried-paper-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 74400],
+        "value"        : [0, 1],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-children-root-flashback-carried-paper-Transform-localPosition.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 137600, 177600],
+        "value"        : [-0.175, 0.175, -0.175],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-children-root-flashback-carried-paper-Transform-localScale.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 137600, 177600],
+        "value"        : [2.5, -2.5, 2.5],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-flashback-adult-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 55200],
+        "value"      : [-3.75924, -0.2499000000000001]
+      },
+      "flashback-flashback-meeting-root-flashback-adult-SpriteAnimator-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 55200],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-flashback-adult-SpriteRenderer-frame": {
+        "type"         : "AnimationTrackInt32",
+        "frameNumber"  : [0, 137600],
+        "value"        : [4, 6],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-flashback-adult-Transform-localPosition.y": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 55200, 137600],
+        "value"        : [-1.06755, -1.0552499999999998, -1.0801999999999998],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 55200, 72000, 137600],
+        "value"      : [3.8521199999999998, 0.3, 0.3, 3.9957399999999996]
+      },
+      "flashback-flashback-meeting-root-flashback-red-pilot-SpriteAnimator-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 55200, 72000],
+        "value"        : [1, 0, 1],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-flashback-red-pilot-SpriteAnimator-start.frame": {
+        "type"         : "AnimationTrackInt32",
+        "frameNumber"  : [0, 72000],
+        "value"        : [3, 8],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localScale.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 72000],
+        "value"        : [-2.5, 2.5],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localPosition.y": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 55200, 72000],
+        "value"        : [-1.1074000000000002, -1.0951999999999997, -1.1074000000000002],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-flashback-blue-ship-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 267200],
+        "value"      : [10.294775942504415, -2.0480604574955845]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-strength": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 8000, 184800, 185600],
+        "value"      : [0.75, 0, 0, 1]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-sigmaWorld.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 8000],
+        "value"      : [0.065, 0]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 8000],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 185600],
+        "value"        : [0, 1],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-scale": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 185600, 192800, 200000, 207200, 215200, 222400, 229600],
+        "value"        : [1, 0.8715, 0.7425, 0.6125, 0.4825, 0.34, 0.2094, 0.079],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-opacity": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 236800, 267200],
+        "value"      : [1, 1, 0]
       }
     },
     "sequences": {
@@ -9669,6 +9840,16 @@
             "id"      : "paper-return-landscape",
             "sequence": "paper-return-landscape",
             "range"   : {"start": 2739200, "end": 2744800}
+          },
+          {
+            "id"      : "flashback-children",
+            "sequence": "flashback-children",
+            "range"   : {"start": 2744800, "end": 2966400}
+          },
+          {
+            "id"      : "flashback-meeting",
+            "sequence": "flashback-meeting",
+            "range"   : {"start": 2966400, "end": 3233600}
           }
         ]
       },
@@ -31272,6 +31453,821 @@
           }
         ],
         "sequences"     : []
+      },
+      "flashback-children": {
+        "tickResolution": {"numerator": 24000, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 221600},
+        "objects"       : [
+          {
+            "id"      : "chapter",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "flashback-children-root",
+              "name"      : "flashback children root",
+              "components": [],
+              "transform" : {
+                "localPosition": {"x": 0, "y": 0, "z": 0},
+                "localScale"   : {"x": 1, "y": 1, "z": 1}
+              },
+              "children"  : [
+                {
+                  "id"        : "flashback-children-ground_tile",
+                  "name"      : "ground tile",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -3.125, "y": -1.085, "z": -0.4},
+                    "localRotation": {"x":  0,     "y":  0,     "z":  0  },
+                    "localScale"   : {"x":  2.5,   "y":  2.5,   "z":  1  }
+                  },
+                  "components": [
+                    {
+                      "type"  : "TiledSpriteRenderer",
+                      "asset" : "landscape_ground_tile",
+                      "wrap"  : {"x": "repeat", "y": "repeatBottom"},
+                      "origin": {"x": 0, "y": 0}
+                    }
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-children-grass_tile",
+                  "name"      : "grass tile",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -3,   "y": -0.98, "z": -0.5},
+                    "localRotation": {"x":  0,   "y":  0,    "z":  0  },
+                    "localScale"   : {"x":  2.5, "y":  2.5,  "z":  1  }
+                  },
+                  "components": [
+                    {
+                      "type"  : "TiledSpriteRenderer",
+                      "asset" : "landscape_grass_tile",
+                      "wrap"  : {"x": "repeat", "y": "transparent"},
+                      "origin": {"x": 0, "y": 0}
+                    }
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-child-0",
+                  "name"      : "flashback child 0",
+                  "components": [],
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": 0, "z": 0},
+                    "localScale"   : {"x": 1, "y": 1, "z": 1}
+                  },
+                  "children"  : [
+                    {
+                      "id"        : "flashback-child-0-body",
+                      "name"      : "flashback child 0 body",
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "landscape_child", "frame": 4},
+                        {
+                          "type"           : "SpriteAnimator",
+                          "start"          : {
+                            "frame": 3,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          },
+                          "frames"         : [0, 1, 2, 3],
+                          "framesPerSecond": 10,
+                          "loop"           : true,
+                          "hideOutside"    : false
+                        }
+                      ],
+                      "transform" : {
+                        "localPosition": {"x":  0.0, "y": -1.07255, "z": 0},
+                        "localScale"   : {"x": -2.5, "y":  2.5,     "z": 1}
+                      },
+                      "children"  : []
+                    },
+                    {
+                      "id"        : "flashback-carried-paper",
+                      "name"      : "flashback carried paper",
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small", "frame": 0}
+                      ],
+                      "transform" : {
+                        "localPosition": {"x": -0.175, "y": -0.835, "z": 0.2},
+                        "localScale"   : {"x":  2.5,   "y":  2.5,   "z": 1  }
+                      },
+                      "children"  : []
+                    }
+                  ]
+                },
+                {
+                  "id"        : "flashback-child-1",
+                  "name"      : "flashback child 1",
+                  "components": [],
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": 0, "z": 0},
+                    "localScale"   : {"x": 1, "y": 1, "z": 1}
+                  },
+                  "children"  : [
+                    {
+                      "id"        : "flashback-child-1-body",
+                      "name"      : "flashback child 1 body",
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "landscape_child", "frame": 4},
+                        {
+                          "type"           : "SpriteAnimator",
+                          "start"          : {
+                            "frame": 3,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          },
+                          "frames"         : [0, 1, 2, 3],
+                          "framesPerSecond": 10,
+                          "loop"           : true,
+                          "hideOutside"    : false
+                        }
+                      ],
+                      "transform" : {
+                        "localPosition": {"x":  0.0, "y": -1.07255, "z": 0},
+                        "localScale"   : {"x": -2.5, "y":  2.5,     "z": 1}
+                      },
+                      "children"  : []
+                    }
+                  ]
+                },
+                {
+                  "id"        : "flashback-free-paper",
+                  "name"      : "flashback free paper",
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small", "frame": 0}
+                  ],
+                  "transform" : {
+                    "localPosition": {"x": 0.0, "y": -0.2045786000000001, "z": 0.2},
+                    "localScale"   : {"x": 2.5, "y":  2.5,                "z": 1  }
+                  },
+                  "children"  : []
+                }
+              ]
+            }
+          },
+          {
+            "id"      : "camera-layers",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "flashback-children-camera-layers",
+              "name"      : "Landscape camera layers",
+              "active"    : true,
+              "transform" : {
+                "localPosition": {"x": 0, "y": 0, "z": 10},
+                "localRotation": {"x": 0, "y": 0, "z":  0},
+                "localScale"   : {"x": 1, "y": 1, "z":  1}
+              },
+              "components": [],
+              "children"  : [
+                {
+                  "id"        : "flashback-children-sky",
+                  "name"      : "Textured cyan sky",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": 0, "z": 2},
+                    "localRotation": {"x": 0, "y": 0, "z": 0},
+                    "localScale"   : {"x": 1, "y": 1, "z": 1}
+                  },
+                  "components": [
+                    {
+                      "type"  : "TiledSpriteRenderer",
+                      "asset" : "landscape_sky",
+                      "origin": {"x": -3.2, "y": 1.8}
+                    },
+                    {
+                      "type"       : "ProceduralNoise",
+                      "seed"       : 4981227,
+                      "textureSize": {"x": 1024, "y": 512},
+                      "worldSize"  : {"x": 10.24, "y": 5.12},
+                      "origin"     : {"x": -3.2, "y": 1.8},
+                      "range"      : 0.05,
+                      "channelGain": {"r": 2.624065667297263, "g": 0.5512604727399197, "b": 0.6772158033659882},
+                      "bands"      : [
+                        {
+                          "sigmaTexels": {"x": 1.852584662887536, "y": 1.6943110367061973},
+                          "variance"   : 8.837571220996478e-06
+                        },
+                        {
+                          "sigmaTexels": {"x": 7.156287426705121, "y": 5.729292786515615},
+                          "variance"   : 3.0084557984899898e-05
+                        },
+                        {
+                          "sigmaTexels": {"x": 19.98110846501085, "y": 8.139283537984129},
+                          "variance"   : 3.8952749683006865e-05
+                        }
+                      ]
+                    }
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-children-cloud_large",
+                  "name"      : "landscape cloud_large",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -2.41, "y": 1.38, "z": 1},
+                    "localRotation": {"x":  0,    "y": 0,    "z": 0},
+                    "localScale"   : {"x":  2.5,  "y": 2.5,  "z": 1}
+                  },
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_cloud_large"}
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-children-cloud_left",
+                  "name"      : "landscape cloud_left",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -2.15, "y": 1.3125, "z": 1},
+                    "localRotation": {"x":  0,    "y": 0,      "z": 0},
+                    "localScale"   : {"x":  2.5,  "y": 2.5,    "z": 1}
+                  },
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_cloud_left"}
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-children-cloud_right",
+                  "name"      : "landscape cloud_right",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 1.37, "y": 0.8220000000000001, "z": 1},
+                    "localRotation": {"x": 0,    "y": 0,                  "z": 0},
+                    "localScale"   : {"x": 2.5,  "y": 2.5,                "z": 1}
+                  },
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_cloud_right"}
+                  ],
+                  "children"  : []
+                }
+              ]
+            },
+            "parent"  : {"entity": "helmet-flat-camera"}
+          },
+          {
+            "id"    : "flashback-child-0-body",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-child-0-body"}
+          },
+          {
+            "id"    : "flashback-child-0",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-child-0"}
+          },
+          {
+            "id"    : "flashback-child-1-body",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-child-1-body"}
+          },
+          {
+            "id"    : "flashback-child-1",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-child-1"}
+          },
+          {
+            "id"    : "flashback-free-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-free-paper"}
+          },
+          {
+            "id"    : "flashback-carried-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-carried-paper"}
+          }
+        ],
+        "bindings"      : [
+          {
+            "id"      : "flashback-flashback-children-root-flashback-child-0-body-SpriteRenderer-frame",
+            "object"  : "flashback-child-0-body",
+            "property": {"component": "SpriteRenderer", "path": "frame"},
+            "track"   : "flashback-flashback-children-root-flashback-child-0-body-SpriteRenderer-frame"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-child-0-body-Transform-localScale.x",
+            "object"  : "flashback-child-0-body",
+            "property": {"component": "Transform", "path": "localScale.x"},
+            "track"   : "flashback-flashback-children-root-flashback-child-0-body-Transform-localScale.x"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-child-0-Transform-localPosition.x",
+            "object"  : "flashback-child-0",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "flashback-flashback-children-root-flashback-child-0-Transform-localPosition.x"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-child-0-body-SpriteAnimator-enabled",
+            "object"  : "flashback-child-0-body",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "flashback-flashback-children-root-flashback-child-0-body-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-child-1-body-Transform-localScale.x",
+            "object"  : "flashback-child-1-body",
+            "property": {"component": "Transform", "path": "localScale.x"},
+            "track"   : "flashback-flashback-children-root-flashback-child-1-body-Transform-localScale.x"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-child-1-Transform-localPosition.x",
+            "object"  : "flashback-child-1",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "flashback-flashback-children-root-flashback-child-1-Transform-localPosition.x"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-child-1-body-SpriteAnimator-enabled",
+            "object"  : "flashback-child-1-body",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "flashback-flashback-children-root-flashback-child-1-body-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-free-paper-Transform-localPosition.x",
+            "object"  : "flashback-free-paper",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "flashback-flashback-children-root-flashback-free-paper-Transform-localPosition.x"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-free-paper-Transform-localPosition.y",
+            "object"  : "flashback-free-paper",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "flashback-flashback-children-root-flashback-free-paper-Transform-localPosition.y"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-free-paper-Entity-active",
+            "object"  : "flashback-free-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "flashback-flashback-children-root-flashback-free-paper-Entity-active"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-carried-paper-Entity-active",
+            "object"  : "flashback-carried-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "flashback-flashback-children-root-flashback-carried-paper-Entity-active"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-carried-paper-Transform-localPosition.x",
+            "object"  : "flashback-carried-paper",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "flashback-flashback-children-root-flashback-carried-paper-Transform-localPosition.x"
+          },
+          {
+            "id"      : "flashback-flashback-children-root-flashback-carried-paper-Transform-localScale.x",
+            "object"  : "flashback-carried-paper",
+            "property": {"component": "Transform", "path": "localScale.x"},
+            "track"   : "flashback-flashback-children-root-flashback-carried-paper-Transform-localScale.x"
+          }
+        ],
+        "sequences"     : []
+      },
+      "flashback-meeting": {
+        "tickResolution": {"numerator": 24000, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 267200},
+        "objects"       : [
+          {
+            "id"      : "chapter",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "flashback-meeting-root",
+              "name"      : "flashback meeting root",
+              "components": [],
+              "transform" : {
+                "localPosition": {"x": 0, "y": 0, "z": 0},
+                "localScale"   : {"x": 1, "y": 1, "z": 1}
+              },
+              "children"  : [
+                {
+                  "id"        : "flashback-meeting-ground_tile",
+                  "name"      : "ground tile",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -3.125, "y": -1.085, "z": -0.4},
+                    "localRotation": {"x":  0,     "y":  0,     "z":  0  },
+                    "localScale"   : {"x":  2.5,   "y":  2.5,   "z":  1  }
+                  },
+                  "components": [
+                    {
+                      "type"  : "TiledSpriteRenderer",
+                      "asset" : "landscape_ground_tile",
+                      "wrap"  : {"x": "repeat", "y": "repeatBottom"},
+                      "origin": {"x": 0, "y": 0}
+                    }
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-meeting-grass_tile",
+                  "name"      : "grass tile",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -3,   "y": -0.98, "z": -0.5},
+                    "localRotation": {"x":  0,   "y":  0,    "z":  0  },
+                    "localScale"   : {"x":  2.5, "y":  2.5,  "z":  1  }
+                  },
+                  "components": [
+                    {
+                      "type"  : "TiledSpriteRenderer",
+                      "asset" : "landscape_grass_tile",
+                      "wrap"  : {"x": "repeat", "y": "transparent"},
+                      "origin": {"x": 0, "y": 0}
+                    }
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-adult",
+                  "name"      : "flashback adult",
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_adult", "frame": 4},
+                    {
+                      "type"           : "SpriteAnimator",
+                      "start"          : {
+                        "frame": 3,
+                        "rate" : {"numerator": 30, "denominator": 1}
+                      },
+                      "frames"         : [0, 1, 2, 3],
+                      "framesPerSecond": 10,
+                      "loop"           : true,
+                      "hideOutside"    : false
+                    }
+                  ],
+                  "transform" : {
+                    "localPosition": {"x": -0.2499000000000001, "y": -1.06755, "z": 0},
+                    "localScale"   : {"x":  2.5,                "y":  2.5,     "z": 1}
+                  },
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-red-pilot",
+                  "name"      : "flashback red pilot",
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "pilot_red", "frame": 4},
+                    {
+                      "type"           : "SpriteAnimator",
+                      "start"          : {
+                        "frame": 3,
+                        "rate" : {"numerator": 30, "denominator": 1}
+                      },
+                      "frames"         : [0, 1, 2, 3],
+                      "framesPerSecond": 10,
+                      "loop"           : true,
+                      "hideOutside"    : false
+                    }
+                  ],
+                  "transform" : {
+                    "localPosition": {"x":  0.3, "y": -1.1074000000000002, "z": 0},
+                    "localScale"   : {"x": -2.5, "y":  2.5,                "z": 1}
+                  },
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-blue-ship",
+                  "name"      : "Blue pilot in the red-engine ship",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0,      "y": 1.0788130124916577, "z": 0},
+                    "localScale"   : {"x": 1.1968, "y": 1.1968,             "z": 1}
+                  },
+                  "components": [
+                    {
+                      "type" : "SpriteRenderer",
+                      "asset": "flight_ship",
+                      "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+                    }
+                  ],
+                  "children"  : [
+                    {
+                      "id"        : "flashback-ship-pilot",
+                      "name"      : "Blue pilot",
+                      "active"    : true,
+                      "transform" : {
+                        "localPosition": {"x": -0.2905236819054275, "y": -0.1500275839669601, "z": 0.1},
+                        "localRotation": {"x":  0,                  "y":  0,                  "z": 0  },
+                        "localScale"   : {"x": -1,                  "y":  1,                  "z": 1  }
+                      },
+                      "components": [
+                        {
+                          "type" : "SpriteRenderer",
+                          "asset": "pilot_red",
+                          "frame": 4,
+                          "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+                        }
+                      ],
+                      "children"  : []
+                    },
+                    {
+                      "id"        : "flashback-ship-thruster",
+                      "name"      : "Thruster flame",
+                      "transform" : {
+                        "localPosition": {"x": 0.04447631809457249, "y": -0.025027583966960094, "z": 0.03}
+                      },
+                      "components": [
+                        {
+                          "type" : "SpriteRenderer",
+                          "asset": "thruster",
+                          "color": {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+                        },
+                        {
+                          "type"       : "Flicker",
+                          "mode"       : "periodic",
+                          "frequency"  : 15,
+                          "dutyCycle"  : 0.5,
+                          "probability": 0.5,
+                          "seed"       : 49821,
+                          "phase"      : 0,
+                          "start"      : {
+                            "frame": 0,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id"        : "flashback-ship-exhaust",
+                      "name"      : "Local exhaust",
+                      "active"    : true,
+                      "transform" : {
+                        "localPosition": {"x": 0.10447631809457249, "y": -0.010027583966960095, "z": 0.02},
+                        "localRotation": {"x": 0,                   "y":  0,                    "z": 0   },
+                        "localScale"   : {"x": 1,                   "y":  1,                    "z": 1   }
+                      },
+                      "components": [
+                        {
+                          "type"         : "ParticleEmitter",
+                          "asset"        : "exhaust",
+                          "seed"         : 4983880,
+                          "maxParticles" : 64,
+                          "start"        : {
+                            "frame": 3708,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          },
+                          "prewarm"      : 0.85,
+                          "rate"         : 20,
+                          "duration"     : 11.133333333333333,
+                          "space"        : "local",
+                          "billboard"    : "local",
+                          "shape"        : {
+                            "type": "ellipse",
+                            "size": {"x": 0.035, "y": 0.04, "z": 0}
+                          },
+                          "direction"    : {"x": 1, "y": 0, "z": 0},
+                          "spreadDegrees": 48,
+                          "speed"        : {"min": 0.24, "max": 0.66},
+                          "lifetime"     : {"min": 0.5, "max": 0.85},
+                          "startSize"    : {"min": 0.025, "max": 0.05},
+                          "sizeOverLife" : [
+                            {"time": 0,    "value": 0.65},
+                            {"time": 0.45, "value": 1.3 },
+                            {"time": 1,    "value": 0.85}
+                          ],
+                          "colorOverLife": [
+                            { "time": 0,    "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                            { "time": 0.86, "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                            { "time": 1,    "value": {"r": 1, "g": 1, "b": 1, "a": 0} }
+                          ],
+                          "animation"    : {"mode": "fps", "framesPerSecond": 15, "loop": true},
+                          "color"        : {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+                        },
+                        {
+                          "type"      : "Glow",
+                          "threshold" : 0.18,
+                          "softness"  : 0.6,
+                          "sigmaWorld": 0.009,
+                          "intensity" : 0.6,
+                          "color"     : {"r": 1, "g": 0.4, "b": 0.08, "a": 1}
+                        }
+                      ],
+                      "children"  : []
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id"      : "camera-layers",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "flashback-meeting-camera-layers",
+              "name"      : "Landscape camera layers",
+              "active"    : true,
+              "transform" : {
+                "localPosition": {"x": 0, "y": 0, "z": 10},
+                "localRotation": {"x": 0, "y": 0, "z":  0},
+                "localScale"   : {"x": 1, "y": 1, "z":  1}
+              },
+              "components": [],
+              "children"  : [
+                {
+                  "id"        : "flashback-meeting-sky",
+                  "name"      : "Textured cyan sky",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": 0, "z": 2},
+                    "localRotation": {"x": 0, "y": 0, "z": 0},
+                    "localScale"   : {"x": 1, "y": 1, "z": 1}
+                  },
+                  "components": [
+                    {
+                      "type"  : "TiledSpriteRenderer",
+                      "asset" : "landscape_sky",
+                      "origin": {"x": -3.2, "y": 1.8}
+                    },
+                    {
+                      "type"       : "ProceduralNoise",
+                      "seed"       : 4981227,
+                      "textureSize": {"x": 1024, "y": 512},
+                      "worldSize"  : {"x": 10.24, "y": 5.12},
+                      "origin"     : {"x": -3.2, "y": 1.8},
+                      "range"      : 0.05,
+                      "channelGain": {"r": 2.624065667297263, "g": 0.5512604727399197, "b": 0.6772158033659882},
+                      "bands"      : [
+                        {
+                          "sigmaTexels": {"x": 1.852584662887536, "y": 1.6943110367061973},
+                          "variance"   : 8.837571220996478e-06
+                        },
+                        {
+                          "sigmaTexels": {"x": 7.156287426705121, "y": 5.729292786515615},
+                          "variance"   : 3.0084557984899898e-05
+                        },
+                        {
+                          "sigmaTexels": {"x": 19.98110846501085, "y": 8.139283537984129},
+                          "variance"   : 3.8952749683006865e-05
+                        }
+                      ]
+                    }
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-meeting-cloud_large",
+                  "name"      : "landscape cloud_large",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0.013172181758775423, "y": 1.0631731801617779, "z": 1},
+                    "localRotation": {"x": 0,                    "y": 0,                  "z": 0},
+                    "localScale"   : {"x": 2.5,                  "y": 2.5,                "z": 1}
+                  },
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_cloud_large"}
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-meeting-cloud_left",
+                  "name"      : "landscape cloud_left",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -0.44094175221329013, "y": 1.5195983151956318, "z": 1},
+                    "localRotation": {"x":  0,                   "y": 0,                  "z": 0},
+                    "localScale"   : {"x":  2.5,                 "y": 2.5,                "z": 1}
+                  },
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_cloud_left"}
+                  ],
+                  "children"  : []
+                },
+                {
+                  "id"        : "flashback-meeting-cloud_right",
+                  "name"      : "landscape cloud_right",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -2.7770133639048167, "y": 0.6003923897607087, "z": 1},
+                    "localRotation": {"x":  0,                  "y": 0,                  "z": 0},
+                    "localScale"   : {"x":  2.5,                "y": 2.5,                "z": 1}
+                  },
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_cloud_right"}
+                  ],
+                  "children"  : []
+                }
+              ]
+            },
+            "parent"  : {"entity": "helmet-flat-camera"}
+          },
+          {
+            "id"    : "flashback-adult",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-adult"}
+          },
+          {
+            "id"    : "flashback-red-pilot",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-red-pilot"}
+          },
+          {
+            "id"    : "flashback-blue-ship",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "flashback-blue-ship"}
+          },
+          {
+            "id"    : "helmet-flat-camera",
+            "kind"  : "possessable",
+            "target": {"entity": "helmet-flat-camera"}
+          }
+        ],
+        "bindings"      : [
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-adult-Transform-localPosition.x",
+            "object"  : "flashback-adult",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "flashback-flashback-meeting-root-flashback-adult-Transform-localPosition.x"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-adult-SpriteAnimator-enabled",
+            "object"  : "flashback-adult",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "flashback-flashback-meeting-root-flashback-adult-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-adult-SpriteRenderer-frame",
+            "object"  : "flashback-adult",
+            "property": {"component": "SpriteRenderer", "path": "frame"},
+            "track"   : "flashback-flashback-meeting-root-flashback-adult-SpriteRenderer-frame"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-adult-Transform-localPosition.y",
+            "object"  : "flashback-adult",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "flashback-flashback-meeting-root-flashback-adult-Transform-localPosition.y"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localPosition.x",
+            "object"  : "flashback-red-pilot",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localPosition.x"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-red-pilot-SpriteAnimator-enabled",
+            "object"  : "flashback-red-pilot",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "flashback-flashback-meeting-root-flashback-red-pilot-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-red-pilot-SpriteAnimator-start.frame",
+            "object"  : "flashback-red-pilot",
+            "property": {"component": "SpriteAnimator", "path": "start.frame"},
+            "track"   : "flashback-flashback-meeting-root-flashback-red-pilot-SpriteAnimator-start.frame"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localScale.x",
+            "object"  : "flashback-red-pilot",
+            "property": {"component": "Transform", "path": "localScale.x"},
+            "track"   : "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localScale.x"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localPosition.y",
+            "object"  : "flashback-red-pilot",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "flashback-flashback-meeting-root-flashback-red-pilot-Transform-localPosition.y"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-flashback-blue-ship-Transform-localPosition.x",
+            "object"  : "flashback-blue-ship",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "flashback-flashback-meeting-root-flashback-blue-ship-Transform-localPosition.x"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-strength",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "ColorGrade", "path": "strength"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ColorGrade-strength"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-sigmaWorld.x",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "GaussianBlur", "path": "sigmaWorld.x"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-sigmaWorld.x"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-enabled",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "GaussianBlur", "path": "enabled"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-GaussianBlur-enabled"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-enabled",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "ViewportTransform", "path": "enabled"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-enabled"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-scale",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "ViewportTransform", "path": "scale"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-scale"
+          },
+          {
+            "id"      : "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-opacity",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "ViewportTransform", "path": "opacity"},
+            "track"   : "flashback-flashback-meeting-root-helmet-flat-camera-ViewportTransform-opacity"
+          }
+        ],
+        "sequences"     : []
       }
     }
   },
@@ -32886,6 +33882,44 @@
         },
         "notes": "Three weighted Bezier keys per scalar curve. Spatial deformation is evaluated at each boundary point, not at the tile center. The source editor and original parameter names are unknown."
       }
+    },
+    "flashback": {
+      "sourceFrames": [3431, 4050],
+      "chapters": ["flashback-children", "flashback-meeting"],
+      "motion": "Piecewise linear paths with retained holds, measured from native pixel grids. Pose changes are independent stepped tracks.",
+      "childRun": {
+        "frames"          : [0, 1, 2, 3],
+        "sourceHoldFrames": 3,
+        "sourcePhase"     : 3
+      },
+      "events": {
+        "paperDescent"    : 3462,
+        "paperLanded"     : 3487,
+        "paperPickup"     : 3524,
+        "childrenSeparate": [3603, 3625, 3653],
+        "meetingCut"      : 3708,
+        "adultsStop"      : 3777,
+        "pilotLeaves"     : 3798,
+        "adultLooksUp"    : 3880,
+        "sepiaRetreat"    : 3940,
+        "fade"            : [4004, 4042]
+      },
+      "viewportRetreat": {
+        "sourceFrames": [3940, 3949, 3958, 3967, 3977, 3986, 3995],
+        "scales": [0.8715, 0.7425, 0.6125, 0.4825, 0.34, 0.2094, 0.079],
+        "aspect": "Uniform fraction of the current fitted viewport; scene projection and controls remain independent."
+      },
+      "colorGrade": {
+        "matrix"              : [0.299, 0.587, 0.114, 0.0, 0.299, 0.587, 0.114, 0.0, 0.299, 0.587, 0.114, 0.0],
+        "midpoint"            : {"r": 0.8197598771827679, "g": 0.49038711004701835, "b": 0.1351101908424012},
+        "space"               : "sRGB",
+        "fitMeanAbsoluteError": 4.903510569858046
+      },
+      "notes": [
+        "Existing reviewed child, adult, red pilot, blue-engine ship and landscape sprites are reused.",
+        "The ship continues linearly through the retreat; particles remain deterministic and live.",
+        "The short cut uses a decaying horizontal blur and color grade; codec noise is not baked into assets."
+      ]
     }
   }
 }
