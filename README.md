@@ -6,6 +6,8 @@ Sprites, transforms, keyframe animation and procedural effects are rebuilt from 
 
 Original music by **ヒゲドライバー (Hige Driver)**; original video by **サーモンラット（クロユキ）**.
 
+[Watch the original music video on YouTube](https://youtu.be/-lHRRVnoE0Y)
+
 [Play on GitHub Pages](https://noname0310.github.io/498tokio-recon/)
 
 ![Frame 2396 rendered with Babylon.js](docs/frame-2396.png)
