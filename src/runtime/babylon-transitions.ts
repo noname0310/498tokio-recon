@@ -4,6 +4,7 @@ import type {TransitionGroup} from "./transitions.js";
 import {Math3D as M} from "./math.js";
 import {BabylonTransitionUniforms,transitionUniformNames} from "./babylon-transition-uniforms.js";
 import {BabylonFade} from "./babylon-fade.js";
+import type {FadeTransition} from "./types.js";
 interface MaskGroup {mesh:Babylon.Mesh;material:Babylon.ShaderMaterial;uniforms:BabylonTransitionUniforms}
 
 export function createTransitionMask(r:BabylonSceneContext,id:string):MaskGroup {
@@ -17,7 +18,7 @@ export function createTransitionMask(r:BabylonSceneContext,id:string):MaskGroup 
 export class BabylonTransitions {
   private readonly groups=new Map<string,MaskGroup>();
   private readonly fades=new Map<string,BabylonFade>();
-  private fadeDraws:{fade:BabylonFade;opacity:number;members:Babylon.AbstractMesh[]}[]=[];
+  private fadeDraws:{fade:BabylonFade;opacity:number;composition:FadeTransition["composition"];members:Babylon.AbstractMesh[]}[]=[];
   private applied=false;
   constructor(private readonly renderer:BabylonSceneContext){}
   update(groups:TransitionGroup[]):void {
@@ -32,7 +33,8 @@ export class BabylonTransitions {
         fade.mesh.renderingGroupId=index*3+2;fade.mesh.setEnabled(false);
         const world=r.data.world.get(group.id)!;fade.mesh.metadata={sortWorldPosition:{x:world[12],y:world[13],z:world[14]}};
         const opacity=group.component.enabled?group.component.progress:1;
-        if(opacity<1)this.fadeDraws.push({fade,opacity,members:[]});else fade.release();
+        const composition=group.component.enabled?group.component.composition:"source-over";
+        if(opacity<1||composition==="plus-lighter")this.fadeDraws.push({fade,opacity,composition,members:[]});else fade.release();
         r.scene.setRenderingAutoClearDepthStencil(index*3+2,true,true,true);
         r.scene.setRenderingAutoClearDepthStencil(index*3+3,true,true,true);
         for(const id of group.members)owners.set(id,index);
@@ -80,7 +82,7 @@ export class BabylonTransitions {
     try{
       for(const draw of this.fadeDraws){
         const visible=draw.members.filter(mesh=>mesh.isVisible&&mesh.isEnabled());
-        if(draw.opacity>0)draw.fade.capture(visible,draw.opacity);
+        if(draw.opacity>0)draw.fade.capture(visible,draw.opacity,draw.composition);
         for(const mesh of visible){hidden.push(mesh);mesh.isVisible=false;}
       }
       drawScene();

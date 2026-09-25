@@ -5,7 +5,7 @@ import {Frame,frameRate} from "./animation/time.js";
 const start={frame:Frame.zero,rate:frameRate(30)};
 const rgba = {r:1,g:1,b:1,a:1};
 const transitionDefaults=new Map<Transition["kind"],Transition>([
-  ["fade",{kind:"fade",progress:0,target:null}],
+  ["fade",{kind:"fade",progress:0,target:null,composition:"source-over"}],
   ["grid",{kind:"grid",progress:0,target:null,grid:{cellSize:{x:.36,y:.36},origin:{x:0,y:0},direction:{x:1,y:0},feather:4.8}}],
   ["radialGrid",{kind:"radialGrid",progress:0,target:null,radialGrid:{cellSize:{x:.6,y:.6},origin:{x:0,y:0},center:{x:0,y:0},curvature:0,inset:0}}],
   ["pinwheel",{kind:"pinwheel",progress:0,target:null,pinwheel:{cellSize:{x:.2666666667,y:.2666666667},origin:{x:0,y:0},profiles:[{fronts:[[0,0],[0,0],[0,0],[0,0]]},{fronts:[[1,2],[1,2],[1,2],[1,2]]}]}}],
@@ -229,6 +229,7 @@ export function normalizeScene(input:unknown):SceneData {
         if(c.target!==null&&(!c.target||typeof c.target.entity!=="string"))fail("Transition.target must reference an entity.");
         if(c.kind==="fade"){
           if(!c.target)fail("Fade transitions require a target subtree.");
+          if(!["source-over","plus-lighter"].includes(c.composition))fail("Invalid fade composition.");
         }else if(c.kind==="grid"){
           const g=c.grid;vector(g.cellSize,"xy","Transition.grid.cellSize",.0001);vector(g.origin,"xy","Transition.grid.origin");vector(g.direction,"xy","Transition.grid.direction");finite(g.feather,"Transition.grid.feather",.0001);
           if(Math.hypot(g.direction.x,g.direction.y)<1e-9)fail("Transition.grid needs a nonzero direction.");

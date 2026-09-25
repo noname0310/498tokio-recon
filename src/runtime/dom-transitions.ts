@@ -28,6 +28,7 @@ export class DOMTransitions {
       const {component:c,bounds,frameBounds}=group;
       sync.hidden(record.element,false);r.setDepth(record.element,group.depth);
       const fade=c.kind==="fade",masked=!fade&&c.enabled&&c.progress<1;
+      sync.attribute(record.element,"data-composition",fade&&c.enabled?c.composition:null);
       sync.style(record.element,{opacity:fade&&c.enabled?c.progress:1,visibility:(fade&&c.enabled&&c.progress<=0)||masked&&(c.progress<=0||!bounds||!frameBounds)?"hidden":"visible",clipPath:masked?`url(#${record.clip.id})`:"none"});
       if(masked&&c.progress>0&&bounds&&frameBounds){
         const key=JSON.stringify([transitionGeometryKey(c),bounds,frameBounds,group.viewMatrix,view.width,view.height,view.pixelsPerUnit,scene.requireComponent(scene.cameraNode.id,"Camera")]);

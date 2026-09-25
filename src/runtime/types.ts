@@ -76,8 +76,9 @@ export interface PinwheelTransition extends TransitionBase {kind:"pinwheel";pinw
 export interface DissolveTransitionSettings {cellSize:Vec2;origin:Vec2;seed:number;direction:Vec2;feather:number}
 export interface DissolveTransition extends TransitionBase {kind:"dissolve";dissolve:DissolveTransitionSettings}
 export interface StripeTransition extends TransitionBase {kind:"stripes";stripes:{axis:"x"|"y";period:number;phase:number}}
-/** Opacity of the completed target subtree, applied once after composition. */
-export interface FadeTransition extends TransitionBase {kind:"fade"}
+/** Opacity of the completed target subtree. Plus-lighter sums premultiplied
+ * RGBA inside an isolated group, preserving opaque overlaps in a crossfade. */
+export interface FadeTransition extends TransitionBase {kind:"fade";composition:"source-over"|"plus-lighter"}
 // Additional kinds extend this discriminated union with their own settings.
 export type Transition=GridTransition|RadialGridTransition|PinwheelTransition|DissolveTransition|StripeTransition|FadeTransition;
 export interface ParticleMotionBlur {shutterSeconds:number;maxSigmaWorld:number;dilationPixels:number;softnessPixels:number;alphaGain:number}

@@ -37,6 +37,24 @@ async function main(){
    await page.evaluate(()=>scenePlayer.setComponent('red','PlaneRenderer',{enabled:false}));await settle();
    const im=png(await shot()),view=await page.evaluate(()=>scenePlayer.view),at=(Math.floor((view.worldHeight/2-1.2)*view.pixelsPerUnit)*im.width+Math.floor((2.2+view.worldWidth/2)*view.pixelsPerUnit))*im.channels;
    for(const [c,value]of [.2,.28,.84].entries())assert(Math.abs(im.pixels[at+c]-value*255)<3,`${name}: partial source alpha composes only once`);
+   // A sprite-to-sprite crossfade sums premultiplied RGBA in isolation.
+   // Complementary opacities keep the overlapping region opaque, including
+   // black ink; the unrelated blue background must not leak into that region.
+   await page.setViewportSize({width:640,height:360});
+   await page.evaluate(async()=>{
+    await scenePlayer.setComponent('red','PlaneRenderer',{enabled:true,color:{r:1,g:.1,b:0,a:.25}});
+    await scenePlayer.setComponent('green','PlaneRenderer',{color:{r:0,g:1,b:0,a:.75}});
+    await scenePlayer.setComponent('translucent','PlaneRenderer',{enabled:false});
+    await scenePlayer.setComponent('fade','Transition',{composition:'plus-lighter',progress:1});
+   });await settle();
+   const sample=async(x,y)=>{const image=png(await shot()),i=(y*image.width+x)*image.channels;return Array.from(image.pixels.subarray(i,i+3));};
+   const checkRGB=(actual,expected,label)=>expected.forEach((v,c)=>assert(Math.abs(actual[c]-v*255)<3,`${name}: ${label} ${actual}`));
+   checkRGB(await sample(320,160),[.25,.775,0],'crossfade has no background leak');
+   checkRGB(await sample(140,180),[.25,.1,.6],'single-sprite edge retains partial alpha');
+   await page.evaluate(()=>scenePlayer.setComponent('fade','Transition',{progress:.5}));await settle();
+   checkRGB(await sample(320,160),[.125,.4375,.4],'group opacity follows the RGBA sum');
+   await page.evaluate(()=>scenePlayer.setComponent('fade','Transition',{composition:'source-over'}));await settle();
+   checkRGB(await sample(320,160),[.03125,.4375,.475],'ordinary blend state restored after additive capture');
    assert.deepEqual(errors,[]);console.log(`${name}: subtree opacity, overlapping layers, partial alpha, aspect changes and rewind passed.`);
   }finally{await browser.close();}
  }}finally{await new Promise(r=>server.close(r));}

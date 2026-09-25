@@ -5,8 +5,8 @@ const output=path.join(root,'test-results/biome');fs.mkdirSync(output,{recursive
 async function main(){
  const {Scene,Time,frameRate}=await import(pathToFileURL(path.join(root,'dist/runtime/player.js'))),scene=new Scene(data,pathToFileURL(file).href);
  const at=n=>{scene.setFrameTime(Time.fromDecimal(n),frameRate(30));scene.updateWorld();};
- for(const n of [4077,4078,4234.99,4235,4383,4535.99,4536].reverse()){
-  at(n);assert.equal(scene.nodes.has('biome-world'),n>=4078&&n<4536);assert.equal(scene.cameraNode.id==='biome-camera',n>=4078&&n<4536);
+ for(const n of [4077,4078,4234.99,4235,4383,4529.99,4530,4535.99,4536].reverse()){
+  at(n);assert.equal(scene.nodes.has('biome-world'),n>=4078&&n<4536);assert.equal(scene.cameraNode.id==='biome-camera',n>=4078&&n<4530);
  }
  at(4300);let grounded=0;
  for(const n of [4078,4084,4088,4090]){

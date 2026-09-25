@@ -2,6 +2,7 @@
 .scene-world { position: absolute; inset: 0; transform-style: flat; perspective: none; isolation: isolate; }
 .transition-layer { position: absolute; inset: 0; transform-style: flat; isolation: isolate; }
 .transition-layer[hidden] { display: none; }
+.transition-layer[data-composition="plus-lighter"] > .component { mix-blend-mode: plus-lighter !important; }
 .component { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-origin: 0 0; }
 .component[hidden], .screen-effect[hidden], .noise[hidden] { display: none; }
 .transition-grid[hidden], .transition-grid [hidden] { display: none; }
