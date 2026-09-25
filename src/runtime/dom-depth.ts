@@ -27,7 +27,7 @@ export class DOMPlanarDepth {
     });
     const cameraWorld=scene.world.get(scene.cameraNode.id)!,camera=scene.requireComponent(scene.cameraNode.id,"Camera");
     const planes:(Occluder|null)[]=await Promise.all(candidates.map(async id=>{
-      const c=scene.requireComponent(id,"TiledSpriteRenderer"),world=scene.world.get(id)!,pixels=await resources.image(scene,c.asset);
+      const c=scene.requireComponent(id,"TiledSpriteRenderer"),world=scene.world.get(id)!,pixels=await resources.framePixels(scene,c.asset,scene.spriteState(id).frame);
       let opaque=this.opacity.get(pixels);
       if(opaque===undefined){opaque=true;for(let i=3;i<pixels.data.length;i+=4)if(pixels.data[i]!==255){opaque=false;break;}this.opacity.set(pixels,opaque);}
       if(!opaque)return null;

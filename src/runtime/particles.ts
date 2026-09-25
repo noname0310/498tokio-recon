@@ -190,7 +190,7 @@ export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene
   return states.sort((a,b)=>(c.sortMode==="sizeAscending"?a.projectedArea-b.projectedArea:b.depth-a.depth)||a.birthTime-b.birthTime||a.id.localeCompare(b.id));
 }
 
-export const particleDefaults:ParticleEmitter={asset:"",seed:1,maxParticles:256,start:{frame:Frame.zero,rate:frameRate(30)},duration:0,prewarm:0,rate:10,bursts:[],cameraContinuation:null,space:"local",shape:{type:"point",size:{x:0,y:0,z:0}},directionMode:"cone",direction:{x:0,y:1,z:0},spreadDegrees:0,speed:{min:1,max:1},speedOverLife:[],lifetime:{min:1,max:1},startSize:{min:.1,max:.1},rotation:{min:0,max:0},angularVelocity:{min:0,max:0},acceleration:{x:0,y:0,z:0},velocityRelaxation:null,sizeOverLife:[],color:{r:1,g:1,b:1,a:1},colorPalette:[],colorOverLife:[],billboard:"camera",blend:"alpha",sortMode:"depth",animation:{mode:"single",timeSource:"age",frame:0,frames:[],framesPerSecond:15,loop:true,randomStart:false}};
+export const particleDefaults:ParticleEmitter={asset:"",colorMatrix:[1,0,0,0,0,1,0,0,0,0,1,0],seed:1,maxParticles:256,start:{frame:Frame.zero,rate:frameRate(30)},duration:0,prewarm:0,rate:10,bursts:[],cameraContinuation:null,space:"local",shape:{type:"point",size:{x:0,y:0,z:0}},directionMode:"cone",direction:{x:0,y:1,z:0},spreadDegrees:0,speed:{min:1,max:1},speedOverLife:[],lifetime:{min:1,max:1},startSize:{min:.1,max:.1},rotation:{min:0,max:0},angularVelocity:{min:0,max:0},acceleration:{x:0,y:0,z:0},velocityRelaxation:null,sizeOverLife:[],color:{r:1,g:1,b:1,a:1},colorPalette:[],colorOverLife:[],billboard:"camera",blend:"alpha",sortMode:"depth",animation:{mode:"single",timeSource:"age",frame:0,frames:[],framesPerSecond:15,loop:true,randomStart:false}};
 
 export function validateKeys(keys:unknown,label:string,axes:string|null=null,unitTime=false,minimum=-Infinity){
   if(!Array.isArray(keys))throw new Error(`${label} must be a key array.`);
@@ -209,6 +209,7 @@ export function validateKeys(keys:unknown,label:string,axes:string|null=null,uni
 }
 export function validateEmitter(c:ParticleEmitter,assets:Record<string,SpriteAsset>){
   const fail=(m:string)=>{throw new Error(`ParticleEmitter: ${m}`);},number=(n:number,min:number,max=Infinity)=>Number.isFinite(n)&&n>=min&&n<=max;
+  if(!Array.isArray(c.colorMatrix)||c.colorMatrix.length!==12||c.colorMatrix.some(v=>!Number.isFinite(v)))fail("colorMatrix must contain twelve finite values.");
   if(!Number.isInteger(c.seed)||!number(c.seed,0,4294967295))fail("seed must be an unsigned 32-bit integer.");
   if(!Number.isInteger(c.maxParticles)||!number(c.maxParticles,1,20000))fail("maxParticles must be an integer in [1, 20000].");
   for(const key of ["duration","prewarm","rate"] as const)if(!number(c[key],0))fail(`invalid ${key}.`);

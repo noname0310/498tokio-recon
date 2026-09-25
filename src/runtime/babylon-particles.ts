@@ -25,9 +25,11 @@ uniform sampler2D spriteTex,filteredTex,glowTex;
 uniform vec2 textureSize,sigmaUV,cellSize,atlasStride,atlasGrid;
 uniform float glowOnly,threshold,softness,intensity,filterPadding,glowPadding,alphaGain;
 uniform vec4 glowColor;
+uniform vec4 colorRow0,colorRow1,colorRow2;
 varying vec2 localUV;
 varying vec4 tint,rect;
 varying vec2 blurUV;
+vec4 recolor(vec4 s){vec4 rgb=vec4(s.rgb,1.0);return vec4(clamp(vec3(dot(colorRow0,rgb),dot(colorRow1,rgb),dot(colorRow2,rgb))*tint.rgb,0.0,1.0),s.a*tint.a);}
 vec4 sampleArt(vec2 p){
   if(filterPadding>0.0){
     vec2 expanded=cellSize+2.0*filterPadding,at=filterPadding+p*cellSize;
@@ -47,10 +49,10 @@ float sampleGlow(vec2 p){
 }
 void main(){
   if(glowOnly<.5){
-    if(dot(blurUV,blurUV)<0.000000000001){vec4 s=sampleArt(localUV);s.a=clamp(s.a*alphaGain,0.0,1.0);gl_FragColor=s*tint;return;}
+    if(dot(blurUV,blurUV)<0.000000000001){vec4 s=sampleArt(localUV);s.a=clamp(s.a*alphaGain,0.0,1.0);gl_FragColor=recolor(s);return;}
     vec4 sum=vec4(0.0);float weights=0.0;
     for(int i=-12;i<=12;i++){float x=float(i)*.25,w=exp(-.5*x*x);vec4 s=sampleArt(localUV+blurUV*x);sum+=vec4(s.rgb*s.a,s.a)*w;weights+=w;}
-    gl_FragColor=vec4(sum.rgb/max(sum.a,0.000001),clamp(sum.a/weights*alphaGain,0.0,1.0))*tint;return;
+    gl_FragColor=recolor(vec4(sum.rgb/max(sum.a,0.000001),clamp(sum.a/weights*alphaGain,0.0,1.0)));return;
   }
   // Gaussian mask filtering is shared across instances in a two-pass GPU
   // atlas. Sparse taps over nearest-neighbour artwork produced checkerboards.
@@ -93,7 +95,7 @@ export class BabylonParticles {
     const B=renderer.B;B.Effect.ShadersStore.sceneParticleVertexShader=vertex;B.Effect.ShadersStore.sceneParticleFragmentShader=fragment;
     for(const glow of [false,...(node.components.some(c=>c.type==="Glow")?[true]:[])]){
       const name=`${node.name} / ${glow?"Glow":"ParticleEmitter"}`;
-      const material=new B.ShaderMaterial(name,renderer.scene,{vertex:"sceneParticle",fragment:"sceneParticle"},{attributes:["position","uv","world0","world1","world2","world3","particleColor","particleRect","particleBlur"],uniforms:["viewProjection","padding","textureSize","sigmaUV","glowOnly","threshold","softness","intensity","glowColor","cellSize","atlasStride","atlasGrid","filterPadding","glowPadding","alphaGain"],samplers:["spriteTex","filteredTex","glowTex"],needAlphaBlending:true});
+      const material=new B.ShaderMaterial(name,renderer.scene,{vertex:"sceneParticle",fragment:"sceneParticle"},{attributes:["position","uv","world0","world1","world2","world3","particleColor","particleRect","particleBlur"],uniforms:["viewProjection","padding","textureSize","sigmaUV","glowOnly","threshold","softness","intensity","glowColor","cellSize","atlasStride","atlasGrid","filterPadding","glowPadding","alphaGain","colorRow0","colorRow1","colorRow2"],samplers:["spriteTex","filteredTex","glowTex"],needAlphaBlending:true});
       material.backFaceCulling=false;material.disableDepthWrite=true;material.setFloat("glowOnly",glow?1:0);
       material.setTexture("spriteTex",renderer.neutralTexture);
       material.setTexture("filteredTex",renderer.neutralTexture);
@@ -130,6 +132,7 @@ export class BabylonParticles {
     states.forEach((s,i)=>{this.matrices.set(s.matrix,i*16);this.colors.set([s.color.r,s.color.g,s.color.b,s.color.a],i*4);this.rects.set([s.rect.x,s.rect.y,s.rect.width,s.rect.height],i*4);this.blurs.set([s.blurUV.x,s.blurUV.y],i*2);});
     for(const entry of this.entries){
       const {mesh,material,glow:isGlow}=entry;
+      for(let row=0;row<3;row++){const i=row*4;material.setVector4(`colorRow${row}`,new B.Vector4(c.colorMatrix[i],c.colorMatrix[i+1],c.colorMatrix[i+2],c.colorMatrix[i+3]));}
       mesh.metadata={sortWorldPosition:Object.fromEntries((["x","y","z"] as const).map((k,i)=>[k,(sortAnchor||center)[k]+(isGlow?camera[8+i]*.0001:0)]))};
       mesh.isVisible=!this.sortBySize&&this.count>0&&(!isGlow||Boolean(glow?.enabled));
       if(mesh.isVisible)uploadInstances(entry,this.matrices,this.colors,this.rects,this.blurs,this.count);

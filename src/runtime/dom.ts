@@ -219,7 +219,15 @@ class Sprite {
 }
 
 interface TileSlot {top:SVGRectElement[];bottom:SVGRectElement[];group:SVGGElement}
+interface TileEdgeRun {x:number;width:number;fill:string}
 class TiledSprite {
+  private readonly edgeRuns:Record<"top"|"bottom",TileEdgeRun[]>={top:[],bottom:[]};
+  private hasAlpha=false;
+  private readonly alphaNoiseFilter:SVGFilterElement;
+  private readonly alphaNoiseImage:SVGFEImageElement;
+  private readonly alphaNoiseTiles:SVGFETileElement;
+  private readonly alphaNoiseChannels:NoiseChannels;
+  private readonly noiseAxes:SVGGElement;
   private readonly projection:HTMLDivElement;
   private readonly crop:SVGClipPathElement;private readonly cropRect:SVGRectElement;
   private readonly repeatPattern:SVGPatternElement;private readonly repeatRect:SVGRectElement;
@@ -239,7 +247,7 @@ class TiledSprite {
     this.renderer=renderer;this.id=node.id;this.element=renderer.createSurface(node.id,"TiledSpriteRenderer");
     this.projection=div("tile-projection",this.element);this.projection.style.cssText="position:absolute;transform-origin:0 0";
     this.surface=div("background-surface",this.projection);this.svg=svg("svg",{class:"pattern",preserveAspectRatio:"none","aria-hidden":"true"},this.surface);
-    this.artID=`tile-${++serial}`;this.blurAxes=svg("g",{},this.svg);this.contentAxes=svg("g",{},this.blurAxes);this.art=svg("g",{id:this.artID,"data-role":"tile-art"},this.contentAxes);this.tiles=svg("g",{},this.contentAxes);this.grain=div("noise",this.surface);
+    this.artID=`tile-${++serial}`;this.noiseAxes=svg("g",{},this.svg);this.blurAxes=svg("g",{},this.noiseAxes);this.contentAxes=svg("g",{},this.blurAxes);this.art=svg("g",{id:this.artID,"data-role":"tile-art"},this.contentAxes);this.tiles=svg("g",{},this.contentAxes);this.grain=div("noise",this.surface);
     this.repeatPattern=svg("pattern",{id:this.artID+"-repeat",patternUnits:"userSpaceOnUse"},svg("defs",{},this.svg));this.repeatRect=svg("rect",{fill:`url(#${this.artID}-repeat)`,display:"none"},this.contentAxes);
     this.crop=svg("clipPath",{id:this.artID+"-crop",clipPathUnits:"userSpaceOnUse"},renderer.defs);this.cropRect=svg("rect",{},this.crop);
     this.directionalFilter=svg("filter",{id:this.artID+"-directional",x:"-50%",y:"-50%",width:"200%",height:"200%","color-interpolation-filters":"sRGB"},renderer.defs);this.directionalBlur=svg("feGaussianBlur",{},this.directionalFilter);
@@ -253,32 +261,43 @@ class TiledSprite {
     this.tintMatrix=svg("feColorMatrix",{},this.tintFilter);
     this.noiseColorFilter=svg("filter",{id:this.artID+"-noise-color",x:"0",y:"0",width:"100%",height:"100%","color-interpolation-filters":"sRGB"},renderer.defs);
     this.noiseChannels=noiseChannels(this.noiseColorFilter,"SourceGraphic");
+    this.alphaNoiseFilter=svg("filter",{id:this.artID+"-alpha-noise",filterUnits:"userSpaceOnUse","color-interpolation-filters":"sRGB"},renderer.defs);
+    this.alphaNoiseImage=svg("feImage",{result:"grainTile",preserveAspectRatio:"none"},this.alphaNoiseFilter);
+    this.alphaNoiseTiles=svg("feTile",{in:"grainTile",result:"grain"},this.alphaNoiseFilter);
+    this.alphaNoiseChannels=noiseChannels(this.alphaNoiseFilter,"grain","coloredGrain");
+    svg("feColorMatrix",{in:"SourceGraphic",values:"1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 1",result:"opaqueArt"},this.alphaNoiseFilter);
+    svg("feComposite",{in:"opaqueArt",in2:"coloredGrain",operator:"arithmetic",k1:2,k2:0,k3:0,k4:0,result:"texturedArt"},this.alphaNoiseFilter);
+    svg("feComposite",{in:"texturedArt",in2:"SourceAlpha",operator:"in"},this.alphaNoiseFilter);
   }
   async update(scene:Scene,view:View){
     const sync=this.renderer.sync;
     // An inactive update must also cancel a pending visible update. Otherwise
     // an awaited image can resume after a seek and reveal the old scene.
     const updateRevision=++this.updateRevision;
-    const c=scene.requireComponent(this.id,"TiledSpriteRenderer"),asset=scene.asset(c.asset),blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise");
-    const visible=!!scene.active.get(this.id)&&c.enabled&&this.renderer.resources.isImageReady(c.asset);if(!visible){sync.hidden(this.element,true);sync.style(this.svg,{willChange:"auto"});return;}
+    const c=scene.requireComponent(this.id,"TiledSpriteRenderer"),original=scene.asset(c.asset),state=scene.spriteState(this.id),asset={...original,size:state.size,atlas:undefined},blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise");
+    const visible=!!scene.active.get(this.id)&&state.visible&&this.renderer.resources.isImageReady(c.asset);if(!visible){sync.hidden(this.element,true);sync.style(this.svg,{willChange:"auto"});return;}
     const world=scene.world.get(this.id)!;
     const worldScale=Math.max(Math.hypot(world[0],world[1],world[2]),Math.hypot(world[4],world[5],world[6]));
     const effectUnits=view.pixelsPerUnit*(c.clipBounds&&(enabled(blur)||scene.component(this.id,"Glow")?.enabled)?8:1);
+    const camera=scene.requireComponent(scene.cameraNode.id,"Camera"),cameraPlane=M.multiply(scene.viewMatrix,world);
+    const parallel=camera.projection==="perspective"&&Math.abs(cameraPlane[2])+Math.abs(cameraPlane[6])<1e-9&&cameraPlane[14]>camera.near;
     // CSS perspective composites a rasterized SVG. A large world scale can
     // otherwise magnify a one-pixel backing texel into a broad bilinear smear.
-    // Keep native texels resolved, while bounding the SVG backing resolution.
-    const units=scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective"
-      ?Math.max(effectUnits,Math.min(asset.pixelsPerUnit*8,view.pixelsPerUnit*worldScale)):effectUnits;
+    // Parallel planes have constant screen scale: do not allocate a distant
+    // filtered background at its much larger, unprojected world resolution.
+    const units=parallel?Math.max(asset.pixelsPerUnit,Math.min(asset.pixelsPerUnit*8,effectUnits*worldScale/scene.frustumScale(cameraPlane[14])))
+      :camera.projection==="perspective"?Math.max(effectUnits,Math.min(asset.pixelsPerUnit*8,view.pixelsPerUnit*worldScale)):effectUnits;
     const screenClip=c.wrap.y==="repeat"&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective";
     const transform=scene.cssMatrix(this.id,view,{x:0,y:0,z:0},units);
     sync.style(this.element,{transform:screenClip?"none":transform});sync.style(this.projection,{transform:screenClip?transform:"none"});
-    const source=scene.source(c.asset);
+    const source=JSON.stringify([scene.source(c.asset),state.rect]);
     if(source!==this.sourceKey){
-      this.sourceKey=source;this.layoutKey=null;this.pixelPending=this.renderer.resources.image(scene,c.asset);
+      this.sourceKey=source;this.layoutKey=null;this.pixelPending=this.renderer.resources.framePixels(scene,c.asset,state.frame);
     }
     const pixels=await this.pixelPending;if(updateRevision!==this.updateRevision)return;
     if(pixels!==this.pixels){
       this.pixels=pixels;
+      this.hasAlpha=!!pixels?.data.some((value,index)=>index%4===3&&value!==255);
       this.artworkKey="";this.palette.clear();this.repeatGeometry.clear();
       // Coalesce identical horizontal runs, then extend matching runs through
       // adjacent rows. Exact rectangles preserve every pixel/alpha value while
@@ -297,24 +316,34 @@ class TiledSprite {
         }
         previous=next;
       }
+      for(const side of ["top","bottom"] as const){
+        const runs=this.edgeRuns[side];runs.length=0;const y=side==="top"?0:asset.size.y-1;
+        for(let x=0;x<asset.size.x;){const start=x,fill=this.rgb(x++,y);while(x<asset.size.x&&this.rgb(x,y)===fill)x++;runs.push({x:start,width:x-start,fill});}
+      }
     }
     if(!this.pixels||!visible)return;
     const directional=scene.component(this.id,"DirectionalBlur"),bounds=clippedBounds(scene.coverage(this.id,view,.1+(enabled(directional)?4*directional.sigmaWorld:0)),c.clipBounds);
     if(!bounds){sync.hidden(this.element,true);sync.style(this.svg,{willChange:"auto"});return;}
+    const tileGlow=scene.component(this.id,"Glow"),edgePad=4*Math.max(enabled(blur)?Math.max(blur.sigmaWorld.x,blur.sigmaWorld.y):0,enabled(tileGlow)?tileGlow.sigmaWorld:0,enabled(directional)?directional.sigmaWorld:0);
+    // Transparent wrap regions contribute no pixels. Excluding them also
+    // prevents SVG filters from processing an empty half-screen per cloud.
+    if(c.wrap.y==="transparent"||c.wrap.y==="clampBottom"||c.wrap.y==="repeatBottom")bounds.top=Math.min(bounds.top,c.origin.y+edgePad);
+    if(c.wrap.y==="transparent")bounds.bottom=Math.max(bounds.bottom,c.origin.y-asset.size.y/asset.pixelsPerUnit-edgePad);
+    if(bounds.bottom>=bounds.top){sync.hidden(this.element,true);return;}
     sync.attribute(this.contentAxes,"clip-path",c.clipBounds&&c.wrap.y!=="repeat"?`url(#${this.artID}-crop)`:"none");
     this.renderer.setDepth(this.element,this.renderer.planeDepth(scene,this.id,bounds));
     const clipping=this.renderer.depth.clipPlane(scene,this.id,view,bounds,0,{x:0,y:0},units,screenClip);sync.hidden(this.element,!clipping.visible);sync.style(this.element,{clipPath:clipping.visible?clipping.css:"none"});
     let left=bounds.left*units,top=-bounds.top*units,right=bounds.right*units,bottom=-bounds.bottom*units;
-    if(c.wrap.y==="repeat"&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective"){
+    if((c.wrap.y==="repeat"||this.hasAlpha&&enabled(noise))&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective"){
       // Quantize only the backing rectangle, never the camera or UV phase.
       // A retained guard band avoids resizing/rasterizing the SVG for every
       // subpixel camera movement and keeps native cell edges on a stable grid.
-      const quantum=64*units/asset.pixelsPerUnit;
+      const quantum=(this.hasAlpha&&enabled(noise)?256:64)*units/asset.pixelsPerUnit;
       left=Math.floor(left/quantum)*quantum;top=Math.floor(top/quantum)*quantum;
       right=Math.ceil(right/quantum)*quantum;bottom=Math.ceil(bottom/quantum)*quantum;
     }
     const matrix=new DOMMatrix(transform);
-    if(Math.abs(matrix.m11-1)<1e-9&&Math.abs(matrix.m22-1)<1e-9&&Math.abs(matrix.m12)+Math.abs(matrix.m21)+Math.abs(matrix.m13)+Math.abs(matrix.m23)<1e-9){
+    if(Math.abs(matrix.m44-1)<1e-9&&Math.abs(matrix.m11-1)<1e-9&&Math.abs(matrix.m22-1)<1e-9&&Math.abs(matrix.m12)+Math.abs(matrix.m21)+Math.abs(matrix.m13)+Math.abs(matrix.m23)<1e-9){
       const x=view.width/2+matrix.m41,y=view.height/2+matrix.m42,dpr=view.dpr;
       left=Math.floor((left+x)*dpr)/dpr-x;top=Math.floor((top+y)*dpr)/dpr-y;right=Math.ceil((right+x)*dpr)/dpr-x;bottom=Math.ceil((bottom+y)*dpr)/dpr-y;
     }
@@ -332,7 +361,7 @@ class TiledSprite {
     const colorMatrix=[color.r,color.g,color.b].flatMap((gain,row)=>[...luma.map((v,col)=>brightness*gain*((1-s)*v+(row===col?s:0))),0,0]);
     sync.attribute(this.tintMatrix,"values",String([...colorMatrix,0,0,0,1,0].join(" ")));
     const gain=color.r*brightness,tint=gray&&s===1?(gain===1?"":`brightness(${gain})`):`url(#${this.artID}-tint)`;
-    sync.style(this.surface,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,opacity:color.a,filter:[hasNoise?"brightness(2)":"",tint].filter(Boolean).join(" ")||"none"});sync.attribute(this.svg,"viewBox",`${left} ${top} ${width} ${height}`);
+    sync.style(this.surface,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,opacity:color.a,filter:[hasNoise&&!this.hasAlpha?"brightness(2)":"",tint].filter(Boolean).join(" ")||"none"});sync.attribute(this.svg,"viewBox",`${left} ${top} ${width} ${height}`);
     const cell=units/asset.pixelsPerUnit,tileWidth=asset.size.x*cell,tileHeight=asset.size.y*cell,y0=-c.origin.y*units,y1=y0+tileHeight,bleed=cell/2;
     // One spare tile covers every scroll phase. Geometry must not alternate
     // between two path lengths whenever the viewport crosses a tile boundary.
@@ -395,12 +424,13 @@ class TiledSprite {
         const slot=this.slots[i];sync.style(slot.group,{display:!repeatY&&i<count?"":"none"});if(repeatY||i>=count)continue;
         const x=x0+(first+i)*tileWidth;
         const showTop=c.wrap.y==="clamp"&&top<y0+bleed,showBottom=c.wrap.y!=="transparent"&&bottom>y1-bleed;
-        for(let col=0;col<Math.max(asset.size.x,slot.top.length,slot.bottom.length);col++){
-          for(const side of ["top","bottom"] as const){
-            const show=col<asset.size.x&&(side==="top"?showTop:showBottom);let strip=slot[side][col];
+        for(const side of ["top","bottom"] as const){
+          const runs=this.edgeRuns[side];
+          for(let col=0;col<Math.max(runs.length,slot[side].length);col++){
+            const run=runs[col],show=!!run&&(side==="top"?showTop:showBottom);let strip=slot[side][col];
             if(show&&!strip)strip=slot[side][col]=svg("rect",{},slot.group);
             if(!strip)continue;sync.style(strip,{display:show?"":"none"});if(!show)continue;
-            sync.attrs(strip,{x:x+col*cell,y:side==="top"?top:y1-bleed,width:cell,height:side==="top"?y0-top+bleed:bottom-y1+bleed,fill:this.rgb(col,side==="top"?0:asset.size.y-1)});
+            sync.attrs(strip,{x:x+run.x*cell,y:side==="top"?top:y1-bleed,width:run.width*cell,height:side==="top"?y0-top+bleed:bottom-y1+bleed,fill:run.fill});
           }
         }
       }
@@ -408,6 +438,9 @@ class TiledSprite {
     const glow=scene.component(this.id,"Glow");
     if(this.glowBlur&&this.glowGain){sync.attribute(this.glowBlur,"stdDeviation",glow?.enabled?glow.sigmaWorld*units:0);sync.attribute(this.glowGain,"slope",glow?.enabled?glow.intensity:0);}
     sync.style(this.svg,{filter:enabled(blur)||enabled(glow)?`url(#${this.artID}-blur)`:"none"});
+    // User-space filter coordinates belong to the SVG viewBox. Applying this
+    // to the outer CSS box instead clips negative tile phases in Chromium.
+    sync.attribute(this.noiseAxes,"filter",hasNoise&&this.hasAlpha?`url(#${this.alphaNoiseFilter.id})`:"none");
     if(blur)sync.attribute(this.blur,"stdDeviation",`${blur.sigmaWorld.x*units} ${blur.sigmaWorld.y*units}`);
     const liveBlur=enabled(directional)&&directional.sigmaWorld>0;
     // Chromium can present missing raster tiles when a filtered SVG changes
@@ -418,10 +451,19 @@ class TiledSprite {
     sync.attribute(this.blurAxes,"filter",liveBlur?`url(#${this.artID}-directional)`:"none");
     sync.attribute(this.blurAxes,"transform",liveBlur?`rotate(${-directional.angleDegrees})`:"");sync.attribute(this.contentAxes,"transform",liveBlur?`rotate(${directional.angleDegrees})`:"");
     if(liveBlur)sync.attribute(this.directionalBlur,"stdDeviation",`${directional.sigmaWorld*units} 0`);
-    sync.hidden(this.grain,!hasNoise);
+    sync.hidden(this.grain,!hasNoise||this.hasAlpha);
     if(noise){
       const gain=noise.channelGain;
       updateNoiseChannels(sync,this.noiseChannels,gain);
+      if(this.hasAlpha){
+        updateNoiseChannels(sync,this.alphaNoiseChannels,gain);
+        sync.attrs(this.alphaNoiseTiles,{x:left,y:top,width,height});
+        const w=noise.worldSize.x*units,h=noise.worldSize.y*units;
+        const x=noise.origin.x*units,y=-noise.origin.y*units;
+        const px=x+Math.floor((left-x)/w)*w,py=y+Math.floor((top-y)/h)*h;
+        sync.attrs(this.alphaNoiseImage,{x:px,y:py,width:w,height:h});
+        sync.attrs(this.alphaNoiseFilter,{x:px,y:py,width:Math.max(right,px+w)-px,height:Math.max(bottom,py+h)-py});
+      }
       sync.style(this.grain,{filter:gain.r===1&&gain.g===1&&gain.b===1?"none":`url(#${this.artID}-noise-color)`});
       sync.style(this.grain,{backgroundSize:`${noise.worldSize.x*units}px ${noise.worldSize.y*units}px`});sync.style(this.grain,{backgroundPosition:`${noise.origin.x*units-left}px ${-noise.origin.y*units-top}px`});
       const key=this.renderer.resources.noiseKey(noise);
@@ -429,14 +471,14 @@ class TiledSprite {
         this.noiseKey=key;const revision=++this.noiseRevision;
         this.noisePending=this.renderer.resources.noiseURL(noise).then(result=>{
           if(revision!==this.noiseRevision)return;
-          this.noiseURL=result.url;sync.style(this.grain,{backgroundImage:`url("${result.url}")`});
+          this.noiseURL=result.url;sync.style(this.grain,{backgroundImage:`url("${result.url}")`});sync.attribute(this.alphaNoiseImage,"href",result.url);
         });
       }
       await this.noisePending;
     }
   }
   rgb(x:number,y:number){const i=(y*this.pixels!.width+x)*4,d=this.pixels!.data;return d[i+3]===255?`rgb(${d[i]} ${d[i+1]} ${d[i+2]})`:`rgb(${d[i]} ${d[i+1]} ${d[i+2]} / ${d[i+3]/255})`;}
-  dispose(){this.noiseRevision++;this.updateRevision++;this.renderer.removeSurface(this.element);this.filter.remove();this.crop.remove();this.tintFilter.remove();this.directionalFilter.remove();this.noiseColorFilter.remove();}
+  dispose(){this.noiseRevision++;this.updateRevision++;this.renderer.removeSurface(this.element);this.filter.remove();this.crop.remove();this.tintFilter.remove();this.directionalFilter.remove();this.noiseColorFilter.remove();this.alphaNoiseFilter.remove();}
 }
 
 type DOMObjectConstructor=new(renderer:DOMRenderer,node:Entity)=>RenderObject;

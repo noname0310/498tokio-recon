@@ -53,7 +53,7 @@ export interface TransformNoise {seed:number;start:FrameStamp;duration:number;fr
 export interface CameraMotionBlur {shutterSeconds:number;focusDistance:number;maxSigmaWorld:number}
 /** Gaussian aperture in camera world units. Focus lies on a camera-parallel plane. */
 export interface DepthOfField {focusDistance:number;apertureSigma:number;maxSigmaWorld:number}
-export interface TiledSpriteRenderer {asset:string;color:Color;saturation:number;brightness:number;coverage:"camera";clipBounds:ClipBounds|null;wrap:{x:"repeat";y:"clamp"|"clampBottom"|"transparent"|"repeat"|"repeatBottom"};origin:Vec2}
+export interface TiledSpriteRenderer {asset:string;frame:number;color:Color;saturation:number;brightness:number;coverage:"camera";clipBounds:ClipBounds|null;wrap:{x:"repeat";y:"clamp"|"clampBottom"|"transparent"|"repeat"|"repeatBottom"};origin:Vec2}
 /** Open cylinder along local +Z. U circles clockwise in XY, V runs toward -Z.
  * Lighting is local to the cylinder and never baked into the shared sprite. */
 export interface CylindricalSpriteRenderer {asset:string;color:Color;radius:number;length:Range;tileLength:number;segments:number;uvOffset:Vec2;lighting:{ambient:number;diffuse:number;direction:Vec3}}
@@ -76,14 +76,18 @@ export interface PinwheelTransition extends TransitionBase {kind:"pinwheel";pinw
 export interface DissolveTransitionSettings {cellSize:Vec2;origin:Vec2;seed:number;direction:Vec2;feather:number}
 export interface DissolveTransition extends TransitionBase {kind:"dissolve";dissolve:DissolveTransitionSettings}
 export interface StripeTransition extends TransitionBase {kind:"stripes";stripes:{axis:"x"|"y";period:number;phase:number}}
+/** Opacity of the completed target subtree, applied once after composition. */
+export interface FadeTransition extends TransitionBase {kind:"fade"}
 // Additional kinds extend this discriminated union with their own settings.
-export type Transition=GridTransition|RadialGridTransition|PinwheelTransition|DissolveTransition|StripeTransition;
+export type Transition=GridTransition|RadialGridTransition|PinwheelTransition|DissolveTransition|StripeTransition|FadeTransition;
 export interface ParticleMotionBlur {shutterSeconds:number;maxSigmaWorld:number;dilationPixels:number;softnessPixels:number;alphaGain:number}
 export interface LineRenderer {start:Vec2;end:Vec2;width:number;color:Color;coverage:"segment"|"camera"|"ray";viewportExpansion:number}
 export interface ProceduralNoise {seed:number;textureSize:Vec2;worldSize:Vec2;origin:Vec2;range:number;channelGain:RGB;bands:{sigmaTexels:Vec2;variance:number}[]}
 export interface DropShadow {offsetWorld:Vec2;sigmaWorld:number;color:Color;opacity:number}
 export interface Glow {threshold:number;softness:number;sigmaWorld:number;intensity:number;color:Color;blend:"alpha"|"additive"}
 export interface ParticleEmitter {
+  /** Live, row-major RGB transform applied before the particle tint. */
+  colorMatrix:number[];
   asset:string;seed:number;maxParticles:number;start:FrameStamp;duration:number;prewarm:number;rate:number;bursts:{time:number|FrameStamp;count:number;sizeScale?:number;color?:Color;velocity?:Vec3;targetVelocity?:Vec3}[];
   cameraContinuation:{padding:number}|null;
   space:"local"|"world";shape:{type:"point"|"box"|"ellipse"|"sphere";size:Vec3};directionMode:"cone"|"radial";direction:Vec3;spreadDegrees:number;

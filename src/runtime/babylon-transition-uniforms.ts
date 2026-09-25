@@ -7,9 +7,9 @@ export const transitionUniformNames=["gridSize","gridOrigin","gridDirection","gr
 export class BabylonTransitionUniforms {
   private readonly fronts:number[]=Array<number>(64).fill(0);
   update(r:BabylonSceneContext,m:ShaderMaterial,c:ComponentMap["Transition"]|undefined,bounds:Bounds|null):void {
-    m.setFloat("transitionKind",c?.enabled===false||!c?0:c.kind==="grid"?1:c.kind==="pinwheel"?2:c.kind==="dissolve"?3:c.kind==="stripes"?4:5);
+    m.setFloat("transitionKind",c?.enabled===false||!c||c.kind==="fade"?0:c.kind==="grid"?1:c.kind==="pinwheel"?2:c.kind==="dissolve"?3:c.kind==="stripes"?4:5);
     m.setFloat("transitionProgress",c?.progress??1);
-    if(!c||!bounds)return;
+    if(!c||!bounds||c.kind==="fade")return;
     if(c.kind==="grid"){
       const g=c.grid,{direction,front}=gridTransitionFront(bounds,g,c.progress);
       r.vec2(m,"gridSize",g.cellSize);r.vec2(m,"gridOrigin",g.origin);r.vec2(m,"gridDirection",direction);

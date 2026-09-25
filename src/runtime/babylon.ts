@@ -146,6 +146,7 @@ class Sprite {
 }
 
 class TiledSprite {
+  private readonly nativeFrames=new Map<string,Babylon.RawTexture>();
   readonly renderer:BabylonSceneContext;readonly id:string;
   readonly textures:Map<string,Babylon.RawTexture>;readonly keys:Map<string,string>;readonly jobs:Map<string,Promise<void>>;readonly revisions:Map<string,number>;
   updateRevision=0;disposed=false;
@@ -159,8 +160,8 @@ class TiledSprite {
     this.material.setTexture("haloTex",renderer.neutralTexture);
   }
   async update(scene:Scene,view:View){
-    const r=this.renderer,c=scene.requireComponent(this.id,"TiledSpriteRenderer"),asset=scene.asset(c.asset),blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise"),resolution=Math.max(scene.data.rendering.texturePixelsPerUnit,c.clipBounds?asset.pixelsPerUnit*8:0);
-    if(!scene.active.get(this.id)||!c.enabled||!r.resources.isImageReady(c.asset)){this.mesh.setEnabled(false);return;}
+    const r=this.renderer,c=scene.requireComponent(this.id,"TiledSpriteRenderer"),original=scene.asset(c.asset),state=scene.spriteState(this.id),asset={...original,size:state.size,atlas:undefined},blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise"),resolution=Math.max(scene.data.rendering.texturePixelsPerUnit,c.clipBounds?asset.pixelsPerUnit*8:0);
+    if(!scene.active.get(this.id)||!state.visible||!r.resources.isImageReady(c.asset)){this.mesh.setEnabled(false);return;}
     const bounds=clippedBounds(scene.coverage(this.id,view),c.clipBounds),glow=scene.component(this.id,"Glow"),sigma=enabled(blur)?blur.sigmaWorld:{x:0,y:0};this.mesh.setEnabled(c.enabled&&Boolean(bounds));
     const halo=glow?.enabled?glow.sigmaWorld:0,pad=4*Math.max(sigma.x,sigma.y,halo);
     if(bounds)r.rect(this.mesh,bounds.left-pad,bounds.bottom-pad,bounds.right+pad,bounds.top+pad);
@@ -171,7 +172,7 @@ class TiledSprite {
     r.vec2(this.material,"noiseOrigin",noise?.origin||{x:0,y:0});r.vec2(this.material,"noiseSize",noise?.worldSize||{x:1,y:1});this.material.setFloat("noiseRange",noise?.range||0);this.material.setFloat("noiseEnabled",enabled(noise)&&noise.bands.some(b=>b.variance>0)?1:0);
     this.material.setVector3("noiseChannelGain",new r.B.Vector3(noise?.channelGain.r??1,noise?.channelGain.g??1,noise?.channelGain.b??1));
     const revision=this.updateRevision=(this.updateRevision||0)+1;
-    const source=await r.resources.image(scene,c.asset);if(this.disposed||revision!==this.updateRevision)return;
+    const source=await r.resources.framePixels(scene,c.asset,state.frame);if(this.disposed||revision!==this.updateRevision)return;
     if(this.alphaSource!==source){this.alphaSource=source;this.hasAlpha=source.data.some((value,index)=>index%4===3&&value<255);}
     // A hard crop is already part of the quad geometry; it does not make an
     // opaque tile transparent. Keep depth writes so intersecting sprites and
@@ -179,7 +180,7 @@ class TiledSprite {
     const softCrop=!!c.clipBounds&&pad>0;
     this.transparent=this.hasAlpha||c.color.a<1||softCrop;this.material.disableDepthWrite=this.transparent;
     const repeatY=c.wrap.y==="repeat"||c.wrap.y==="repeatBottom";
-    const key=JSON.stringify([scene.source(c.asset),asset,sigma,resolution,repeatY]);
+    const key=JSON.stringify([scene.source(c.asset),state.rect,asset,sigma,resolution,repeatY]);
     const jobs:(Promise<void>|undefined)[]=[];
     const schedule=(name:string,key:string,input:TextureJob,options:TextureOptions)=>{
       if(this.keys.get(name)!==key){this.keys.set(name,key);const revision=(this.revisions.get(name)||0)+1;this.revisions.set(name,revision);
@@ -187,12 +188,17 @@ class TiledSprite {
       jobs.push(this.jobs.get(name));
     };
     if(sigma.x===0&&sigma.y===0){
-      const nativeKey="native:"+scene.source(c.asset);
-      if(this.keys.get("background")!==nativeKey){this.keys.set("background",nativeKey);this.revisions.set("background",(this.revisions.get("background")||0)+1);this.textures.get("background")?.dispose();const texture=r.texture(`${this.id}/background`,source,{repeatX:true});this.textures.set("background",texture);this.material.setTexture("backgroundTex",texture);}
+      const nativeKey=JSON.stringify([scene.source(c.asset),state.rect,repeatY]);
+      if(this.keys.get("background")!==nativeKey){
+        this.keys.set("background",nativeKey);this.revisions.set("background",(this.revisions.get("background")||0)+1);
+        let texture=this.nativeFrames.get(nativeKey);
+        if(!texture){texture=r.texture(`${this.id}/frame-${state.frame}`,source,{repeatX:true,repeatY});this.nativeFrames.set(nativeKey,texture);}
+        this.material.setTexture("backgroundTex",texture);
+      }
     }else schedule("background","tile:"+key,{kind:"tile",source,asset,sigmaWorld:sigma,resolution,repeatY},{repeatX:true,repeatY});
     if(halo>0&&glow?.enabled){
       const haloSigma={x:Math.hypot(sigma.x,halo),y:Math.hypot(sigma.y,halo)},haloResolution=Math.min(resolution,asset.pixelsPerUnit*2);
-      const haloKey=JSON.stringify([scene.source(c.asset),asset,haloSigma,haloResolution,repeatY]);
+      const haloKey=JSON.stringify([scene.source(c.asset),state.rect,asset,haloSigma,haloResolution,repeatY]);
       schedule("halo","tile-halo:"+haloKey,{kind:"tile",source,asset,sigmaWorld:haloSigma,resolution:haloResolution,repeatY},{repeatX:true,repeatY});
     }
     if(noise)schedule("noise",r.resources.noiseKey(noise),{kind:"noise",component:noise},{repeatX:true,repeatY:true});
@@ -200,7 +206,7 @@ class TiledSprite {
     const background=this.textures.get("background");
     if(background)background.wrapV=repeatY?r.B.Texture.WRAP_ADDRESSMODE:r.B.Texture.CLAMP_ADDRESSMODE;
   }
-  dispose(){this.disposed=true;for(const type of this.revisions.keys())this.revisions.set(type,(this.revisions.get(type)||0)+1);this.mesh.dispose();this.material.dispose();this.textures.forEach(t=>t.dispose());}
+  dispose(){this.disposed=true;for(const type of this.revisions.keys())this.revisions.set(type,(this.revisions.get(type)||0)+1);this.mesh.dispose();this.material.dispose();this.textures.forEach(t=>t.dispose());this.nativeFrames.forEach(t=>t.dispose());this.nativeFrames.clear();}
 }
 
 export class BabylonRenderer {
@@ -329,7 +335,7 @@ export class BabylonRenderer {
     transparent.forEach(({mesh},index)=>mesh.alphaIndex=index);
   }
   private cancelProgressiveDraw():void {if(this.progressiveDraw!==null)cancelAnimationFrame(this.progressiveDraw);this.progressiveDraw=null;}
-  render(){this.scene.render();this.renderCount++;}
+  render(){if(this.transitions)this.transitions.render(()=>this.scene.render());else this.scene.render();this.renderCount++;}
   disposeScene(){this.scanlineJitter?.dispose();this.scanlineJitter=undefined;this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.colorGrade?.dispose();this.colorGrade=undefined;this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
   dispose(){this.disposeScene();this.engine.dispose();this.canvas.remove();}
 }

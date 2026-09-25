@@ -5,6 +5,7 @@ import {Frame,frameRate} from "./animation/time.js";
 const start={frame:Frame.zero,rate:frameRate(30)};
 const rgba = {r:1,g:1,b:1,a:1};
 const transitionDefaults=new Map<Transition["kind"],Transition>([
+  ["fade",{kind:"fade",progress:0,target:null}],
   ["grid",{kind:"grid",progress:0,target:null,grid:{cellSize:{x:.36,y:.36},origin:{x:0,y:0},direction:{x:1,y:0},feather:4.8}}],
   ["radialGrid",{kind:"radialGrid",progress:0,target:null,radialGrid:{cellSize:{x:.6,y:.6},origin:{x:0,y:0},center:{x:0,y:0},curvature:0,inset:0}}],
   ["pinwheel",{kind:"pinwheel",progress:0,target:null,pinwheel:{cellSize:{x:.2666666667,y:.2666666667},origin:{x:0,y:0},profiles:[{fronts:[[0,0],[0,0],[0,0],[0,0]]},{fronts:[[1,2],[1,2],[1,2],[1,2]]}]}}],
@@ -29,7 +30,7 @@ export const componentTypes = new Map<ComponentType,object>([
   ["CameraMotionBlur", {shutterSeconds:1/60,focusDistance:1,maxSigmaWorld:.1}],
   ["DepthOfField", {focusDistance:1,apertureSigma:0,maxSigmaWorld:.32}],
   ["ParticleEmitter", particleDefaults],
-  ["TiledSpriteRenderer", {asset:null,color:rgba,saturation:1,brightness:1,coverage:"camera",clipBounds:null,wrap:{x:"repeat",y:"clamp"},origin:{x:0,y:0}}],
+  ["TiledSpriteRenderer", {asset:null,frame:0,color:rgba,saturation:1,brightness:1,coverage:"camera",clipBounds:null,wrap:{x:"repeat",y:"clamp"},origin:{x:0,y:0}}],
   ["CylindricalSpriteRenderer", {asset:null,color:rgba,radius:1,length:{min:.01,max:100},tileLength:2*Math.PI,segments:100,uvOffset:{x:0,y:0},lighting:{ambient:1,diffuse:0,direction:{x:1,y:0,z:0}}}],
   ["GaussianBlur", {sigmaWorld:{x:0,y:0}}],
   ["SpriteMotionBlur", {translationWorld:{x:0,y:0},radialAmount:0,center:{x:0,y:0},samples:25,dilationPixels:0,softnessPixels:0,alphaGain:1,clipToSprite:false}],
@@ -203,7 +204,8 @@ export function normalizeScene(input:unknown):SceneData {
       if(c.type==="TiledSpriteRenderer"){
         finite(c.saturation,"saturation",0);
         finite(c.brightness,"TiledSpriteRenderer.brightness",0);
-        if(sprites[c.asset].atlas)fail("TiledSpriteRenderer needs a standalone tile, not an atlas.");
+        const count=sprites[c.asset].atlas?.frameCount||1;
+        if(!Number.isInteger(c.frame)||c.frame<0||c.frame>=count)fail("Invalid tiled sprite frame.");
         if(c.coverage!=="camera"||c.wrap.x!=="repeat"||!["clamp","clampBottom","transparent","repeat","repeatBottom"].includes(c.wrap.y))fail("TiledSpriteRenderer requires camera coverage, repeat X, and a supported Y wrap mode.");
         if(sprites[c.asset].filter!=="point")fail("TiledSpriteRenderer requires point-filtered pixel art.");vector(c.origin,"xy","tile origin");
       }
@@ -225,7 +227,9 @@ export function normalizeScene(input:unknown):SceneData {
       if(c.type==="Transition"){
         finite(c.progress,"Transition.progress",0,1);
         if(c.target!==null&&(!c.target||typeof c.target.entity!=="string"))fail("Transition.target must reference an entity.");
-        if(c.kind==="grid"){
+        if(c.kind==="fade"){
+          if(!c.target)fail("Fade transitions require a target subtree.");
+        }else if(c.kind==="grid"){
           const g=c.grid;vector(g.cellSize,"xy","Transition.grid.cellSize",.0001);vector(g.origin,"xy","Transition.grid.origin");vector(g.direction,"xy","Transition.grid.direction");finite(g.feather,"Transition.grid.feather",.0001);
           if(Math.hypot(g.direction.x,g.direction.y)<1e-9)fail("Transition.grid needs a nonzero direction.");
         }else if(c.kind==="radialGrid"){
@@ -265,7 +269,7 @@ export function normalizeScene(input:unknown):SceneData {
     });
     if(["SpriteRenderer","SpriteNumberRenderer","TiledSpriteRenderer","CylindricalSpriteRenderer","PlaneRenderer","LineRenderer","ParticleEmitter"].filter(t=>types.has(t as ComponentType)).length>1)fail(`Use one renderer per entity: ${node.id}`);
     if(types.has("SpriteAnimator")){
-      const sprite=node.components.find(c=>c.type==="SpriteRenderer"),animator=node.components.find(c=>c.type==="SpriteAnimator");
+      const sprite=node.components.find(c=>c.type==="SpriteRenderer"||c.type==="TiledSpriteRenderer"),animator=node.components.find(c=>c.type==="SpriteAnimator");
       if(!sprite||!sprites[sprite.asset].atlas)fail(`SpriteAnimator requires a sprite atlas: ${node.id}`);
       if(animator!.frames.some(n=>n>=sprites[sprite!.asset].atlas!.frameCount))fail(`Animation frame outside atlas: ${node.id}`);
     }

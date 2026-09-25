@@ -89,6 +89,8 @@ export class DOMParticles {
     const sortDepth=sortAnchor?M.point(scene.viewMatrix,sortAnchor).z:sortBySize?this.renderer.viewDepth(scene,this.id,{x:0,y:0,z:0}):0;
     const slots=this.assign(states);
     const motion=scene.component(this.id,"ParticleMotionBlur"),dilation=motion?.enabled?motion.dilationPixels:0,softness=motion?.enabled?motion.softnessPixels:0,alphaGain=motion?.enabled?motion.alphaGain:1;
+    const colorMatrix=c.colorMatrix,recolored=colorMatrix.some((v,i)=>v!==(i===0||i===5||i===10?1:0));
+    const matrixValues=recolored?[...Array.from({length:3},(_,row)=>[...colorMatrix.slice(row*4,row*4+3),0,colorMatrix[row*4+3]]).flat(),0,0,0,1,0].join(" "):"";
     for(let i=0;i<states.length;i++){
       const p=slots[i],s=states[i];
       // Mask-backed particles have fixed native layout; projection only changes
@@ -127,10 +129,11 @@ export class DOMParticles {
         const by=(Math.abs(Math.sin(angle))*(display.x+2*spread)+Math.abs(Math.cos(angle))*(display.y+2*spread))/2+4*across;
         for(const [key,value] of Object.entries({x:(.5-bx/display.x)*100,y:(.5-by/display.y)*100,width:2*bx/display.x*100,height:2*by/display.y*100}))sync.attribute(p.motion.filter,key,`${value}%`);
       }
-      sync.attribute(p.matrix,"values",`${t.r} 0 0 0 0 0 ${t.g} 0 0 0 0 0 ${t.b} 0 0 0 0 0 1 0`);
+      const values=!recolored?`${t.r} 0 0 0 0 0 ${t.g} 0 0 0 0 0 ${t.b} 0 0 0 0 0 1 0`:!tinted?matrixValues:[...[t.r,t.g,t.b].flatMap((gain,row)=>[colorMatrix[row*4]*gain,colorMatrix[row*4+1]*gain,colorMatrix[row*4+2]*gain,0,colorMatrix[row*4+3]*gain]),0,0,0,1,0].join(" ");
+      sync.attribute(p.matrix,"values",values);
       for(const entry of p.entries){
         const {element,surface,blurFrame,image,mask,glow:isGlow}=entry;
-        const cachedGlow=Boolean(isGlow&&mask&&glowFrames&&glow),maskedBody=Boolean(!isGlow&&mask&&this.solidColor&&tinted),masked=cachedGlow||maskedBody;
+        const cachedGlow=Boolean(isGlow&&mask&&glowFrames&&glow),maskedBody=Boolean(!isGlow&&mask&&this.solidColor&&tinted&&!recolored),masked=cachedGlow||maskedBody;
         sync.hidden(image,masked);
         if(mask){
           sync.hidden(mask,!masked);
@@ -147,7 +150,7 @@ export class DOMParticles {
         sync.hidden(element,!pr.visible||(isGlow&&!glow?.enabled));sync.attribute(element,"data-particle",s.id);sync.attribute(element,"data-frame",s.frame);
         sync.style(element,{transform:pr.transform,clipPath:pr.clip,opacity:t.a,mixBlendMode:(isGlow?glow?.blend==="additive":c.blend==="additive")?"plus-lighter":"normal"});
         if(blurFrame&&p.motion)sync.style(blurFrame,{position:"absolute",left:"0px",top:"0px",width:`${display.x}px`,height:`${display.y}px`,transformOrigin:"50% 50%",transform:`rotate(${degrees}deg)`,filter:filterActive?`url(#${p.motion.filter.id})`:"none"});
-        sync.style(surface,{left:"0px",top:"0px",width:`${display.x}px`,height:`${display.y}px`,transformOrigin:"50% 50%",transform:blurFrame?`rotate(${-degrees}deg)`:"none",filter:masked?"none":[dilation>0&&p.motion?`url(#${p.motion.spread.id})`:"",isGlow&&p.glow?`url(#${p.glow.filter.id})`:tinted?p.tint:""].filter(Boolean).join(" ")||"none"});
+        sync.style(surface,{left:"0px",top:"0px",width:`${display.x}px`,height:`${display.y}px`,transformOrigin:"50% 50%",transform:blurFrame?`rotate(${-degrees}deg)`:"none",filter:masked?"none":[dilation>0&&p.motion?`url(#${p.motion.spread.id})`:"",isGlow&&p.glow?`url(#${p.glow.filter.id})`:tinted||recolored?p.tint:""].filter(Boolean).join(" ")||"none"});
         sync.style(image,{width:`${display.x}px`,height:`${display.y}px`,left:"0px",top:"0px",imageRendering:asset.filter==="point"?"crisp-edges":"auto"});
       }
       // Size sorting changes surface ranks, while each living particle keeps

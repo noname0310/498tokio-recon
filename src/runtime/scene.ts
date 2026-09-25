@@ -78,7 +78,7 @@ export class Scene {
   audioAsset(id:string):AudioAsset {const a=this.data.assets[id];if(a?.type!=="Audio")throw new Error(`Unknown Audio asset: ${id}`);return a;}
   source(id:string):string{const a=this.data.assets[id];if(!a)throw new Error(`Unknown asset: ${id}`);return this.resolveAsset(new URL(a.file,this.baseURL).href);}
   spriteState(id:string):SpriteState {
-    const sprite=this.requireComponent(id,"SpriteRenderer"),asset=this.asset(sprite.asset),atlas=asset.atlas,animation=this.component(id,"SpriteAnimator");
+    const sprite=this.component(id,"SpriteRenderer")||this.requireComponent(id,"TiledSpriteRenderer"),asset=this.asset(sprite.asset),atlas=asset.atlas,animation=this.component(id,"SpriteAnimator");
     let frame=sprite.frame,visible=sprite.enabled;
     if(animation?.enabled&&atlas){
       const count=animation.frames.length||atlas.frameCount,elapsed=Time.subtract(this.timelineTime,Time.convert(Time.fromFrame(animation.start.frame),animation.start.rate,frameRate(1)));
@@ -100,8 +100,8 @@ export class Scene {
       if(typeof value==="number"&&!Number.isFinite(value))throw new Error("Animated values must be finite.");
       if(w.property.component==="Transform"&&w.tokens[0]==="localScale"&&value===0)throw new Error("An animated Transform scale cannot be zero.");
       if(w.trackType==="AnimationTrackInt32"&&typeof value==="number")value=Math.max(Frame.min,Math.min(Frame.max,Math.round(value)));
-      if(w.property.component==="SpriteRenderer"&&w.property.path==="frame"){
-        const sprite=entity.components.find(c=>c.type==="SpriteRenderer")!;
+      if((w.property.component==="SpriteRenderer"||w.property.component==="TiledSpriteRenderer")&&w.property.path==="frame"){
+        const sprite=entity.components.find(c=>c.type==="SpriteRenderer"||c.type==="TiledSpriteRenderer")!;
         if(typeof value!=="number"||value<0||value>=(this.asset(sprite.asset).atlas?.frameCount||1))throw new Error(`Animated sprite frame outside atlas: ${entity.id}`);
       }
       writeProperty(root,w.tokens,value);

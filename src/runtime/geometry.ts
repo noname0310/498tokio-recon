@@ -16,6 +16,7 @@ export function pinwheelCovered(i:number,j:number,profile:PinwheelProfile):boole
 }
 /** Geometry keys ignore motion inside a held pinwheel phase. */
 export function transitionGeometryKey(c:Transition):string {
+  if(c.kind==="fade")return JSON.stringify([c.kind,c.progress]);
   if(c.kind==="grid")return JSON.stringify([c.kind,c.progress,c.grid]);
   if(c.kind==="radialGrid")return JSON.stringify([c.kind,c.progress,c.radialGrid]);
   if(c.kind==="stripes")return JSON.stringify([c.kind,c.progress,c.stripes]);

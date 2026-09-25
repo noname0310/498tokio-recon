@@ -6,6 +6,7 @@ import {createDilationEffect,createSoftnessEffect} from "./babylon-particle-filt
 import {createViewportFrameEffect} from "./babylon-viewport-frame.js";
 import {createCameraBlurEffect} from "./babylon-camera-blur.js";
 import {createTransitionMask} from "./babylon-transitions.js";
+import {BabylonFade} from "./babylon-fade.js";
 import type {ComponentType} from "./types.js";
 import type {LoadingProgress} from "./loading-status.js";
 
@@ -65,7 +66,9 @@ export class BabylonShaderPreparation {
           const mesh=r.quad("Camera / depth vignette",null,r.depthVignetteMaterial());material(mesh);
           features.add("depth-vignette");
         }
-        if(c.type==="Transition"&&!features.has("transition-stencil")){
+        if(c.type==="Transition"&&c.kind==="fade"&&!features.has("transition-fade")){
+          material(new BabylonFade(r,"Transition").mesh);features.add("transition-fade");
+        }else if(c.type==="Transition"&&c.kind!=="fade"&&!features.has("transition-stencil")){
           material(createTransitionMask(r,"Transition").mesh);features.add("transition-stencil");
         }
         if(c.type==="SpriteMotionBlur"||c.type==="ParticleMotionBlur"){

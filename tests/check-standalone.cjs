@@ -31,7 +31,7 @@ async function main(){
    await file.route(/^https?:/,r=>r.abort());
    await file.goto(pathToFileURL(portable).href+'?controls=0');await waitForPlayer(file,`${name} standalone`);
    const normal=await browser.newPage({viewport:{width:640,height:360}});await normal.goto(`${base}/?renderer=babylon&controls=0`);await waitForPlayer(normal,`${name} website`);
-   for(const frame of [15,173,540,900,1150,1500,1943,2200,2225,2245]){
+   for(const frame of [15,173,540,900,1150,1500,1943,2200,2225,2245,4088,4091,4194,4245,4422]){
     for(const page of [file,normal])await page.evaluate(async frame=>{await scenePlayer.seekFrame(frame,{numerator:30,denominator:1});await scenePlayer.whenIdle();},frame);
     const diff=compare(await captureFrame(file),await captureFrame(normal));assert(diff.max<=2&&diff.mae<.001,`${name} frame ${frame}: ${JSON.stringify(diff)}`);
    }

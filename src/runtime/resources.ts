@@ -10,6 +10,7 @@ export class Resources {
   readonly images=new Map<string,Promise<PixelImage>>();
   readonly jobs=new Map<string,Promise<PixelImage>>();
   readonly atlasFrames=new Map<string,Promise<readonly HTMLImageElement[]>>();
+  private readonly atlasPixels=new Map<string,Promise<PixelImage>>();
   readonly decodedImages=new Map<string,Promise<HTMLImageElement>>();
   private readonly noiseImages=new Map<string,Promise<{url:string;result:PixelImage;image:HTMLImageElement}>>();
   private readonly scanlines=new Map<number,PixelImage>();
@@ -79,6 +80,14 @@ export class Resources {
     for(let y=0;y<rect.height;y++){const start=((rect.y+y)*image.width+rect.x)*4;data.set(image.data.subarray(start,start+rect.width*4),y*rect.width*4);}
     return {width:rect.width,height:rect.height,channels:4,data};
   }
+  /** Source cells are immutable and shared by every tiled instance. */
+  framePixels(scene:Scene,id:string,frame:number):Promise<PixelImage>{
+    const asset=scene.asset(id);if(!asset.atlas)return this.image(scene,id);
+    const rect=spriteRect(asset,frame),key=JSON.stringify([scene.source(id),rect]);
+    let pending=this.atlasPixels.get(key);
+    if(!pending){pending=this.image(scene,id).then(source=>this.crop(source,rect));this.atlasPixels.set(key,pending);}
+    return pending;
+  }
   /** One-time cell preparation for DOM image sampling.
    * Firefox snaps the full atlas's bounds before clipping, changing the texel
    * phase per cell. Independent source bounds keep identical cells identical.
@@ -146,5 +155,5 @@ export class Resources {
     }
     return pending;
   }
-  dispose(){this.disposed=true;this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.decodedImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
+  dispose(){this.disposed=true;this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.atlasPixels.clear();this.decodedImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
 }

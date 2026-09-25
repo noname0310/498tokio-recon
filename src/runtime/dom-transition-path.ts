@@ -6,6 +6,7 @@ export class DOMTransitionPath {
   private readonly cell=new GridTransitionCell();
   private readonly radialCell=new RadialGridTransitionCell();
   transition(bounds:Bounds,frameBounds:Bounds,c:Transition,project:(x:number,y:number)=>Vec2):string {
+    if(c.kind==="fade")return "";
     if(c.kind==="grid")return this.build(bounds,frameBounds,c.grid,c.progress,project);
     if(c.kind==="radialGrid")return this.radial(bounds,c.radialGrid,c.progress,project);
     if(c.kind==="stripes"){
