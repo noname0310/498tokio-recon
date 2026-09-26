@@ -184,7 +184,8 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
     B.Effect.ShadersStore.sceneSpriteFragmentShader=`
       precision highp float;
       varying vec2 textureUV,localPoint;
-      uniform sampler2D spriteTex,noiseTex,filteredTex;
+      uniform sampler2D spriteTex,noiseTex,filteredTex,secondaryTex;
+      uniform vec2 secondaryOrigin,secondarySize;uniform float secondaryOpacity;
       uniform vec2 noiseOrigin,noiseSize;
       uniform vec4 tint,uvRect,uvBounds;
       uniform float maskOnly,intensity,hue,noiseRange,noiseEnabled,saturation,brightness,contrast,whiteMix;
@@ -234,6 +235,7 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
         vec2 noiseUV=vec2(localPoint.x-noiseOrigin.x,noiseOrigin.y-localPoint.y)/noiseSize;
         float grain=(texture2D(noiseTex,noiseUV).r*2.0-1.0)*noiseRange;
         color=clamp(rotateHue(color),0.0,1.0);if(saturation!=1.0||brightness!=1.0){float luma=dot(color,vec3(.213,.715,.072));color=clamp(clamp(vec3(luma)+(color-vec3(luma))*saturation,0.0,1.0)*brightness,0.0,1.0);}if(contrast!=1.0)color=clamp((color-.5)*contrast+.5,0.0,1.0);
+        if(secondaryOpacity>0.0){vec4 overlay=texture2D(secondaryTex,vec2(localPoint.x-secondaryOrigin.x,secondaryOrigin.y-localPoint.y)/secondarySize);color=mix(color,overlay.rgb,overlay.a*secondaryOpacity);}
         vec2 ramp=opacityGradientEnd-opacityGradientStart;
         float opacity=mix(1.0,clamp(dot(localPoint-opacityGradientStart,ramp)/max(dot(ramp,ramp),1e-18),0.0,1.0),opacityGradientEnabled);
         gl_FragColor=vec4(clamp(color*exp(grain*noiseEnabled*noiseChannelGain),0.0,1.0),mix(t.a,t.r,maskOnly)*tint.a*intensity*opacity);}`;

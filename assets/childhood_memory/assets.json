@@ -1,0 +1,184 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Childhood memory asset library",
+  "referenceFrame": {"width": 640, "height": 360},
+  "assets"        : {
+    "background_base": {
+      "type"          : "Sprite",
+      "file"          : "background_base.png",
+      "size"          : {"x": 1, "y": 144},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5270, 5280, 5290, 5300, 5310, 5320, 5330, 5340, 5350, 5360, 5370],
+        "originPixels": [0, 0],
+        "nativeCellPixels": 2.5,
+        "method": "Row-wise base color separated from the repeated pattern; visible sky samples include the bottom of frame 5325.",
+        "repeat": ["x"],
+        "edgeModeY": "clamp"
+      }
+    },
+    "secondary_pattern": {
+      "type"          : "Sprite",
+      "file"          : "secondary_pattern.png",
+      "size"          : {"x": 8, "y": 144},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5270, 5280, 5290, 5300, 5310, 5320, 5330, 5340, 5350, 5360, 5370],
+        "originPixels": [0, 0],
+        "nativeCellPixels": 2.5,
+        "screenRepeatPixels": 20,
+        "repeat": ["x"],
+        "method": "Horizontal repeated-cell means, decomposed into a row base and a minimum-alpha RGBA overlay. Smallest supported repeat is eight native cells. Fine grain is excluded.",
+        "normalization": "Editable RGBA/base factorization; original layer colors and alpha are not uniquely identifiable from the composite.",
+        "compositeErrorRGB": 0.07667862694524301,
+        "moonValidation": {
+          "sourceFrame"         : 5526,
+          "screenAligned"       : true,
+          "coarseMoonCellPixels": 12.5,
+          "patternCellPixels"   : 2.5,
+          "phaseCorrelation"    : 0.7458205397977714
+        }
+      }
+    },
+    "cliff": {
+      "type"          : "Sprite",
+      "file"          : "cliff.png",
+      "size"          : {"x": 165, "y": 146},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5236, 5245, 5260, 5275, 5290, 5305, 5325, 5340, 5355, 5370, 5385, 5400],
+        "referenceFrame": 5325,
+        "originPixels": [290, 105],
+        "nativeCellPixels": 5,
+        "samplingFraction": 0.6,
+        "alpha": "binary",
+        "clippedSourceEdges": ["right", "bottom"],
+        "method": "Native-cell sampling with sky and character rejection in the original; registered, palette-matched extension on the same square grid.",
+        "originalBounds": {"x": 0, "y": 0, "width": 70, "height": 51},
+        "extension": {
+          "source": "Artist-supplied expanded image",
+          "samplingFraction": 0.6,
+          "grid": "Locally measured source cell boundaries normalized to a square native grid.",
+          "colorCorrection": "Robust Lab fit for grass and rock separately; original palette shades with small color variation.",
+          "originalRGBAUnchanged": true,
+          "alpha": "binary"
+        }
+      }
+    },
+    "grass_silhouette_tile": {
+      "type"          : "Sprite",
+      "file"          : "grass_silhouette_tile.png",
+      "size"          : {"x": 32, "y": 16},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "source"   : "cliff.png",
+        "method"   : "Black grass silhouette from the right-hand extension; first column matches the cliff edge.",
+        "repeat"   : ["x"],
+        "edgeModeY": "clampBottom"
+      }
+    },
+    "ground_tile": {
+      "type"          : "Sprite",
+      "file"          : "ground_tile.png",
+      "size"          : {"x": 10, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5000, 5060, 5140, 5200],
+        "nativeCellPixels": 2.5,
+        "samplingFraction": 0.6,
+        "method": "Repeated native-cell means; reference grass silhouette and independently measured memory palette."
+      }
+    },
+    "grass_tile": {
+      "type"          : "Sprite",
+      "file"          : "grass_tile.png",
+      "size"          : {"x": 14, "y": 6},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5198, 5201, 5204, 5207, 5210, 5213, 5216, 5219, 5222, 5225, 5228, 5231, 5234],
+        "originPixels": [17.49867403482393, 275.48961403949914],
+        "nativeCellPixels": 2.5,
+        "alpha": "binary",
+        "repeat": ["x"],
+        "method": "Independent binary silhouette with measured bright rim cells; repeated-cell color fitting separates compression-edge color bleed from the known sky."
+      }
+    },
+    "closeup_background_base": {
+      "type"          : "Sprite",
+      "file"          : "closeup_background_base.png",
+      "size"          : {"x": 1, "y": 144},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames"    : [5523, 5525, 5527, 5529, 5531],
+        "nativeCellPixels": 2.5,
+        "samplingFraction": 0.6,
+        "method"          : "Repeated native-cell means, separating row color and alpha pattern."
+      }
+    },
+    "closeup_secondary_pattern": {
+      "type"          : "Sprite",
+      "file"          : "closeup_secondary_pattern.png",
+      "size"          : {"x": 8, "y": 144},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames"    : [5523, 5525, 5527, 5529, 5531],
+        "nativeCellPixels": 2.5,
+        "samplingFraction": 0.6,
+        "method"          : "Repeated native-cell means, separating row color and alpha pattern."
+      }
+    },
+    "moon": {
+      "type"          : "Sprite",
+      "file"          : "moon.png",
+      "size"          : {"x": 25, "y": 25},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.4994587714888038, "y": 0.5001773701370096},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5523, 5524, 5525],
+        "nativeCellPixels": 12.5,
+        "samplingFraction": 0.6,
+        "method": "Native-cell color samples with the shared secondary overlay removed; reviewed moon silhouette retained."
+      }
+    }
+  },
+  "reconstruction": {
+    "referenceFrame": 5325,
+    "backgroundComposition": "background_base + straight-alpha secondary_pattern; both use the same reference grid.",
+    "secondaryMapping": "Shared screen-plane phase, applied to the moon only during the close-up beginning at source frame 5523. The regular moon has procedural grain without the background grid overlay.",
+    "entryFade": {
+      "interpolation"  : "step",
+      "sourceFrameRate": 30,
+      "frameNumber"    : [4941, 4950, 4959, 4969, 4978],
+      "opacity"        : [0.2, 0.4, 0.6, 0.8, 1.0]
+    },
+    "earlierReuse": {
+      "sourceFrameRange": [4862, 4940],
+      "actionTimeOffsetFrames": 79,
+      "method": "Shared ground-action tracks behind the helmet, with the earlier landscape and measured monochrome pulses."
+    },
+    "cliffContinuation": {
+      "referenceScene" : "cliff.scene.json",
+      "darkening"      : "Runtime horizontal opacity ramp over the same sprite tinted black. No vertical gradient.",
+      "localX"         : {"fullColorUntil": 0.7, "blackFrom": 1.64},
+      "beyondRightEdge": "Grass silhouette tiled horizontally, clamped below; camera coverage."
+    },
+    "moonSecondaryOpacity": 0.3720864598100621
+  }
+}

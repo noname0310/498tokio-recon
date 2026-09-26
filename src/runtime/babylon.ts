@@ -70,6 +70,18 @@ class Sprite {
     body.mesh.setEnabled(state.visible);r.tint(body.material,sprite.color);body.material.setFloat("hue",sprite.hueDegrees*Math.PI/180);
     body.material.setFloat("saturation",sprite.saturation);body.material.setFloat("brightness",sprite.brightness);body.material.setFloat("contrast",sprite.contrast);body.material.setFloat("whiteMix",sprite.whiteMix);
     const gradient=scene.component(this.id,"OpacityGradient");body.material.setFloat("opacityGradientEnabled",gradient?.enabled?1:0);r.vec2(body.material,"opacityGradientStart",gradient?.start??{x:0,y:0});r.vec2(body.material,"opacityGradientEnd",gradient?.end??{x:0,y:-1});
+    const secondary=scene.component(this.id,"SecondaryTexture"),useSecondary=enabled(secondary)&&secondary.opacity>0&&r.resources.isImageReady(secondary.asset);
+    body.material.setFloat("secondaryOpacity",useSecondary?secondary.opacity:0);
+    if(useSecondary){
+      r.vec2(body.material,"secondaryOrigin",secondary.origin);r.vec2(body.material,"secondarySize",secondary.worldSize);
+      const key=JSON.stringify([scene.source(secondary.asset),scene.asset(secondary.asset).filter]);
+      if(this.keys.get("secondary")!==key){
+        const pixels=await r.resources.image(scene,secondary.asset);if(this.disposed||revision!==this.updateRevision)return;
+        this.keys.set("secondary",key);this.textures.get("secondary")?.dispose();
+        const texture=r.texture(`${this.id}/secondary`,pixels,{linear:scene.asset(secondary.asset).filter==="linear",repeatX:true,repeatY:true});
+        this.textures.set("secondary",texture);body.material.setTexture("secondaryTex",texture);
+      }
+    }
     const rect=state.rect;body.material.setVector4("uvRect",new B.Vector4(rect.x/source.width,rect.y/source.height,rect.width/source.width,rect.height/source.height));
     body.material.setVector4("uvBounds",asset.atlas?new B.Vector4((rect.x+.5)/source.width,(rect.y+.5)/source.height,(rect.x+rect.width-.5)/source.width,(rect.y+rect.height-.5)/source.height):new B.Vector4(0,0,1,1));
     const writeDepth=sprite.depthWrite&&sprite.color.a===1&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective";

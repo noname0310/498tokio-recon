@@ -1,0 +1,120 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Childhood memory cliff / frame 5325",
+  "referenceFrame": {"width": 640, "height": 360},
+  "assets"        : {
+    "background_base"      : {
+      "type"         : "Sprite",
+      "file"         : "background_base.png",
+      "size"         : {"x": 1, "y": 144},
+      "pixelsPerUnit": 100,
+      "pivot"        : {"x": 0, "y": 1},
+      "filter"       : "point"
+    },
+    "secondary_pattern"    : {
+      "type"         : "Sprite",
+      "file"         : "secondary_pattern.png",
+      "size"         : {"x": 8, "y": 144},
+      "pixelsPerUnit": 100,
+      "pivot"        : {"x": 0, "y": 1},
+      "filter"       : "point"
+    },
+    "cliff"                : {
+      "type"         : "Sprite",
+      "file"         : "cliff.png",
+      "size"         : {"x": 165, "y": 146},
+      "pixelsPerUnit": 100,
+      "pivot"        : {"x": 0, "y": 1},
+      "filter"       : "point"
+    },
+    "grass_silhouette_tile": {
+      "type"         : "Sprite",
+      "file"         : "grass_silhouette_tile.png",
+      "size"         : {"x": 32, "y": 16},
+      "pixelsPerUnit": 100,
+      "pivot"        : {"x": 0, "y": 1},
+      "filter"       : "point"
+    }
+  },
+  "root"          : {
+    "id"      : "root",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6}
+        ]
+      },
+      {
+        "id"        : "background-base",
+        "transform" : {
+          "localPosition": {"x": -3.2, "y": 1.8, "z": 2},
+          "localScale"   : {"x":  2.5, "y": 2.5        }
+        },
+        "components": [
+          {"type": "TiledSpriteRenderer", "asset": "background_base"}
+        ]
+      },
+      {
+        "id"        : "background-pattern",
+        "transform" : {
+          "localPosition": {"x": -3.2, "y": 1.8, "z": 1.9},
+          "localScale"   : {"x":  2.5, "y": 2.5          }
+        },
+        "components": [
+          {"type": "TiledSpriteRenderer", "asset": "secondary_pattern"}
+        ]
+      },
+      {
+        "id"       : "cliff",
+        "transform": {
+          "localPosition": {"x": -0.3, "y": 0.75, "z": 0},
+          "localScale"   : {"x":  5,   "y": 5           }
+        },
+        "children" : [
+          {
+            "id"        : "cliff-silhouette",
+            "transform" : {
+              "localPosition": {"z": 0.001}
+            },
+            "components": [
+              {"type": "SpriteRenderer", "asset": "cliff", "brightness": 0}
+            ]
+          },
+          {
+            "id"        : "cliff-color",
+            "components": [
+              { "type": "SpriteRenderer",  "asset": "cliff"                                                          },
+              { "type": "OpacityGradient",                   "start": {"x": 1.64, "y": 0}, "end": {"x": 0.7, "y": 0} }
+            ]
+          },
+          {
+            "id"        : "cliff-continuation",
+            "transform" : {
+              "localPosition": {"z": 0.002}
+            },
+            "components": [
+              {
+                "type"      : "TiledSpriteRenderer",
+                "asset"     : "grass_silhouette_tile",
+                "wrap"      : {"x": "repeat", "y": "clampBottom"},
+                "origin"    : {"x": 1.65, "y": 0},
+                "clipBounds": {"left": 1.6499, "right": null, "top": null, "bottom": null}
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "reconstruction": {
+    "referenceFrame": 5325,
+    "scope": "Static extracted background and cliff, without characters, moon or fine grain.",
+    "cliff": "Original 70 x 51 RGBA cells preserved at the upper-left of the expanded native sprite.",
+    "darkening": "Horizontal only, beginning outside the reference view. OpacityGradient composites the color sprite over its black silhouette at runtime.",
+    "continuation": "Black grass silhouette repeats to the right of the expanded sprite and clamps below, with a small overlap against rasterization gaps."
+  }
+}

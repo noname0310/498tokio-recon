@@ -12,6 +12,7 @@ export class Resources {
   readonly atlasFrames=new Map<string,Promise<readonly HTMLImageElement[]>>();
   private readonly atlasPixels=new Map<string,Promise<PixelImage>>();
   readonly decodedImages=new Map<string,Promise<HTMLImageElement>>();
+  private readonly filterImages=new Map<string,Promise<HTMLImageElement>>();
   private readonly noiseImages=new Map<string,Promise<{url:string;result:PixelImage;image:HTMLImageElement}>>();
   private readonly scanlines=new Map<number,PixelImage>();
   private readonly scanlineImages=new Map<number,Promise<string>>();
@@ -25,6 +26,8 @@ export class Resources {
   /** Start every image now. Renderers skip unfinished assets without stalling. */
   preload(scene:Scene,domFrames:boolean):Promise<void>{
     this.preloading=true;const unique=new Map<string,string[]>();
+    const filterAssets=new Set<string>();
+    if(domFrames)for(const node of scene.declaredEntities())for(const c of node.components)if(c.type==="SecondaryTexture")filterAssets.add(c.asset);
     for(const [id,asset]of Object.entries(scene.data.assets))if(asset.type==="Sprite"){
       const key=JSON.stringify([scene.source(id),asset.size,asset.atlas]),ids=unique.get(key);
       if(ids)ids.push(id);else unique.set(key,[id]);
@@ -36,6 +39,7 @@ export class Resources {
       try {
         await this.image(scene,id);
         if(domFrames)await this.spriteFrames(scene,id);
+        const filterId=ids.find(alias=>filterAssets.has(alias));if(filterId)await this.filterImage(scene,filterId);
         if(!this.disposed){for(const alias of ids)this.prepared.add(alias);this.imageReady?.();}
       }catch(error){
         throw new Error(`Could not prepare ${name}: ${error instanceof Error?error.message:String(error)}`,{cause:error});
@@ -106,6 +110,30 @@ export class Resources {
     }
     return pending;
   }
+  /** SVG feImage ignores nearest-neighbor sampling in some browsers. Expand
+   * immutable source texels once; UVs, alpha and all compositing stay live. */
+  filterImage(scene:Scene,id:string):Promise<HTMLImageElement>{
+    if(scene.asset(id).filter!=="point")return this.decodedImage(scene,id);
+    const key=scene.source(id);let pending=this.filterImages.get(key);
+    if(!pending){
+      pending=this.image(scene,id).then(async source=>{
+        const factor=Math.max(1,Math.min(8,2**Math.floor(Math.log2(Math.sqrt(4194304/(source.width*source.height))))));
+        if(factor===1)return this.decodedImage(scene,id);
+        const width=source.width*factor,height=source.height*factor,data=new Uint8Array(width*height*4);
+        for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+          const from=(Math.floor(y/factor)*source.width+Math.floor(x/factor))*4,to=(y*width+x)*4;
+          data[to]=source.data[from];data[to+1]=source.data[from+1];data[to+2]=source.data[from+2];data[to+3]=source.data[from+3];
+        }
+        const blob=await rgbaPng({width,height,channels:4,data});
+        if(this.disposed)throw new Error("Resources have been disposed.");
+        const image=new Image(),url=URL.createObjectURL(blob);this.urls.add(url);image.src=url;
+        try{await image.decode();return image;}catch(error){this.releaseURL(url);throw error;}
+      });
+      this.filterImages.set(key,pending);
+      pending.catch(()=>{if(this.filterImages.get(key)===pending)this.filterImages.delete(key);});
+    }
+    return pending;
+  }
   texture(key:string,input:TextureJob):Promise<PixelImage>{
     if(this.jobs.has(key))return this.jobs.get(key)!;
     const promise=this.processor.run(input);
@@ -155,5 +183,5 @@ export class Resources {
     }
     return pending;
   }
-  dispose(){this.disposed=true;this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.atlasPixels.clear();this.decodedImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
+  dispose(){this.disposed=true;this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.atlasPixels.clear();this.decodedImages.clear();this.filterImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
 }

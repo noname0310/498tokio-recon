@@ -24,6 +24,7 @@ export const componentTypes = new Map<ComponentType,object>([
   ["SpriteNumberRenderer", {asset:null,value:0,rounding:"round",minDigits:1,suffix:"",glyphs:"0123456789",advances:[],alignment:"left",repeatWorld:null,color:rgba}],
   ["SpriteAnimator", {start,framesPerSecond:15,frames:[],loop:false,hideOutside:true}],
   ["OpacityGradient", {start:{x:0,y:0},end:{x:0,y:-1}}],
+  ["SecondaryTexture", {asset:"",worldSize:{x:1,y:1},origin:{x:0,y:0},opacity:1}],
   ["Flicker", {mode:"periodic",frequency:15,dutyCycle:.5,probability:.5,seed:1,start,phase:0}],
   ["TransformAnimator", {position:[],rotation:[],scale:[]}],
   ["TransformNoise", {seed:1,start,duration:1,frequency:15,strength:1,positionAmplitude:{x:0,y:0,z:0},rotationAmplitude:{x:0,y:0,z:0}}],
@@ -223,6 +224,7 @@ export function normalizeScene(input:unknown):SceneData {
         if(c.clipBounds){for(const side of ["left","right","bottom","top"] as const)if(c.clipBounds[side]!==null)finite(c.clipBounds[side],`PlaneRenderer.clipBounds.${side}`);
           if(c.clipBounds.left!==null&&c.clipBounds.right!==null&&c.clipBounds.left>=c.clipBounds.right||c.clipBounds.bottom!==null&&c.clipBounds.top!==null&&c.clipBounds.bottom>=c.clipBounds.top)fail("PlaneRenderer clip bounds must have positive area.");}
       }
+      if(c.type==="SecondaryTexture"){vector(c.worldSize,"xy","SecondaryTexture.worldSize",.000001);vector(c.origin,"xy","SecondaryTexture.origin");finite(c.opacity,"SecondaryTexture.opacity",0,1);if(sprites[c.asset].atlas)fail("SecondaryTexture requires a standalone tile.");}
       if(c.type==="OpacityGradient"){vector(c.start,"xy","OpacityGradient.start");vector(c.end,"xy","OpacityGradient.end");if(Math.hypot(c.end.x-c.start.x,c.end.y-c.start.y)<1e-9)fail("OpacityGradient needs distinct endpoints.");}
       if(c.type==="Transition"){
         finite(c.progress,"Transition.progress",0,1);
@@ -288,6 +290,7 @@ export function normalizeScene(input:unknown):SceneData {
     if(types.has("ParticleMotionBlur")&&!types.has("ParticleEmitter"))fail(`ParticleMotionBlur requires ParticleEmitter on ${node.id}.`);
     if(types.has("ProceduralNoise")&&!types.has("TiledSpriteRenderer")&&!types.has("SpriteRenderer")&&!types.has("PlaneRenderer"))fail(`ProceduralNoise requires a sprite or plane renderer on ${node.id}.`);
     if(types.has("Vignette")&&!types.has("Camera"))fail(`Vignette requires Camera on ${node.id}.`);
+    if(types.has("SecondaryTexture")&&!types.has("SpriteRenderer"))fail(`SecondaryTexture requires SpriteRenderer on ${node.id}.`);
     if(types.has("OpacityGradient")&&!types.has("SpriteRenderer"))fail(`OpacityGradient requires SpriteRenderer on ${node.id}.`);
     for(const type of ["ViewportTransform","ColorGrade","ScanlineJitter"] as const)if(types.has(type)&&!types.has("Camera"))fail(`${type} requires Camera on ${node.id}.`);
     if(types.has("ViewportFrame")&&!types.has("Camera"))fail(`ViewportFrame requires Camera on ${node.id}.`);

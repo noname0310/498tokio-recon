@@ -1870,23 +1870,24 @@
     "biome_desert_mountain_tile": {
       "type"          : "Sprite",
       "file"          : "biome_flight/desert_mountain_tile.png",
-      "size"          : {"x": 60, "y": 16},
+      "size"          : {"x": 64, "y": 16},
       "pixelsPerUnit" : 100,
       "pivot"         : {"x": 0, "y": 0},
       "filter"        : "point",
       "reconstruction": {
         "sourceFrames": [
-          4245, 4249, 4253, 4257, 4261, 4265, 4269, 4273, 4277, 4281, 4285, 4289, 4293, 4297, 4301, 4305, 4309, 4313,
-          4317, 4321, 4325, 4329, 4333, 4337, 4341, 4345, 4349, 4353, 4357, 4361, 4365, 4369, 4373, 4377
+          4245, 4250, 4255, 4260, 4265, 4270, 4275, 4280, 4285, 4290, 4295, 4300, 4305, 4310, 4315, 4320, 4325, 4330,
+          4335, 4340, 4345, 4350, 4355, 4360, 4365, 4370, 4375
         ],
-        "nativeCellPixels": 2.454545,
+        "nativeCellPixels": 2.299980570741747,
         "referenceFrame": 4245,
-        "originPixelsAtReference": [0, 170],
-        "screenRepeatPixels": 147.2727,
-        "screenSpeedPixelsPerFrame": 0.4,
+        "originPixelsAtReference": [-0.07107701919000567, 169.62932830780946],
+        "screenRepeatPixels": 147.1987565274718,
+        "screenSpeedPixelsPerFrame": 0.38423127134000973,
+        "samplingFraction": 0.6,
         "repeat": ["x"],
         "edgeModeY": "clamp-bottom",
-        "method": "Folded repeated hill silhouettes; central 60% cell means with temporal occlusion rejection. Sky kept transparent."
+        "method": "Desert-only 64-cell silhouette registered across repeated copies and frames. Central-cell contour samples exclude moving foregrounds; native colors are estimated through the source luminance/chroma resampling footprints. Binary alpha preserves the narrow valley spires."
       }
     },
     "biome_snow_creature_atlas": {
@@ -2065,6 +2066,160 @@
           "selectedCellsByFrame": [146],
           "definition"          : "Explicit reviewed cell spans in the recovery recipe; baked into the native PNG."
         }
+      }
+    },
+    "memory_background_base": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/background_base.png",
+      "size"          : {"x": 1, "y": 144},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5270, 5280, 5290, 5300, 5310, 5320, 5330, 5340, 5350, 5360, 5370],
+        "originPixels": [0, 0],
+        "nativeCellPixels": 2.5,
+        "method": "Row-wise base color separated from the repeated pattern; visible sky samples include the bottom of frame 5325.",
+        "repeat": ["x"],
+        "edgeModeY": "clamp"
+      }
+    },
+    "memory_secondary_pattern": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/secondary_pattern.png",
+      "size"          : {"x": 8, "y": 144},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5270, 5280, 5290, 5300, 5310, 5320, 5330, 5340, 5350, 5360, 5370],
+        "originPixels": [0, 0],
+        "nativeCellPixels": 2.5,
+        "screenRepeatPixels": 20,
+        "repeat": ["x"],
+        "method": "Horizontal repeated-cell means, decomposed into a row base and a minimum-alpha RGBA overlay. Smallest supported repeat is eight native cells. Fine grain is excluded.",
+        "normalization": "Editable RGBA/base factorization; original layer colors and alpha are not uniquely identifiable from the composite.",
+        "compositeErrorRGB": 0.07667862694524301,
+        "moonValidation": {
+          "sourceFrame"         : 5526,
+          "screenAligned"       : true,
+          "coarseMoonCellPixels": 12.5,
+          "patternCellPixels"   : 2.5,
+          "phaseCorrelation"    : 0.7458205397977714
+        }
+      }
+    },
+    "memory_cliff": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/cliff.png",
+      "size"          : {"x": 165, "y": 146},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5236, 5245, 5260, 5275, 5290, 5305, 5325, 5340, 5355, 5370, 5385, 5400],
+        "referenceFrame": 5325,
+        "originPixels": [290, 105],
+        "nativeCellPixels": 5,
+        "samplingFraction": 0.6,
+        "alpha": "binary",
+        "clippedSourceEdges": ["right", "bottom"],
+        "method": "Native-cell sampling with sky and character rejection in the original; registered, palette-matched extension on the same square grid.",
+        "originalBounds": {"x": 0, "y": 0, "width": 70, "height": 51},
+        "extension": {
+          "source": "Artist-supplied expanded image",
+          "samplingFraction": 0.6,
+          "grid": "Locally measured source cell boundaries normalized to a square native grid.",
+          "colorCorrection": "Robust Lab fit for grass and rock separately; original palette shades with small color variation.",
+          "originalRGBAUnchanged": true,
+          "alpha": "binary"
+        }
+      }
+    },
+    "memory_grass_silhouette_tile": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/grass_silhouette_tile.png",
+      "size"          : {"x": 32, "y": 16},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "source"   : "cliff.png",
+        "method"   : "Black grass silhouette from the right-hand extension; first column matches the cliff edge.",
+        "repeat"   : ["x"],
+        "edgeModeY": "clampBottom"
+      }
+    },
+    "memory_ground_tile": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/ground_tile.png",
+      "size"          : {"x": 10, "y": 10},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5000, 5060, 5140, 5200],
+        "nativeCellPixels": 2.5,
+        "samplingFraction": 0.6,
+        "method": "Repeated native-cell means; reference grass silhouette and independently measured memory palette."
+      }
+    },
+    "memory_grass_tile": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/grass_tile.png",
+      "size"          : {"x": 14, "y": 6},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5198, 5201, 5204, 5207, 5210, 5213, 5216, 5219, 5222, 5225, 5228, 5231, 5234],
+        "originPixels": [17.49867403482393, 275.48961403949914],
+        "nativeCellPixels": 2.5,
+        "alpha": "binary",
+        "repeat": ["x"],
+        "method": "Independent binary silhouette with measured bright rim cells; repeated-cell color fitting separates compression-edge color bleed from the known sky."
+      }
+    },
+    "memory_closeup_background_base": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/closeup_background_base.png",
+      "size"          : {"x": 1, "y": 144},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames"    : [5523, 5525, 5527, 5529, 5531],
+        "nativeCellPixels": 2.5,
+        "samplingFraction": 0.6,
+        "method"          : "Repeated native-cell means, separating row color and alpha pattern."
+      }
+    },
+    "memory_closeup_secondary_pattern": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/closeup_secondary_pattern.png",
+      "size"          : {"x": 8, "y": 144},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames"    : [5523, 5525, 5527, 5529, 5531],
+        "nativeCellPixels": 2.5,
+        "samplingFraction": 0.6,
+        "method"          : "Repeated native-cell means, separating row color and alpha pattern."
+      }
+    },
+    "memory_moon": {
+      "type"          : "Sprite",
+      "file"          : "childhood_memory/moon.png",
+      "size"          : {"x": 25, "y": 25},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.4994587714888038, "y": 0.5001773701370096},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5523, 5524, 5525],
+        "nativeCellPixels": 12.5,
+        "samplingFraction": 0.6,
+        "method": "Native-cell color samples with the shared secondary overlay removed; reviewed moon silhouette retained."
       }
     }
   },
@@ -9398,7 +9553,7 @@
       "biome-biome-desert-mountains-Transform-localPosition.x": {
         "type"       : "AnimationTrackFloat32",
         "frameNumber": [0, 366400],
-        "value"      : [-18.273078169882844, -9.652685616648816]
+        "value"      : [-18.152510279112107, -9.871949303664454]
       },
       "biome-biome-desert-ground-TiledSpriteRenderer-origin.x": {
         "type"       : "AnimationTrackFloat32",
@@ -9725,25 +9880,10 @@
         "frameNumber": [0, 366400],
         "value"      : [-9.757411940678944, 25.360295929240717]
       },
-      "biome-biome-cactus-64-Transform-localPosition.x": {
-        "type"       : "AnimationTrackFloat32",
-        "frameNumber": [0, 366400],
-        "value"      : [-20.6523367451937, 16.77183673716459]
-      },
-      "biome-biome-cactus-65-Transform-localPosition.x": {
-        "type"       : "AnimationTrackFloat32",
-        "frameNumber": [0, 366400],
-        "value"      : [-23.552377772415944, 11.247049415596434]
-      },
       "biome-biome-cactus-66-Transform-localPosition.x": {
         "type"       : "AnimationTrackFloat32",
         "frameNumber": [0, 366400],
         "value"      : [-25.546222233527192, 10.68309945882733]
-      },
-      "biome-biome-cactus-67-Transform-localPosition.x": {
-        "type"       : "AnimationTrackFloat32",
-        "frameNumber": [0, 366400],
-        "value"      : [-20.82878489419678, 14.123724798491033]
       },
       "biome-biome-cactus-continuation-0-Transform-localPosition.x": {
         "type"       : "AnimationTrackFloat32",
@@ -10222,13 +10362,13 @@
       },
       "biome-biome-snowman-0-head-Transform-localPosition.y": {
         "type": "AnimationTrackFloat32",
-        "frameNumber": [0, 80167, 112167],
-        "value": [0.17, 0.17, 1.942692987696646],
+        "frameNumber": [0, 80167, 132800],
+        "value": [0.17, 0.17, 4.965675841873362],
         "interpolation": [10, 0, 10, 4, 10, 8],
         "interpolationParameters": [
            0.0,                    -1,                       0.0,                    -1,
            0.0,                    -1,                       0.0,                    -1,
-           0.00011079331173104038, -1,                       0.00011079331173104038, -1
+           0.00018223076176062024, -1,                       0.00018223076176062024, -1
         ]
       },
       "biome-biome-snowman-1-Transform-localPosition.x": {
@@ -10238,13 +10378,13 @@
       },
       "biome-biome-snowman-1-head-Transform-localPosition.y": {
         "type": "AnimationTrackFloat32",
-        "frameNumber": [0, 85793, 117793],
-        "value": [0.17, 0.17, 1.9447701206067698],
+        "frameNumber": [0, 85793, 132800],
+        "value": [0.17, 0.17, 3.9997217598861816],
         "interpolation": [10, 0, 10, 4, 10, 8],
         "interpolationParameters": [
            0.0,                    -1,                       0.0,                    -1,
            0.0,                    -1,                       0.0,                    -1,
-           0.00011092313253792311, -1,                       0.00011092313253792311, -1
+           0.00016294261535031726, -1,                       0.00016294261535031726, -1
         ]
       },
       "biome-biome-snowman-2-Transform-localPosition.x": {
@@ -10254,13 +10394,13 @@
       },
       "biome-biome-snowman-2-head-Transform-localPosition.y": {
         "type": "AnimationTrackFloat32",
-        "frameNumber": [0, 91361, 123361],
-        "value": [0.17, 0.17, 1.9380052267718317],
+        "frameNumber": [0, 91361, 132800],
+        "value": [0.17, 0.17, 3.134845869230557],
         "interpolation": [10, 0, 10, 4, 10, 8],
         "interpolationParameters": [
-           0.0,                    -1,                       0.0,                    -1,
-           0.0,                    -1,                       0.0,                    -1,
-           0.00011050032667323949, -1,                       0.00011050032667323949, -1
+           0.0,                   -1,                      0.0,                   -1,
+           0.0,                   -1,                      0.0,                   -1,
+           0.0001430944699066366, -1,                      0.0001430944699066366, -1
         ]
       },
       "biome-biome-snowman-3-Transform-localPosition.x": {
@@ -10270,13 +10410,13 @@
       },
       "biome-biome-snowman-3-head-Transform-localPosition.y": {
         "type": "AnimationTrackFloat32",
-        "frameNumber": [0, 60124, 92124],
-        "value": [0.17, 0.17, 1.8059838874858232],
+        "frameNumber": [0, 60124, 132800],
+        "value": [0.17, 0.17, 8.608419232073139],
         "interpolation": [10, 0, 10, 4, 10, 8],
         "interpolationParameters": [
            0.0,                    -1,                       0.0,                    -1,
            0.0,                    -1,                       0.0,                    -1,
-           0.00010224899296786395, -1,                       0.00010224899296786395, -1
+           0.00023222024415414002, -1,                       0.00023222024415414002, -1
         ]
       },
       "biome-biome-snowman-4-Transform-localPosition.x": {
@@ -10286,13 +10426,13 @@
       },
       "biome-biome-snowman-4-head-Transform-localPosition.y": {
         "type": "AnimationTrackFloat32",
-        "frameNumber": [0, 66287, 98287],
-        "value": [0.17, 0.17, 2.255043060029074],
+        "frameNumber": [0, 66287, 132800],
+        "value": [0.17, 0.17, 9.17799517972328],
         "interpolation": [10, 0, 10, 4, 10, 8],
         "interpolationParameters": [
-           0.0,                    -1,                       0.0,                    -1,
-           0.0,                    -1,                       0.0,                    -1,
-           0.00013031519125181713, -1,                       0.00013031519125181713, -1
+           0.0,                   -1,                      0.0,                   -1,
+           0.0,                   -1,                      0.0,                   -1,
+           0.0002708641973666285, -1,                      0.0002708641973666285, -1
         ]
       },
       "biome-biome-snowman-5-Transform-localPosition.x": {
@@ -10302,13 +10442,13 @@
       },
       "biome-biome-snowman-5-head-Transform-localPosition.y": {
         "type": "AnimationTrackFloat32",
-        "frameNumber": [0, 71619, 103619],
-        "value": [0.17, 0.17, 2.4196859968481697],
+        "frameNumber": [0, 71619, 132800],
+        "value": [0.17, 0.17, 8.393469592204475],
         "interpolation": [10, 0, 10, 4, 10, 8],
         "interpolationParameters": [
            0.0,                   -1,                      0.0,                   -1,
            0.0,                   -1,                      0.0,                   -1,
-           0.0001406053748030106, -1,                      0.0001406053748030106, -1
+           0.0002688242948694685, -1,                      0.0002688242948694685, -1
         ]
       },
       "biome-biome-snow-creature-medium-Transform-localPosition.x": {
@@ -10483,7 +10623,7 @@
       },
       "biome-biome-ship-surprise-Entity-active": {
         "type"         : "AnimationTrackBoolean",
-        "frameNumber"  : [0, 335200, 340000],
+        "frameNumber"  : [0, 324800, 340000],
         "value"        : [0, 1, 0],
         "interpolation": [0, -1, 0, -1, 0, -1]
       },
@@ -11001,22 +11141,7 @@
         "frameNumber": [125600, 132000, 244000, 248000],
         "value"      : [0.0, 1.0, 1.0, 0.0]
       },
-      "biome-biome-cactus-64-SpriteRenderer-color.a": {
-        "type"       : "AnimationTrackFloat32",
-        "frameNumber": [125600, 132000, 244000, 248000],
-        "value"      : [0.0, 1.0, 1.0, 0.0]
-      },
-      "biome-biome-cactus-65-SpriteRenderer-color.a": {
-        "type"       : "AnimationTrackFloat32",
-        "frameNumber": [125600, 132000, 244000, 248000],
-        "value"      : [0.0, 1.0, 1.0, 0.0]
-      },
       "biome-biome-cactus-66-SpriteRenderer-color.a": {
-        "type"       : "AnimationTrackFloat32",
-        "frameNumber": [125600, 132000, 244000, 248000],
-        "value"      : [0.0, 1.0, 1.0, 0.0]
-      },
-      "biome-biome-cactus-67-SpriteRenderer-color.a": {
         "type"       : "AnimationTrackFloat32",
         "frameNumber": [125600, 132000, 244000, 248000],
         "value"      : [0.0, 1.0, 1.0, 0.0]
@@ -11797,6 +11922,365 @@
         "type"       : "AnimationTrackFloat32",
         "frameNumber": [0, 4000],
         "value"      : [0.0, 1.0]
+      },
+      "biome-biome-cactus-68-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 366400],
+        "value"      : [-28.005036084922146, 9.553781022835352]
+      },
+      "biome-biome-cactus-68-SpriteRenderer-color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [125600, 132000, 244000, 248000],
+        "value"      : [0.0, 1.0, 1.0, 0.0]
+      },
+      "biome-biome-cactus-69-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 366400],
+        "value"      : [-21.353993045988968, 14.402617896270243]
+      },
+      "biome-biome-cactus-69-SpriteRenderer-color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [125600, 132000, 244000, 248000],
+        "value"      : [0.0, 1.0, 1.0, 0.0]
+      },
+      "biome-biome-cactus-70-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 366400],
+        "value"      : [-28.59327179488429, 9.184763424763766]
+      },
+      "biome-biome-cactus-70-SpriteRenderer-color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [125600, 132000, 244000, 248000],
+        "value"      : [0.0, 1.0, 1.0, 0.0]
+      },
+      "biome-biome-cactus-71-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 366400],
+        "value"      : [-27.505532881725056, 9.419794648825842]
+      },
+      "biome-biome-cactus-71-SpriteRenderer-color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [125600, 132000, 244000, 248000],
+        "value"      : [0.0, 1.0, 1.0, 0.0]
+      },
+      "biome-biome-cactus-72-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 366400],
+        "value"      : [-27.806911249862505, 8.75181763975302]
+      },
+      "biome-biome-cactus-72-SpriteRenderer-color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [125600, 132000, 244000, 248000],
+        "value"      : [0.0, 1.0, 1.0, 0.0]
+      },
+      "biome-biome-cactus-73-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 366400],
+        "value"      : [-27.28041917143485, 8.347227590230911]
+      },
+      "biome-biome-cactus-73-SpriteRenderer-color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [125600, 132000, 244000, 248000],
+        "value"      : [0.0, 1.0, 1.0, 0.0]
+      },
+      "memory-memory-background_base-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 465600],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-memory-closeup-background_base-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 465600, 480800],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-secondary_pattern-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 465600],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-memory-closeup-secondary_pattern-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 465600, 480800],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-moon-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 465600],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-memory-closeup-moon-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 465600, 480800],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-palette-hueDegrees": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102],
+        "value"        : [
+            30.121381354156476,   54.21682889021531,    74.13551253808548,   101.32347129938732,   116.10450287658277,
+           124.67700543520326,   135.90200453300434,  -172.79080510647762,  -151.7265942165213,   -138.4192020572217,
+          -127.52892304386808,  -108.41611670344476,   -87.56318822174156,   -66.185041043779,     -47.05559297778719,
+           -27.850346656610036,  -11.224988528186328,    5.079542438483718
+        ],
+        "interpolation": [
+           0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0,
+          -1,  0, -1,  0, -1,  0, -1,  0, -1
+        ]
+      },
+      "memory-palette-saturation": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102],
+        "value"        : [
+          0.9351674375011141, 0.9999999123749516, 0.9776097864736398, 0.9266528520450434, 1.7856683149117565,
+          1.6831366190031443, 1.6918455578533622, 1.6049375702364626, 1.6483023699594936, 1.6370364243180957,
+          1.678986211776525,  1.0979608978928517, 1.0000001389840312, 0.9999992005476392, 0.970540195522815,
+          0.9682239719070295, 1.0766767084507893, 0.9596787066584412
+        ],
+        "interpolation": [
+           0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0,
+          -1,  0, -1,  0, -1,  0, -1,  0, -1
+        ]
+      },
+      "memory-palette-brightness": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102],
+        "value"        : [
+          0.9219336422007829, 0.8939699798507404, 1.0734380536717232, 1.479031184059606,  1.7361216780531,
+          1.6378997240727835, 1.4337276973528637, 1.139690200352129,  1.1291083922174199, 1.2184649072471354,
+          1.2147776061530895, 1.1027575849306395, 0.8985383971311801, 0.7727058883106306, 0.8121862939207161,
+          0.8909773083460343, 0.969205787007631,  0.9524656640374681
+        ],
+        "interpolation": [
+           0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0,
+          -1,  0, -1,  0, -1,  0, -1,  0, -1
+        ]
+      },
+      "memory-palette-contrast": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102],
+        "value"        : [
+          1.1129446571390327, 1.1509076197459536, 0.9047423745164758, 0.8709853911993654, 0.837900353141164,
+          0.7987827734993692, 0.7724330074384215, 0.8155248319626884, 0.8481650085496946, 0.8417647074768796,
+          0.8940258494311176, 0.9170467810969355, 1.1635074282236764, 1.5308837927483894, 1.3993431829054104,
+          1.2322535125725704, 1.071609128581611,  1.0796626654715908
+        ],
+        "interpolation": [
+           0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0, -1,  0,
+          -1,  0, -1,  0, -1,  0, -1,  0, -1
+        ]
+      },
+      "memory-memory-ground-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 236000],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-memory-ground-child-a-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 65600, 118400, 236000],
+        "value"      : [4.410666740348239, -0.2625132596517608, -0.2625132596517608, -6.083669159651761]
+      },
+      "memory-memory-ground-child-b-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 65600, 140000, 236000],
+        "value"      : [4.73318, 0.06, 0.06, -5.22]
+      },
+      "memory-memory-ground-child-a-body-SpriteAnimator-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 65600, 118400],
+        "value"        : [1, 0, 1],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-ground-child-a-body-SpriteRenderer-frame": {
+        "type"         : "AnimationTrackInt32",
+        "frameNumber"  : [0, 81600, 118400],
+        "value"        : [4, 5, 4],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-ground-child-b-body-SpriteAnimator-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 65600, 140000],
+        "value"        : [1, 0, 1],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-ground-child-b-body-SpriteRenderer-frame": {
+        "type"         : "AnimationTrackInt32",
+        "frameNumber"  : [0, 81600, 118400],
+        "value"        : [4, 5, 4],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-falling-paper-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 118400],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-memory-falling-paper-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 32000, 52000],
+        "value"      : [3.3176732109800264, 0.47942999999999986, -0.5100999999999999]
+      },
+      "memory-memory-falling-paper-Transform-localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 32000, 52000],
+        "value"      : [-0.20343999999999995, -0.20343999999999995, -0.8834399999999999]
+      },
+      "memory-memory-ground-carried-paper-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 118400, 236000],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-shot-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 236000, 465600],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-child-a-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [236000, 280000, 354400, 376000, 398400, 424000],
+        "value"      : [
+          3.49056693,          0.01829999999999984, 0.01829999999999984, 0.5114999999999997,  0.5114999999999997,
+          0.18079999999999985
+        ]
+      },
+      "memory-memory-cliff-child-b-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [236000, 304800, 398400, 424000],
+        "value"      : [5.1654, 0.5213999999999999, 0.5213999999999999, 0.19300000000000012]
+      },
+      "memory-memory-cliff-child-a-body-SpriteAnimator-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 280000, 354400, 376000],
+        "value"        : [1, 0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-child-b-body-SpriteAnimator-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 304800, 398400, 424000],
+        "value"        : [1, 0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-child-b-body-SpriteRenderer-frame": {
+        "type"         : "AnimationTrackInt32",
+        "frameNumber"  : [0, 354400, 398400],
+        "value"        : [4, 5, 4],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-child-a-body-SpriteRenderer-frame": {
+        "type"         : "AnimationTrackInt32",
+        "frameNumber"  : [0, 458400],
+        "value"        : [4, 6],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-memory-cliff-child-a-body-Transform-localScale.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 339200, 398400],
+        "value"        : [-2.5, 2.5, -2.5],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-carried-paper-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 236000, 458400],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-carried-paper-Transform-localScale.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 339200, 398400],
+        "value"        : [2.5, -2.5, 2.5],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-carried-paper-Transform-localPosition.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 339200, 398400],
+        "value"        : [-0.225, 0.225, -0.225],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-cliff-child-a-Transform-localPosition.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [236000, 309600, 314400, 319200, 320000, 324800, 329600, 376000, 388800, 465600],
+        "value": [
+          0.44610000000000016, 0.44610000000000016, 0.6669516258151673,  0.44610000000000016, 0.44610000000000016,
+          0.6669516258151673,  0.44610000000000016, 0.44610000000000016, 0.7061,              0.7061
+        ],
+        "interpolation": [5, -1, 9, 0, 10, 2, 6, 6, 9, 8, 10, 10, 6, 14, 5, -1, 5, -1, 5, -1],
+        "interpolationParameters": [
+           0.15566538869976837,  0.0747280017914408,   0.0,                  0.16032259204978938,  0,
+           0.16032259204978938, -0.15566538869976837,  0.0747280017914408,   0.15566538869976837,  0.0747280017914408,
+           0.0,                  0.16032259204978938,  0,                    0.16032259204978938, -0.15566538869976837,
+           0.0747280017914408
+        ]
+      },
+      "memory-memory-launched-paper-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 458400, 465600],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-launched-paper-Transform-localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [457600, 465600],
+        "value"      : [-0.0467540600000001, -1.4516691599999998]
+      },
+      "memory-memory-launched-paper-Transform-localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [457600, 465600],
+        "value"      : [0.97277393, 1.0951334]
+      },
+      "memory-memory-closeup-paper-Entity-active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 465600, 480800],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "memory-memory-closeup-paper-Transform-localPosition.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [465600, 472000],
+        "value": [1.5045136249517923, -0.31510144590886907],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [-0.0010317484999123796, 0.8954042847764948, 0.0, 0.15556395053186395]
+      },
+      "memory-memory-fade-Transition-progress": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600, 472148, 479368],
+        "value"        : [0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 0.0],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "memory-helmet-flat-camera-GaussianBlur-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 472800],
+        "value"        : [0, 1],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-helmet-flat-camera-GaussianBlur-sigmaWorld.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 472000, 472800, 479368],
+        "value"      : [0.0, 0.0, 0.0848, 0.5964]
+      },
+      "memory-echo-pulse-opacity": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [
+              0,  5600,  6400, 13600, 14400, 22400, 23200, 31200, 32000, 40000, 40800, 48000, 48800, 51200, 52000,
+          54400, 55200, 57600, 58400, 60800
+        ],
+        "value"        : [
+          0.34288718868792545, 0,                   0.47505288010688984, 0,                   0.47969249403903824,
+          0,                   0.4940483521437535,  0,                   0.5237299435204532,  0,
+          0.46736258968819816, 0,                   0.7489882458149154,  0,                   0.83229411534043,
+          0,                   0.913386490127303,   0,                   0.9663937430928649,  0
+        ],
+        "interpolation": [
+           4, -1,  5, -1,  4, -1,  5, -1,  4, -1,  5, -1,  4, -1,  5, -1,  4, -1,  5, -1,  4, -1,  5, -1,  4, -1,  5,
+          -1,  4, -1,  5, -1,  4, -1,  5, -1,  4, -1,  5, -1
+        ]
       }
     },
     "sequences": {
@@ -12958,6 +13442,16 @@
             "id"      : "landing-and-recollection",
             "sequence": "landing-and-recollection",
             "range"   : {"start": 3624000, "end": 3952800}
+          },
+          {
+            "id"      : "childhood-memory",
+            "sequence": "childhood-memory",
+            "range"   : {"start": 3952800, "end": 4433600}
+          },
+          {
+            "id"      : "memory-echo",
+            "sequence": "memory-echo",
+            "range"   : {"start": 3889600, "end": 3952800}
           }
         ]
       },
@@ -36134,8 +36628,8 @@
                                 "type": "box",
                                 "size": {"x": 42.0, "y": 0.0, "z": 0.0}
                               },
-                              "direction"         : {"x": 0.0, "y": -1.0, "z": 0.0},
-                              "speed"             : {"min": 0.62, "max": 0.62},
+                              "direction"         : {"x": 0.4467967062453389, "y": -0.8946355142114114, "z": 0.0},
+                              "speed"             : {"min": 0.7410154121602691, "max": 0.7410154121602691},
                               "lifetime"          : {"min": 24, "max": 24},
                               "startSize"         : {"min": 0.19, "max": 0.28}
                             },
@@ -36183,8 +36677,8 @@
                             }
                           ],
                           "transform" : {
-                            "localPosition": {"x": -15.129834596978732, "y":  1.5294740138573284, "z": 12.5},
-                            "localScale"   : {"x":  11.54975183272174,  "y": 11.54975183272174,   "z":  1.0}
+                            "localPosition": {"x": -15.133179093741457, "y":  1.546915801494086, "z": 12.5},
+                            "localScale"   : {"x":  10.82245381255737,  "y": 10.82245381255737,  "z":  1.0}
                           },
                           "children"  : []
                         },
@@ -36976,30 +37470,6 @@
                           "children"  : []
                         },
                         {
-                          "id"        : "biome-cactus-64",
-                          "name"      : "cactus 64",
-                          "components": [
-                            {"type": "SpriteRenderer", "asset": "biome_cactus_short", "frame": 0}
-                          ],
-                          "transform" : {
-                            "localPosition": {"x": 0.0,               "y": 0.0,               "z": 2.9113155469478333},
-                            "localScale"   : {"x": 2.553505286732962, "y": 2.553505286732962, "z": 1.0               }
-                          },
-                          "children"  : []
-                        },
-                        {
-                          "id"        : "biome-cactus-65",
-                          "name"      : "cactus 65",
-                          "components": [
-                            {"type": "SpriteRenderer", "asset": "biome_cactus_short", "frame": 0}
-                          ],
-                          "transform" : {
-                            "localPosition": {"x": 0.0,               "y": 0.0,               "z": 3.409520844495297},
-                            "localScale"   : {"x": 2.374415064684251, "y": 2.374415064684251, "z": 1.0              }
-                          },
-                          "children"  : []
-                        },
-                        {
                           "id"        : "biome-cactus-66",
                           "name"      : "cactus 66",
                           "components": [
@@ -37008,18 +37478,6 @@
                           "transform" : {
                             "localPosition": {"x": 0.0, "y": 0.0, "z": 2.3879239539890076},
                             "localScale"   : {"x": 2.4719788272621805, "y": 2.4719788272621805, "z": 1.0}
-                          },
-                          "children"  : []
-                        },
-                        {
-                          "id"        : "biome-cactus-67",
-                          "name"      : "cactus 67",
-                          "components": [
-                            {"type": "SpriteRenderer", "asset": "biome_cactus_short", "frame": 0}
-                          ],
-                          "transform" : {
-                            "localPosition": {"x": 0.0,               "y": 0.0,               "z": 3.53930766623575},
-                            "localScale"   : {"x": 2.384860104577498, "y": 2.384860104577498, "z": 1.0             }
                           },
                           "children"  : []
                         },
@@ -38183,6 +38641,78 @@
                             "localScale"   : {"x": 2.4846252390980044, "y": 2.4846252390980044, "z": 1.0}
                           },
                           "children"  : []
+                        },
+                        {
+                          "id"        : "biome-cactus-68",
+                          "name"      : "cactus 68",
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "biome_cactus_short", "frame": 0}
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0, "y": 0, "z": 8.232599351773807},
+                            "localScale"   : {"x": 2.1022886127470475, "y": 2.1022886127470475, "z": 1}
+                          },
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "biome-cactus-69",
+                          "name"      : "cactus 69",
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "biome_cactus_short", "frame": 0}
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0, "y": 0, "z": 1.1066063085120865},
+                            "localScale"   : {"x": 2.4657247943782625, "y": 2.4657247943782625, "z": 1}
+                          },
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "biome-cactus-70",
+                          "name"      : "cactus 70",
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "biome_cactus_tall", "frame": 0}
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0,                 "y": 0,                 "z": 6.182068747618087},
+                            "localScale"   : {"x": 2.334010467032492, "y": 2.334010467032492, "z": 1                }
+                          },
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "biome-cactus-71",
+                          "name"      : "cactus 71",
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "biome_cactus_short", "frame": 0}
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0,                 "y": 0,                 "z": 5.615347019534383},
+                            "localScale"   : {"x": 2.343479547050065, "y": 2.343479547050065, "z": 1                }
+                          },
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "biome-cactus-72",
+                          "name"      : "cactus 72",
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "biome_cactus_short", "frame": 0}
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0, "y": 0, "z": 4.821708422395861},
+                            "localScale"   : {"x": 2.2581666423050173, "y": 2.2581666423050173, "z": 1}
+                          },
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "biome-cactus-73",
+                          "name"      : "cactus 73",
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "biome_cactus_short", "frame": 0}
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0,                "y": 0,                "z": 3.2577590019584703},
+                            "localScale"   : {"x": 2.37987626119731, "y": 2.37987626119731, "z": 1                 }
+                          },
+                          "children"  : []
                         }
                       ]
                     },
@@ -38886,20 +39416,29 @@
                             }
                           ],
                           "children"  : []
-                        },
-                        {
-                          "id"        : "biome-ship-surprise",
-                          "name"      : "ship surprise",
-                          "components": [
-                            {"type": "SpriteRenderer", "asset": "interior_surprise", "frame": 0, "whiteMix": 1}
-                          ],
-                          "transform" : {
-                            "localPosition": {"x": -0.5, "y": 0.37, "z": -0.0001},
-                            "localScale"   : {"x":  1.3, "y": 1.3,  "z":  1.0   }
-                          },
-                          "children"  : []
                         }
                       ]
+                    },
+                    {
+                      "id"        : "biome-ship-surprise",
+                      "name"      : "ship surprise",
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "interior_surprise", "frame": 0, "whiteMix": 1},
+                        {
+                          "type"     : "Flicker",
+                          "frequency": 15,
+                          "dutyCycle": 0.5,
+                          "start"    : {
+                            "frame": 4484,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          }
+                        }
+                      ],
+                      "transform" : {
+                        "localPosition": {"x": -1.1412457187726823, "y": 1.8976939372724178, "z": 5.534257401790836},
+                        "localScale"   : {"x":  5.208239224244326,  "y": 5.208239224244326,  "z": 1                }
+                      },
+                      "children"  : []
                     }
                   ]
                 },
@@ -39321,24 +39860,9 @@
             "target": {"binding": "chapter", "descendant": "biome-cactus-63"}
           },
           {
-            "id"    : "biome-cactus-64",
-            "kind"  : "possessable",
-            "target": {"binding": "chapter", "descendant": "biome-cactus-64"}
-          },
-          {
-            "id"    : "biome-cactus-65",
-            "kind"  : "possessable",
-            "target": {"binding": "chapter", "descendant": "biome-cactus-65"}
-          },
-          {
             "id"    : "biome-cactus-66",
             "kind"  : "possessable",
             "target": {"binding": "chapter", "descendant": "biome-cactus-66"}
-          },
-          {
-            "id"    : "biome-cactus-67",
-            "kind"  : "possessable",
-            "target": {"binding": "chapter", "descendant": "biome-cactus-67"}
           },
           {
             "id"    : "biome-cactus-continuation-0",
@@ -40029,6 +40553,36 @@
             "id"    : "biome-storm-background",
             "kind"  : "possessable",
             "target": {"binding": "chapter", "descendant": "biome-storm-background"}
+          },
+          {
+            "id"    : "biome-cactus-68",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "biome-cactus-68"}
+          },
+          {
+            "id"    : "biome-cactus-69",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "biome-cactus-69"}
+          },
+          {
+            "id"    : "biome-cactus-70",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "biome-cactus-70"}
+          },
+          {
+            "id"    : "biome-cactus-71",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "biome-cactus-71"}
+          },
+          {
+            "id"    : "biome-cactus-72",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "biome-cactus-72"}
+          },
+          {
+            "id"    : "biome-cactus-73",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "biome-cactus-73"}
           }
         ],
         "bindings"      : [
@@ -40465,28 +41019,10 @@
             "track"   : "biome-biome-cactus-63-Transform-localPosition.x"
           },
           {
-            "id"      : "biome-biome-cactus-64-Transform-localPosition.x",
-            "object"  : "biome-cactus-64",
-            "property": {"component": "Transform", "path": "localPosition.x"},
-            "track"   : "biome-biome-cactus-64-Transform-localPosition.x"
-          },
-          {
-            "id"      : "biome-biome-cactus-65-Transform-localPosition.x",
-            "object"  : "biome-cactus-65",
-            "property": {"component": "Transform", "path": "localPosition.x"},
-            "track"   : "biome-biome-cactus-65-Transform-localPosition.x"
-          },
-          {
             "id"      : "biome-biome-cactus-66-Transform-localPosition.x",
             "object"  : "biome-cactus-66",
             "property": {"component": "Transform", "path": "localPosition.x"},
             "track"   : "biome-biome-cactus-66-Transform-localPosition.x"
-          },
-          {
-            "id"      : "biome-biome-cactus-67-Transform-localPosition.x",
-            "object"  : "biome-cactus-67",
-            "property": {"component": "Transform", "path": "localPosition.x"},
-            "track"   : "biome-biome-cactus-67-Transform-localPosition.x"
           },
           {
             "id"      : "biome-biome-cactus-continuation-0-Transform-localPosition.x",
@@ -41815,28 +42351,10 @@
             "track"   : "biome-biome-cactus-63-SpriteRenderer-color.a"
           },
           {
-            "id"      : "biome-biome-cactus-64-SpriteRenderer-color.a",
-            "object"  : "biome-cactus-64",
-            "property": {"component": "SpriteRenderer", "path": "color.a"},
-            "track"   : "biome-biome-cactus-64-SpriteRenderer-color.a"
-          },
-          {
-            "id"      : "biome-biome-cactus-65-SpriteRenderer-color.a",
-            "object"  : "biome-cactus-65",
-            "property": {"component": "SpriteRenderer", "path": "color.a"},
-            "track"   : "biome-biome-cactus-65-SpriteRenderer-color.a"
-          },
-          {
             "id"      : "biome-biome-cactus-66-SpriteRenderer-color.a",
             "object"  : "biome-cactus-66",
             "property": {"component": "SpriteRenderer", "path": "color.a"},
             "track"   : "biome-biome-cactus-66-SpriteRenderer-color.a"
-          },
-          {
-            "id"      : "biome-biome-cactus-67-SpriteRenderer-color.a",
-            "object"  : "biome-cactus-67",
-            "property": {"component": "SpriteRenderer", "path": "color.a"},
-            "track"   : "biome-biome-cactus-67-SpriteRenderer-color.a"
           },
           {
             "id"      : "biome-biome-cactus-continuation-0-SpriteRenderer-color.a",
@@ -42449,6 +42967,78 @@
             "object"  : "biome-storm-background",
             "property": {"component": "PlaneRenderer", "path": "color.a"},
             "track"   : "biome-biome-storm-background-PlaneRenderer-color.a"
+          },
+          {
+            "id"      : "biome-biome-cactus-68-Transform-localPosition.x",
+            "object"  : "biome-cactus-68",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "biome-biome-cactus-68-Transform-localPosition.x"
+          },
+          {
+            "id"      : "biome-biome-cactus-68-SpriteRenderer-color.a",
+            "object"  : "biome-cactus-68",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "biome-biome-cactus-68-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "biome-biome-cactus-69-Transform-localPosition.x",
+            "object"  : "biome-cactus-69",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "biome-biome-cactus-69-Transform-localPosition.x"
+          },
+          {
+            "id"      : "biome-biome-cactus-69-SpriteRenderer-color.a",
+            "object"  : "biome-cactus-69",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "biome-biome-cactus-69-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "biome-biome-cactus-70-Transform-localPosition.x",
+            "object"  : "biome-cactus-70",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "biome-biome-cactus-70-Transform-localPosition.x"
+          },
+          {
+            "id"      : "biome-biome-cactus-70-SpriteRenderer-color.a",
+            "object"  : "biome-cactus-70",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "biome-biome-cactus-70-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "biome-biome-cactus-71-Transform-localPosition.x",
+            "object"  : "biome-cactus-71",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "biome-biome-cactus-71-Transform-localPosition.x"
+          },
+          {
+            "id"      : "biome-biome-cactus-71-SpriteRenderer-color.a",
+            "object"  : "biome-cactus-71",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "biome-biome-cactus-71-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "biome-biome-cactus-72-Transform-localPosition.x",
+            "object"  : "biome-cactus-72",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "biome-biome-cactus-72-Transform-localPosition.x"
+          },
+          {
+            "id"      : "biome-biome-cactus-72-SpriteRenderer-color.a",
+            "object"  : "biome-cactus-72",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "biome-biome-cactus-72-SpriteRenderer-color.a"
+          },
+          {
+            "id"      : "biome-biome-cactus-73-Transform-localPosition.x",
+            "object"  : "biome-cactus-73",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "biome-biome-cactus-73-Transform-localPosition.x"
+          },
+          {
+            "id"      : "biome-biome-cactus-73-SpriteRenderer-color.a",
+            "object"  : "biome-cactus-73",
+            "property": {"component": "SpriteRenderer", "path": "color.a"},
+            "track"   : "biome-biome-cactus-73-SpriteRenderer-color.a"
           }
         ],
         "sequences"     : []
@@ -42690,8 +43280,8 @@
                             {"type": "SpriteRenderer", "asset": "helmet_ship"}
                           ],
                           "transform" : {
-                            "localPosition": {"x": 0.0,               "y": 0.0,               "z": 0.0},
-                            "localScale"   : {"x": 3.764363560364204, "y": 3.764363560364204, "z": 1.0}
+                            "localPosition": {"x": 0.0,               "y": -0.01084136705384886, "z": 0.0},
+                            "localScale"   : {"x": 3.764363560364204, "y":  3.764363560364204,   "z": 1.0}
                           },
                           "children"  : []
                         },
@@ -43190,6 +43780,1679 @@
             "object"  : "landing-entry-fade",
             "property": {"component": "Transition", "path": "progress"},
             "track"   : "landing-landing-entry-fade-Transition-progress"
+          }
+        ],
+        "sequences"     : []
+      },
+      "childhood-memory": {
+        "tickResolution": {"numerator": 24000, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 480800},
+        "objects"       : [
+          {
+            "id"      : "chapter",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "memory-world",
+              "name"      : "world",
+              "components": [],
+              "children"  : [
+                {
+                  "id"        : "memory-content",
+                  "name"      : "content",
+                  "components": [],
+                  "children"  : [
+                    {
+                      "id"        : "memory-background_base",
+                      "name"      : "background_base",
+                      "components": [
+                        {
+                          "type" : "TiledSpriteRenderer",
+                          "asset": "memory_background_base",
+                          "wrap" : {"x": "repeat", "y": "clamp"}
+                        },
+                        {
+                          "type"       : "ProceduralNoise",
+                          "seed"       : 4985325,
+                          "textureSize": {"x": 512, "y": 256},
+                          "worldSize"  : {"x": 2.048, "y": 1.024},
+                          "range"      : 0.3,
+                          "bands"      : [
+                            { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                            { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                            { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                          ]
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -3.2, "y": 1.8, "z": 2.0},
+                        "localScale"   : {"x":  2.5, "y": 2.5, "z": 1.0}
+                      }
+                    },
+                    {
+                      "id"        : "memory-closeup-background_base",
+                      "name"      : "closeup background_base",
+                      "components": [
+                        {
+                          "type" : "TiledSpriteRenderer",
+                          "asset": "memory_closeup_background_base",
+                          "wrap" : {"x": "repeat", "y": "clamp"}
+                        },
+                        {
+                          "type"       : "ProceduralNoise",
+                          "seed"       : 4985325,
+                          "textureSize": {"x": 512, "y": 256},
+                          "worldSize"  : {"x": 2.048, "y": 1.024},
+                          "range"      : 0.3,
+                          "bands"      : [
+                            { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                            { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                            { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                          ]
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -3.2, "y": 1.8, "z": 2.0},
+                        "localScale"   : {"x":  2.5, "y": 2.5, "z": 1.0}
+                      }
+                    },
+                    {
+                      "id"        : "memory-secondary_pattern",
+                      "name"      : "secondary_pattern",
+                      "components": [
+                        {
+                          "type" : "TiledSpriteRenderer",
+                          "asset": "memory_secondary_pattern",
+                          "wrap" : {"x": "repeat", "y": "clamp"}
+                        },
+                        {
+                          "type"       : "ProceduralNoise",
+                          "seed"       : 4985325,
+                          "textureSize": {"x": 512, "y": 256},
+                          "worldSize"  : {"x": 2.048, "y": 1.024},
+                          "range"      : 0.3,
+                          "bands"      : [
+                            { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                            { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                            { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                          ]
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -3.2, "y": 1.8, "z": 1.9},
+                        "localScale"   : {"x":  2.5, "y": 2.5, "z": 1.0}
+                      }
+                    },
+                    {
+                      "id"        : "memory-closeup-secondary_pattern",
+                      "name"      : "closeup secondary_pattern",
+                      "components": [
+                        {
+                          "type" : "TiledSpriteRenderer",
+                          "asset": "memory_closeup_secondary_pattern",
+                          "wrap" : {"x": "repeat", "y": "clamp"}
+                        },
+                        {
+                          "type"       : "ProceduralNoise",
+                          "seed"       : 4985325,
+                          "textureSize": {"x": 512, "y": 256},
+                          "worldSize"  : {"x": 2.048, "y": 1.024},
+                          "range"      : 0.3,
+                          "bands"      : [
+                            { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                            { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                            { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                          ]
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -3.2, "y": 1.8, "z": 1.9},
+                        "localScale"   : {"x":  2.5, "y": 2.5, "z": 1.0}
+                      }
+                    },
+                    {
+                      "id"        : "memory-moon",
+                      "name"      : "Memory moon",
+                      "active"    : true,
+                      "transform" : {
+                        "localPosition": {"x": -1.671147594074566, "y": 1.0493534135983635, "z": 1.0},
+                        "localRotation": {"x":  0,                 "y": 0,                  "z": 0  },
+                        "localScale"   : {"x":  2.5,               "y": 2.5,                "z": 1.0}
+                      },
+                      "components": [
+                        {
+                          "type"      : "SpriteRenderer",
+                          "enabled"   : true,
+                          "asset"     : "moon",
+                          "color"     : {"r": 1, "g": 1, "b": 1, "a": 1},
+                          "hueDegrees": 0,
+                          "saturation": 1,
+                          "brightness": 1
+                        },
+                        {
+                          "type"       : "DropShadow",
+                          "enabled"    : true,
+                          "offsetWorld": {"x": 0, "y": 0},
+                          "sigmaWorld" : 0.017331396369515004,
+                          "color"      : {"r": 0, "g": 0, "b": 0, "a": 1},
+                          "opacity"    : 1
+                        },
+                        {
+                          "type"      : "Glow",
+                          "enabled"   : true,
+                          "threshold" : 0.37254901960784315,
+                          "softness"  : 0.39215686274509803,
+                          "sigmaWorld": 0.0181153109167027,
+                          "intensity" : 1.0474519191726852,
+                          "color"     : {"r": 1, "g": 0.64, "b": 0.95, "a": 1}
+                        },
+                        {
+                          "type"       : "ProceduralNoise",
+                          "seed"       : 4985325,
+                          "textureSize": {"x": 512, "y": 256},
+                          "worldSize"  : {"x": 2.048, "y": 1.024},
+                          "range"      : 0.3,
+                          "bands"      : [
+                            { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                            { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                            { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                          ],
+                          "origin"     : {"x": -0.6115409623701736, "y": 0.30025863456065455}
+                        }
+                      ],
+                      "children"  : []
+                    },
+                    {
+                      "id"        : "memory-closeup-moon",
+                      "name"      : "Moon close-up",
+                      "active"    : true,
+                      "transform" : {
+                        "localPosition": {"x": -1.1314794290974879, "y": -0.0010087783218449432, "z": 1.0},
+                        "localRotation": {"x":  0,                  "y":  0,                     "z": 0  },
+                        "localScale"   : {"x": 12.5,                "y": 12.5,                   "z": 1.0}
+                      },
+                      "components": [
+                        {
+                          "type"      : "SpriteRenderer",
+                          "enabled"   : true,
+                          "asset"     : "memory_moon",
+                          "color"     : {"r": 1, "g": 1, "b": 1, "a": 1},
+                          "hueDegrees": 0,
+                          "saturation": 1,
+                          "brightness": 1,
+                          "contrast"  : 1
+                        },
+                        {
+                          "type"       : "DropShadow",
+                          "enabled"    : true,
+                          "offsetWorld": {"x": 0, "y": 0},
+                          "sigmaWorld" : 0.015470714156982864,
+                          "color"      : {"r": 0, "g": 0, "b": 0, "a": 1},
+                          "opacity"    : 0.9999999999981284
+                        },
+                        {
+                          "type"      : "Glow",
+                          "enabled"   : true,
+                          "threshold" : 0.37254901960784315,
+                          "softness"  : 0.39215686274509803,
+                          "sigmaWorld": 0.01622981763527326,
+                          "intensity" : 0.7408415459427118,
+                          "color"     : {"r": 0.5, "g": 0.9, "b": 1, "a": 1}
+                        },
+                        {
+                          "type"     : "SecondaryTexture",
+                          "asset"    : "memory_secondary_pattern",
+                          "worldSize": {"x": 0.016, "y": 0.28800000000000003},
+                          "origin"   : {"x": -0.16548164567220097, "y": 0.1440807022657476},
+                          "opacity"  : 0.3720864598100621
+                        },
+                        {
+                          "type"       : "ProceduralNoise",
+                          "seed"       : 4985325,
+                          "textureSize": {"x": 512, "y": 256},
+                          "worldSize"  : {"x": 0.4096, "y": 0.2048},
+                          "range"      : 0.3,
+                          "bands"      : [
+                            { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                            { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                            { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                          ],
+                          "origin"     : {"x": -0.16548164567220097, "y": 0.1440807022657476}
+                        }
+                      ],
+                      "children"  : []
+                    },
+                    {
+                      "id"        : "memory-ground",
+                      "name"      : "ground",
+                      "components": [],
+                      "children"  : [
+                        {
+                          "id"        : "memory-floor",
+                          "name"      : "floor",
+                          "components": [
+                            {
+                              "type" : "TiledSpriteRenderer",
+                              "asset": "memory_ground_tile",
+                              "wrap" : {"x": "repeat", "y": "repeatBottom"}
+                            },
+                            {
+                              "type"       : "ProceduralNoise",
+                              "seed"       : 4985325,
+                              "textureSize": {"x": 512, "y": 256},
+                              "worldSize"  : {"x": 2.048, "y": 1.024},
+                              "range"      : 0.3,
+                              "bands"      : [
+                                { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                                { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                                { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                              ]
+                            }
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": -3.125, "y": -1.085, "z": -0.4},
+                            "localScale"   : {"x":  2.5,   "y":  2.5,   "z":  1.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-grass",
+                          "name"      : "grass",
+                          "components": [
+                            {
+                              "type" : "TiledSpriteRenderer",
+                              "asset": "memory_grass_tile",
+                              "wrap" : {"x": "repeat", "y": "transparent"}
+                            },
+                            {
+                              "type"       : "ProceduralNoise",
+                              "seed"       : 4985325,
+                              "textureSize": {"x": 512, "y": 256},
+                              "worldSize"  : {"x": 2.048, "y": 1.024},
+                              "range"      : 0.3,
+                              "bands"      : [
+                                { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                                { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                                { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                              ]
+                            }
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": -3.025013259651761, "y": -0.9548961403949915, "z": 0.2},
+                            "localScale"   : {"x":  2.5,               "y":  2.5,                "z": 1.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-ground-child-a",
+                          "name"      : "ground child a",
+                          "components": [],
+                          "children"  : [
+                            {
+                              "id"        : "memory-ground-child-a-body",
+                              "name"      : "ground child a body",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "landscape_child", "frame": 4},
+                                {
+                                  "type"           : "SpriteAnimator",
+                                  "enabled"        : false,
+                                  "start"          : {
+                                    "frame": 4930,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "frames"         : [0, 1, 2, 3],
+                                  "framesPerSecond": 10,
+                                  "loop"           : true,
+                                  "hideOutside"    : false
+                                }
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localScale": {"x": -2.5, "y": 2.5, "z": 1.0}
+                              }
+                            },
+                            {
+                              "id"        : "memory-ground-carried-paper",
+                              "name"      : "ground carried paper",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small"}
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localPosition": {"x": -0.225, "y": 0.2614, "z": 0.1},
+                                "localScale"   : {"x":  2.5,   "y": 2.5,    "z": 1.0}
+                              }
+                            }
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": -0.2625132596517608, "y": -1.07255, "z": 0.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-ground-child-b",
+                          "name"      : "ground child b",
+                          "components": [],
+                          "children"  : [
+                            {
+                              "id"        : "memory-ground-child-b-body",
+                              "name"      : "ground child b body",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "landscape_child", "frame": 4},
+                                {
+                                  "type"           : "SpriteAnimator",
+                                  "enabled"        : false,
+                                  "start"          : {
+                                    "frame": 4930,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "frames"         : [0, 1, 2, 3],
+                                  "framesPerSecond": 10,
+                                  "loop"           : true,
+                                  "hideOutside"    : false
+                                }
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localScale": {"x": -2.5, "y": 2.5, "z": 1.0}
+                              }
+                            }
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0.06, "y": -1.07255, "z": 0.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-falling-paper",
+                          "name"      : "falling paper",
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small", "frame": 0}
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": 3.3, "y": -0.20343999999999995, "z": 0.1},
+                            "localScale"   : {"x": 2.5, "y":  2.5,                 "z": 1.0}
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id"        : "memory-cliff-shot",
+                      "name"      : "cliff shot",
+                      "components": [],
+                      "children"  : [
+                        {
+                          "id"       : "memory-cliff",
+                          "transform": {
+                            "localPosition": {"x": -0.3, "y": 0.75, "z": -0.4},
+                            "localScale"   : {"x":  5,   "y": 5              }
+                          },
+                          "children" : [
+                            {
+                              "id"        : "memory-cliff-silhouette",
+                              "transform" : {
+                                "localPosition": {"z": 0.001}
+                              },
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "memory_cliff", "brightness": 0}
+                              ]
+                            },
+                            {
+                              "id"        : "memory-cliff-color",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "memory_cliff"},
+                                { "type": "OpacityGradient", "start": {"x": 1.64, "y": 0}, "end": {"x": 0.7, "y": 0} }
+                              ]
+                            },
+                            {
+                              "id"        : "memory-cliff-continuation",
+                              "transform" : {
+                                "localPosition": {"z": 0.002}
+                              },
+                              "components": [
+                                {
+                                  "type"      : "TiledSpriteRenderer",
+                                  "asset"     : "memory_grass_silhouette_tile",
+                                  "wrap"      : {"x": "repeat", "y": "clampBottom"},
+                                  "origin"    : {"x": 1.65, "y": 0},
+                                  "clipBounds": {"left": 1.6499, "right": null, "top": null, "bottom": null}
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id"        : "memory-cliff-child-a",
+                          "name"      : "cliff child a",
+                          "components": [],
+                          "children"  : [
+                            {
+                              "id"        : "memory-cliff-child-a-body",
+                              "name"      : "cliff child a body",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "landscape_child", "frame": 4},
+                                {
+                                  "type"           : "SpriteAnimator",
+                                  "enabled"        : false,
+                                  "start"          : {
+                                    "frame": 4978,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "frames"         : [0, 1, 2, 3],
+                                  "framesPerSecond": 10,
+                                  "loop"           : true,
+                                  "hideOutside"    : false
+                                }
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localScale": {"x": -2.5, "y": 2.5, "z": 1.0}
+                              }
+                            },
+                            {
+                              "id"        : "memory-cliff-carried-paper",
+                              "name"      : "cliff carried paper",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small"}
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localPosition": {"x": -0.225, "y": 0.263, "z": 0.1},
+                                "localScale"   : {"x":  2.5,   "y": 2.5,   "z": 1.0}
+                              }
+                            }
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0.01829999999999984, "y": 0.44610000000000016, "z": 0.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-cliff-child-b",
+                          "name"      : "cliff child b",
+                          "components": [],
+                          "children"  : [
+                            {
+                              "id"        : "memory-cliff-child-b-body",
+                              "name"      : "cliff child b body",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "landscape_child", "frame": 4},
+                                {
+                                  "type"           : "SpriteAnimator",
+                                  "enabled"        : false,
+                                  "start"          : {
+                                    "frame": 4978,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "frames"         : [0, 1, 2, 3],
+                                  "framesPerSecond": 10,
+                                  "loop"           : true,
+                                  "hideOutside"    : false
+                                }
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localScale": {"x": -2.5, "y": 2.5, "z": 1.0}
+                              }
+                            }
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0.5213999999999999, "y": 0.44780000000000003, "z": 0.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-launched-paper",
+                          "name"      : "launched paper",
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small", "frame": 0}
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": -0.18725000000000022, "y": 0.98501, "z": -0.1},
+                            "localScale"   : {"x":  2.5,                 "y": 2.5,     "z":  1.0}
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id"        : "memory-closeup-paper",
+                      "name"      : "closeup paper",
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "paper_plane", "frame": 0}
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 1.5045, "y": 0.49992999999999993, "z": -0.1},
+                        "localScale"   : {"x": 5.0,    "y": 5.0,                 "z":  1.0}
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id"        : "memory-fade",
+                  "name"      : "fade",
+                  "components": [
+                    { "type": "Transition", "kind": "fade", "target": {"entity": "memory-content"} }
+                  ],
+                  "children"  : [],
+                  "transform" : {
+                    "localPosition": {"x": 0.0, "y": 0.0, "z": -5.0}
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id"    : "memory-background_base",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-background_base"}
+          },
+          {
+            "id"    : "memory-closeup-background_base",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-closeup-background_base"}
+          },
+          {
+            "id"    : "memory-secondary_pattern",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-secondary_pattern"}
+          },
+          {
+            "id"    : "memory-closeup-secondary_pattern",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-closeup-secondary_pattern"}
+          },
+          {
+            "id"    : "memory-moon",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-moon"}
+          },
+          {
+            "id"    : "memory-closeup-moon",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-closeup-moon"}
+          },
+          {
+            "id"    : "memory-ground",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-ground"}
+          },
+          {
+            "id"    : "memory-ground-child-a",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-ground-child-a"}
+          },
+          {
+            "id"    : "memory-ground-child-b",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-ground-child-b"}
+          },
+          {
+            "id"    : "memory-ground-child-a-body",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-ground-child-a-body"}
+          },
+          {
+            "id"    : "memory-ground-child-b-body",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-ground-child-b-body"}
+          },
+          {
+            "id"    : "memory-falling-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-falling-paper"}
+          },
+          {
+            "id"    : "memory-ground-carried-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-ground-carried-paper"}
+          },
+          {
+            "id"    : "memory-cliff-shot",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-cliff-shot"}
+          },
+          {
+            "id"    : "memory-cliff-child-a",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-cliff-child-a"}
+          },
+          {
+            "id"    : "memory-cliff-child-b",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-cliff-child-b"}
+          },
+          {
+            "id"    : "memory-cliff-child-a-body",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-cliff-child-a-body"}
+          },
+          {
+            "id"    : "memory-cliff-child-b-body",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-cliff-child-b-body"}
+          },
+          {
+            "id"    : "memory-cliff-carried-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-cliff-carried-paper"}
+          },
+          {
+            "id"    : "memory-launched-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-launched-paper"}
+          },
+          {
+            "id"    : "memory-closeup-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-closeup-paper"}
+          },
+          {
+            "id"    : "memory-fade",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-fade"}
+          },
+          {
+            "id"    : "helmet-flat-camera",
+            "kind"  : "possessable",
+            "target": {"entity": "helmet-flat-camera"}
+          }
+        ],
+        "bindings"      : [
+          {
+            "id"      : "memory-memory-background_base-Entity-active",
+            "object"  : "memory-background_base",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-background_base-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-closeup-background_base-Entity-active",
+            "object"  : "memory-closeup-background_base",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-closeup-background_base-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-secondary_pattern-Entity-active",
+            "object"  : "memory-secondary_pattern",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-secondary_pattern-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-closeup-secondary_pattern-Entity-active",
+            "object"  : "memory-closeup-secondary_pattern",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-closeup-secondary_pattern-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-moon-Entity-active",
+            "object"  : "memory-moon",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-moon-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-closeup-moon-Entity-active",
+            "object"  : "memory-closeup-moon",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-closeup-moon-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-ground-Entity-active",
+            "object"  : "memory-ground",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-ground-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-ground-child-a-Transform-localPosition.x",
+            "object"  : "memory-ground-child-a",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-ground-child-a-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-memory-ground-child-b-Transform-localPosition.x",
+            "object"  : "memory-ground-child-b",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-ground-child-b-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-memory-ground-child-a-body-SpriteAnimator-enabled",
+            "object"  : "memory-ground-child-a-body",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "memory-memory-ground-child-a-body-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "memory-memory-ground-child-a-body-SpriteRenderer-frame",
+            "object"  : "memory-ground-child-a-body",
+            "property": {"component": "SpriteRenderer", "path": "frame"},
+            "track"   : "memory-memory-ground-child-a-body-SpriteRenderer-frame"
+          },
+          {
+            "id"      : "memory-memory-ground-child-b-body-SpriteAnimator-enabled",
+            "object"  : "memory-ground-child-b-body",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "memory-memory-ground-child-b-body-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "memory-memory-ground-child-b-body-SpriteRenderer-frame",
+            "object"  : "memory-ground-child-b-body",
+            "property": {"component": "SpriteRenderer", "path": "frame"},
+            "track"   : "memory-memory-ground-child-b-body-SpriteRenderer-frame"
+          },
+          {
+            "id"      : "memory-memory-falling-paper-Entity-active",
+            "object"  : "memory-falling-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-falling-paper-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-falling-paper-Transform-localPosition.x",
+            "object"  : "memory-falling-paper",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-falling-paper-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-memory-falling-paper-Transform-localPosition.y",
+            "object"  : "memory-falling-paper",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "memory-memory-falling-paper-Transform-localPosition.y"
+          },
+          {
+            "id"      : "memory-memory-ground-carried-paper-Entity-active",
+            "object"  : "memory-ground-carried-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-ground-carried-paper-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-cliff-shot-Entity-active",
+            "object"  : "memory-cliff-shot",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-cliff-shot-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-cliff-child-a-Transform-localPosition.x",
+            "object"  : "memory-cliff-child-a",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-cliff-child-a-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-memory-cliff-child-b-Transform-localPosition.x",
+            "object"  : "memory-cliff-child-b",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-cliff-child-b-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-memory-cliff-child-a-body-SpriteAnimator-enabled",
+            "object"  : "memory-cliff-child-a-body",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "memory-memory-cliff-child-a-body-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "memory-memory-cliff-child-b-body-SpriteAnimator-enabled",
+            "object"  : "memory-cliff-child-b-body",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "memory-memory-cliff-child-b-body-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "memory-memory-cliff-child-b-body-SpriteRenderer-frame",
+            "object"  : "memory-cliff-child-b-body",
+            "property": {"component": "SpriteRenderer", "path": "frame"},
+            "track"   : "memory-memory-cliff-child-b-body-SpriteRenderer-frame"
+          },
+          {
+            "id"      : "memory-memory-cliff-child-a-body-SpriteRenderer-frame",
+            "object"  : "memory-cliff-child-a-body",
+            "property": {"component": "SpriteRenderer", "path": "frame"},
+            "track"   : "memory-memory-cliff-child-a-body-SpriteRenderer-frame"
+          },
+          {
+            "id"      : "memory-memory-cliff-child-a-body-Transform-localScale.x",
+            "object"  : "memory-cliff-child-a-body",
+            "property": {"component": "Transform", "path": "localScale.x"},
+            "track"   : "memory-memory-cliff-child-a-body-Transform-localScale.x"
+          },
+          {
+            "id"      : "memory-memory-cliff-carried-paper-Entity-active",
+            "object"  : "memory-cliff-carried-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-cliff-carried-paper-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-cliff-carried-paper-Transform-localScale.x",
+            "object"  : "memory-cliff-carried-paper",
+            "property": {"component": "Transform", "path": "localScale.x"},
+            "track"   : "memory-memory-cliff-carried-paper-Transform-localScale.x"
+          },
+          {
+            "id"      : "memory-memory-cliff-carried-paper-Transform-localPosition.x",
+            "object"  : "memory-cliff-carried-paper",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-cliff-carried-paper-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-memory-cliff-child-a-Transform-localPosition.y",
+            "object"  : "memory-cliff-child-a",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "memory-memory-cliff-child-a-Transform-localPosition.y"
+          },
+          {
+            "id"      : "memory-memory-launched-paper-Entity-active",
+            "object"  : "memory-launched-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-launched-paper-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-launched-paper-Transform-localPosition.x",
+            "object"  : "memory-launched-paper",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-launched-paper-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-memory-launched-paper-Transform-localPosition.y",
+            "object"  : "memory-launched-paper",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "memory-memory-launched-paper-Transform-localPosition.y"
+          },
+          {
+            "id"      : "memory-memory-closeup-paper-Entity-active",
+            "object"  : "memory-closeup-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-closeup-paper-Entity-active"
+          },
+          {
+            "id"      : "memory-memory-closeup-paper-Transform-localPosition.x",
+            "object"  : "memory-closeup-paper",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-closeup-paper-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-memory-fade-Transition-progress",
+            "object"  : "memory-fade",
+            "property": {"component": "Transition", "path": "progress"},
+            "track"   : "memory-memory-fade-Transition-progress"
+          },
+          {
+            "id"      : "memory-helmet-flat-camera-GaussianBlur-enabled",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "GaussianBlur", "path": "enabled"},
+            "track"   : "memory-helmet-flat-camera-GaussianBlur-enabled"
+          },
+          {
+            "id"      : "memory-helmet-flat-camera-GaussianBlur-sigmaWorld.x",
+            "object"  : "helmet-flat-camera",
+            "property": {"component": "GaussianBlur", "path": "sigmaWorld.x"},
+            "track"   : "memory-helmet-flat-camera-GaussianBlur-sigmaWorld.x"
+          }
+        ],
+        "sequences"     : [
+          {
+            "id"              : "palette",
+            "sequence"        : "memory-palette",
+            "range"           : {"start": 0, "end": 465600},
+            "loop"            : true,
+            "firstLoopOffset" : 66,
+            "bindingOverrides": {
+              "moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-0-burst_a",
+            "sequence"        : "forward-burst_a",
+            "range"           : {"start": 0, "end": 12800},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-0-spark_b",
+            "sequence"        : "forward-spark_b",
+            "range"           : {"start": 12800, "end": 56000},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-0-burst_c",
+            "sequence"        : "forward-burst_c",
+            "range"           : {"start": 24800, "end": 47200},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-0-moon_surface",
+            "sequence"        : "forward-moon_surface",
+            "range"           : {"start": 36000, "end": 56800},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-1-burst_a",
+            "sequence"        : "forward-burst_a",
+            "range"           : {"start": 59200, "end": 72000},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-1-spark_b",
+            "sequence"        : "forward-spark_b",
+            "range"           : {"start": 72000, "end": 115200},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-1-burst_c",
+            "sequence"        : "forward-burst_c",
+            "range"           : {"start": 84000, "end": 106400},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-1-moon_surface",
+            "sequence"        : "forward-moon_surface",
+            "range"           : {"start": 95200, "end": 116000},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-2-burst_a",
+            "sequence"        : "forward-burst_a",
+            "range"           : {"start": 118400, "end": 131200},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-2-spark_b",
+            "sequence"        : "forward-spark_b",
+            "range"           : {"start": 131200, "end": 174400},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-2-burst_c",
+            "sequence"        : "forward-burst_c",
+            "range"           : {"start": 143200, "end": 165600},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-2-moon_surface",
+            "sequence"        : "forward-moon_surface",
+            "range"           : {"start": 154400, "end": 175200},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-3-burst_a",
+            "sequence"        : "forward-burst_a",
+            "range"           : {"start": 177600, "end": 190400},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-3-spark_b",
+            "sequence"        : "forward-spark_b",
+            "range"           : {"start": 190400, "end": 233600},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-3-burst_c",
+            "sequence"        : "forward-burst_c",
+            "range"           : {"start": 202400, "end": 224800},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-3-moon_surface",
+            "sequence"        : "forward-moon_surface",
+            "range"           : {"start": 213600, "end": 234400},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-4-burst_a",
+            "sequence"        : "forward-burst_a",
+            "range"           : {"start": 236000, "end": 248800},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-4-spark_b",
+            "sequence"        : "forward-spark_b",
+            "range"           : {"start": 248800, "end": 292000},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-4-burst_c",
+            "sequence"        : "forward-burst_c",
+            "range"           : {"start": 260800, "end": 283200},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-4-moon_surface",
+            "sequence"        : "forward-moon_surface",
+            "range"           : {"start": 272000, "end": 292800},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-5-burst_a",
+            "sequence"        : "forward-burst_a",
+            "range"           : {"start": 295200, "end": 308000},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-5-spark_b",
+            "sequence"        : "forward-spark_b",
+            "range"           : {"start": 308000, "end": 351200},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-5-burst_c",
+            "sequence"        : "forward-burst_c",
+            "range"           : {"start": 320000, "end": 342400},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-5-moon_surface",
+            "sequence"        : "forward-moon_surface",
+            "range"           : {"start": 331200, "end": 352000},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-6-burst_a",
+            "sequence"        : "forward-burst_a",
+            "range"           : {"start": 353600, "end": 366400},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-6-spark_b",
+            "sequence"        : "forward-spark_b",
+            "range"           : {"start": 366400, "end": 409600},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-6-burst_c",
+            "sequence"        : "forward-burst_c",
+            "range"           : {"start": 378400, "end": 400800},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-6-moon_surface",
+            "sequence"        : "forward-moon_surface",
+            "range"           : {"start": 389600, "end": 410400},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-7-burst_a",
+            "sequence"        : "forward-burst_a",
+            "range"           : {"start": 412000, "end": 424800},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-7-spark_b",
+            "sequence"        : "forward-spark_b",
+            "range"           : {"start": 424800, "end": 465600},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-7-burst_c",
+            "sequence"        : "forward-burst_c",
+            "range"           : {"start": 436800, "end": 459200},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          },
+          {
+            "id"              : "flame-7-moon_surface",
+            "sequence"        : "forward-moon_surface",
+            "range"           : {"start": 448000, "end": 465600},
+            "bindingOverrides": {
+              "forward-moon": {"binding": "memory-moon"}
+            }
+          }
+        ]
+      },
+      "memory-palette": {
+        "tickResolution": {"numerator": 30, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 108},
+        "objects"       : [
+          {"id": "moon", "kind": "possessable"}
+        ],
+        "bindings"      : [
+          {
+            "id"      : "hueDegrees",
+            "object"  : "moon",
+            "property": {"component": "SpriteRenderer", "path": "hueDegrees"},
+            "track"   : "memory-palette-hueDegrees"
+          },
+          {
+            "id"      : "saturation",
+            "object"  : "moon",
+            "property": {"component": "SpriteRenderer", "path": "saturation"},
+            "track"   : "memory-palette-saturation"
+          },
+          {
+            "id"      : "brightness",
+            "object"  : "moon",
+            "property": {"component": "SpriteRenderer", "path": "brightness"},
+            "track"   : "memory-palette-brightness"
+          },
+          {
+            "id"      : "contrast",
+            "object"  : "moon",
+            "property": {"component": "SpriteRenderer", "path": "contrast"},
+            "track"   : "memory-palette-contrast"
+          }
+        ],
+        "sequences"     : []
+      },
+      "memory-echo": {
+        "tickResolution": {"numerator": 24000, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 63200},
+        "objects"       : [
+          {
+            "id"      : "chapter",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "memory-echo-stage",
+              "name"      : "echo stage",
+              "components": [],
+              "children"  : [
+                {
+                  "id"        : "memory-echo-content",
+                  "name"      : "echo content",
+                  "components": [],
+                  "children"  : [
+                    {
+                      "id"        : "memory-echo-ground",
+                      "name"      : "ground",
+                      "components": [],
+                      "children"  : [
+                        {
+                          "id"        : "memory-echo-floor",
+                          "name"      : "floor",
+                          "components": [
+                            {
+                              "type"      : "TiledSpriteRenderer",
+                              "asset"     : "landscape_ground_tile",
+                              "wrap"      : {"x": "repeat", "y": "repeatBottom"},
+                              "saturation": 0,
+                              "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                            },
+                            {
+                              "type"       : "ProceduralNoise",
+                              "seed"       : 4985325,
+                              "textureSize": {"x": 512, "y": 256},
+                              "worldSize"  : {"x": 2.048, "y": 1.024},
+                              "range"      : 0.3,
+                              "bands"      : [
+                                { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                                { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                                { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                              ]
+                            }
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": -3.125, "y": -1.085, "z": -0.4},
+                            "localScale"   : {"x":  2.5,   "y":  2.5,   "z":  1.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-echo-grass",
+                          "name"      : "grass",
+                          "components": [
+                            {
+                              "type"      : "TiledSpriteRenderer",
+                              "asset"     : "landscape_grass_tile",
+                              "wrap"      : {"x": "repeat", "y": "transparent"},
+                              "saturation": 0,
+                              "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                            },
+                            {
+                              "type"       : "ProceduralNoise",
+                              "seed"       : 4985325,
+                              "textureSize": {"x": 512, "y": 256},
+                              "worldSize"  : {"x": 2.048, "y": 1.024},
+                              "range"      : 0.3,
+                              "bands"      : [
+                                { "sigmaTexels": {"x": 0.55, "y": 0.85}, "variance": 0.0014 },
+                                { "sigmaTexels": {"x": 1.5,  "y": 2.5 }, "variance": 0.0004 },
+                                { "sigmaTexels": {"x": 6,    "y": 6   }, "variance": 0.0003 }
+                              ]
+                            }
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": -3.0046553, "y": -0.9792635000000002, "z": -0.5},
+                            "localScale"   : {"x":  2.5,       "y":  2.5,                "z":  1.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-echo-ground-child-a",
+                          "name"      : "ground child a",
+                          "components": [],
+                          "children"  : [
+                            {
+                              "id"        : "memory-echo-ground-child-a-body",
+                              "name"      : "ground child a body",
+                              "components": [
+                                {
+                                  "type"      : "SpriteRenderer",
+                                  "asset"     : "landscape_child",
+                                  "frame"     : 4,
+                                  "saturation": 0,
+                                  "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                                },
+                                {
+                                  "type"           : "SpriteAnimator",
+                                  "enabled"        : false,
+                                  "start"          : {
+                                    "frame": 4851,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "frames"         : [0, 1, 2, 3],
+                                  "framesPerSecond": 10,
+                                  "loop"           : true,
+                                  "hideOutside"    : false
+                                }
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localScale": {"x": -2.5, "y": 2.5, "z": 1.0}
+                              }
+                            },
+                            {
+                              "id"        : "memory-echo-ground-carried-paper",
+                              "name"      : "ground carried paper",
+                              "components": [
+                                {
+                                  "type"      : "SpriteRenderer",
+                                  "asset"     : "landscape_paper_plane_small",
+                                  "saturation": 0,
+                                  "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                                }
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localPosition": {"x": -0.225, "y": 0.2614, "z": 0.1},
+                                "localScale"   : {"x":  2.5,   "y": 2.5,    "z": 1.0}
+                              }
+                            }
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": -0.2625132596517608, "y": -1.07255, "z": 0.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-echo-ground-child-b",
+                          "name"      : "ground child b",
+                          "components": [],
+                          "children"  : [
+                            {
+                              "id"        : "memory-echo-ground-child-b-body",
+                              "name"      : "ground child b body",
+                              "components": [
+                                {
+                                  "type"      : "SpriteRenderer",
+                                  "asset"     : "landscape_child",
+                                  "frame"     : 4,
+                                  "saturation": 0,
+                                  "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                                },
+                                {
+                                  "type"           : "SpriteAnimator",
+                                  "enabled"        : false,
+                                  "start"          : {
+                                    "frame": 4851,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "frames"         : [0, 1, 2, 3],
+                                  "framesPerSecond": 10,
+                                  "loop"           : true,
+                                  "hideOutside"    : false
+                                }
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localScale": {"x": -2.5, "y": 2.5, "z": 1.0}
+                              }
+                            }
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0.06, "y": -1.07255, "z": 0.0}
+                          }
+                        },
+                        {
+                          "id"        : "memory-echo-falling-paper",
+                          "name"      : "falling paper",
+                          "components": [
+                            {
+                              "type"      : "SpriteRenderer",
+                              "asset"     : "landscape_paper_plane_small",
+                              "frame"     : 0,
+                              "saturation": 0,
+                              "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                            }
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": 3.3, "y": -0.20343999999999995, "z": 0.1},
+                            "localScale"   : {"x": 2.5, "y":  2.5,                 "z": 1.0}
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id"        : "memory-echo-camera-layers",
+                      "name"      : "Landscape camera layers",
+                      "active"    : true,
+                      "transform" : {
+                        "localPosition": {"x": 0, "y": 0, "z": 0},
+                        "localRotation": {"x": 0, "y": 0, "z": 0},
+                        "localScale"   : {"x": 1, "y": 1, "z": 1}
+                      },
+                      "components": [],
+                      "children"  : [
+                        {
+                          "id"        : "memory-echo-sky",
+                          "name"      : "Textured cyan sky",
+                          "active"    : true,
+                          "transform" : {
+                            "localPosition": {"x": 0, "y": 0, "z": 2},
+                            "localRotation": {"x": 0, "y": 0, "z": 0},
+                            "localScale"   : {"x": 1, "y": 1, "z": 1}
+                          },
+                          "components": [
+                            {
+                              "type"      : "TiledSpriteRenderer",
+                              "asset"     : "landscape_sky",
+                              "origin"    : {"x": -3.2, "y": 1.8},
+                              "saturation": 0,
+                              "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                            },
+                            {
+                              "type"       : "ProceduralNoise",
+                              "seed"       : 4981227,
+                              "textureSize": {"x": 1024, "y": 512},
+                              "worldSize"  : {"x": 10.24, "y": 5.12},
+                              "origin"     : {"x": -3.2, "y": 1.8},
+                              "range"      : 0.05,
+                              "channelGain": {
+                                "r": 2.624065667297263,
+                                "g": 0.5512604727399197,
+                                "b": 0.6772158033659882
+                              },
+                              "bands"      : [
+                                {
+                                  "sigmaTexels": {"x": 1.852584662887536, "y": 1.6943110367061973},
+                                  "variance"   : 8.837571220996478e-06
+                                },
+                                {
+                                  "sigmaTexels": {"x": 7.156287426705121, "y": 5.729292786515615},
+                                  "variance"   : 3.0084557984899898e-05
+                                },
+                                {
+                                  "sigmaTexels": {"x": 19.98110846501085, "y": 8.139283537984129},
+                                  "variance"   : 3.8952749683006865e-05
+                                }
+                              ]
+                            }
+                          ],
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "memory-echo-cloud_large",
+                          "name"      : "landscape cloud_large",
+                          "active"    : true,
+                          "transform" : {
+                            "localPosition": {"x": -2.41, "y": 1.38, "z": 1},
+                            "localRotation": {"x":  0,    "y": 0,    "z": 0},
+                            "localScale"   : {"x":  2.5,  "y": 2.5,  "z": 1}
+                          },
+                          "components": [
+                            {
+                              "type"      : "SpriteRenderer",
+                              "asset"     : "landscape_cloud_large",
+                              "saturation": 0,
+                              "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                            }
+                          ],
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "memory-echo-cloud_left",
+                          "name"      : "landscape cloud_left",
+                          "active"    : true,
+                          "transform" : {
+                            "localPosition": {"x": -2.15, "y": 1.3125, "z": 1},
+                            "localRotation": {"x":  0,    "y": 0,      "z": 0},
+                            "localScale"   : {"x":  2.5,  "y": 2.5,    "z": 1}
+                          },
+                          "components": [
+                            {
+                              "type"      : "SpriteRenderer",
+                              "asset"     : "landscape_cloud_left",
+                              "saturation": 0,
+                              "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                            }
+                          ],
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "memory-echo-cloud_right",
+                          "name"      : "landscape cloud_right",
+                          "active"    : true,
+                          "transform" : {
+                            "localPosition": {"x": 1.37, "y": 0.8220000000000001, "z": 1},
+                            "localRotation": {"x": 0,    "y": 0,                  "z": 0},
+                            "localScale"   : {"x": 2.5,  "y": 2.5,                "z": 1}
+                          },
+                          "components": [
+                            {
+                              "type"      : "SpriteRenderer",
+                              "asset"     : "landscape_cloud_right",
+                              "saturation": 0,
+                              "color"     : {"r": 0.43, "g": 0.55, "b": 0.65, "a": 1}
+                            }
+                          ],
+                          "children"  : []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id"        : "memory-echo-fade",
+                  "name"      : "echo fade",
+                  "components": [
+                    {
+                      "type"    : "Transition",
+                      "kind"    : "fade",
+                      "progress": 0,
+                      "target"  : {"entity": "memory-echo-content"}
+                    }
+                  ],
+                  "children"  : [],
+                  "transform" : {
+                    "localPosition": {"x": 0.0, "y": 0.0, "z": -5.0}
+                  }
+                }
+              ],
+              "transform" : {
+                "localPosition": {"x": -0.009264685506805233, "y": 1.0511525245122482, "z": 1.6  },
+                "localScale"   : {"x":  0.6022981696582727,   "y": 0.6022981696582727, "z": 0.001}
+              }
+            }
+          },
+          {
+            "id"    : "memory-echo-ground",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-ground"}
+          },
+          {
+            "id"    : "memory-echo-floor",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-floor"}
+          },
+          {
+            "id"    : "memory-echo-grass",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-grass"}
+          },
+          {
+            "id"    : "memory-echo-ground-child-a",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-ground-child-a"}
+          },
+          {
+            "id"    : "memory-echo-ground-child-a-body",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-ground-child-a-body"}
+          },
+          {
+            "id"    : "memory-echo-ground-carried-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-ground-carried-paper"}
+          },
+          {
+            "id"    : "memory-echo-ground-child-b",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-ground-child-b"}
+          },
+          {
+            "id"    : "memory-echo-ground-child-b-body",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-ground-child-b-body"}
+          },
+          {
+            "id"    : "memory-echo-falling-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-falling-paper"}
+          },
+          {
+            "id"    : "memory-echo-fade",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "memory-echo-fade"}
+          }
+        ],
+        "bindings"      : [
+          {
+            "id"      : "memory-echo-memory-ground-Entity-active",
+            "object"  : "memory-echo-ground",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-ground-Entity-active"
+          },
+          {
+            "id"      : "memory-echo-memory-ground-child-a-Transform-localPosition.x",
+            "object"  : "memory-echo-ground-child-a",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-ground-child-a-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-echo-memory-ground-child-b-Transform-localPosition.x",
+            "object"  : "memory-echo-ground-child-b",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-ground-child-b-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-echo-memory-ground-child-a-body-SpriteAnimator-enabled",
+            "object"  : "memory-echo-ground-child-a-body",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "memory-memory-ground-child-a-body-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "memory-echo-memory-ground-child-a-body-SpriteRenderer-frame",
+            "object"  : "memory-echo-ground-child-a-body",
+            "property": {"component": "SpriteRenderer", "path": "frame"},
+            "track"   : "memory-memory-ground-child-a-body-SpriteRenderer-frame"
+          },
+          {
+            "id"      : "memory-echo-memory-ground-child-b-body-SpriteAnimator-enabled",
+            "object"  : "memory-echo-ground-child-b-body",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "memory-memory-ground-child-b-body-SpriteAnimator-enabled"
+          },
+          {
+            "id"      : "memory-echo-memory-ground-child-b-body-SpriteRenderer-frame",
+            "object"  : "memory-echo-ground-child-b-body",
+            "property": {"component": "SpriteRenderer", "path": "frame"},
+            "track"   : "memory-memory-ground-child-b-body-SpriteRenderer-frame"
+          },
+          {
+            "id"      : "memory-echo-memory-falling-paper-Entity-active",
+            "object"  : "memory-echo-falling-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-falling-paper-Entity-active"
+          },
+          {
+            "id"      : "memory-echo-memory-falling-paper-Transform-localPosition.x",
+            "object"  : "memory-echo-falling-paper",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "memory-memory-falling-paper-Transform-localPosition.x"
+          },
+          {
+            "id"      : "memory-echo-memory-falling-paper-Transform-localPosition.y",
+            "object"  : "memory-echo-falling-paper",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "memory-memory-falling-paper-Transform-localPosition.y"
+          },
+          {
+            "id"      : "memory-echo-memory-ground-carried-paper-Entity-active",
+            "object"  : "memory-echo-ground-carried-paper",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "memory-memory-ground-carried-paper-Entity-active"
+          },
+          {
+            "id"      : "memory-echo-pulse-opacity",
+            "object"  : "memory-echo-fade",
+            "property": {"component": "Transition", "path": "progress"},
+            "track"   : "memory-echo-pulse-opacity"
           }
         ],
         "sequences"     : []
@@ -44898,7 +47161,13 @@
         "Motion uses sparse linear/cubic curves; deterministic local particle streams provide snowfall and exhaust.",
         "The existing blue pilot/red-engine ship assembly is shared across all three backgrounds.",
         "Snow creature contours and blurred motion retain the reviewed reconstruction estimates."
-      ]
+      ],
+      "snowfall"    : {
+        "sourceFrames": [4095, 4234],
+        "trackedParticles": 14,
+        "velocityPixelsPerSourceFrame": [0.5330423301689551, 1.0673279200167045],
+        "method": "Common linear screen velocity fitted to unobscured flake tracks; inverse perspective conversion at the emitter depth."
+      }
     },
     "landing": {
       "sourceFrames"    : [4530, 4940],
@@ -44908,9 +47177,11 @@
         "topSourcePixels": 237.5
       },
       "ship"            : {
-        "stopsAtFrame"                : 4640,
+        "stopsAtFrame": 4640,
         "velocityPixelsPerSourceFrame": [-3.30209115, 1.71860358],
-        "fitResidualPixels"           : [0.18, 0.11]
+        "fitResidualPixels": [0.18, 0.11],
+        "hullOffsetPixelsY": 0.7199999999999969,
+        "gridAlignment": "Hull Y matches the seated pilot native grid. X and the shared approach trajectory remain independently fitted."
       },
       "pilot"           : {
         "walkRanges"           : [
@@ -44931,9 +47202,66 @@
       },
       "notes"           : [
         "Reuses the reviewed unoccupied red ship, blue walking pilot, red helmet and front-facing pilot; no new character art.",
-        "The camera projection matches the outgoing cloud shot during the dissolve. Planar parallax layers cover expanded camera bounds.",
-        "Intermittent flashback overlays behind the close-up are intentionally excluded. The following flashback cut at F4941 is not reconstructed here."
+        "The camera projection matches the outgoing cloud shot during the dissolve. Planar parallax layers cover expanded camera bounds."
       ]
+    },
+    "childhoodMemory": {
+      "sourceFrames": [4941, 5541],
+      "camera": "Fixed orthographic camera throughout; the moon close-up is an object transform cut.",
+      "groundCut": 4941,
+      "cliffCut": 5236,
+      "closeupCut": 5523,
+      "moonPalette": {"periodFrames": 108, "holdFrames": 6, "startFrame": 4983},
+      "flameStarts": [4941, 5015, 5089, 5163, 5236, 5310, 5383, 5456],
+      "events": {
+        "childrenStop"      : 5023,
+        "lookUp"            : 5043,
+        "paperPickup"       : 5089,
+        "secondChildFollows": 5116,
+        "cliffStops"        : [5291, 5322],
+        "jumps"             : [
+          [5328, 5340],
+          [5341, 5353]
+        ],
+        "turnRight"         : 5365,
+        "stack"             : [5411, 5427],
+        "walkTogether"      : [5439, 5471],
+        "paperLaunch"       : 5514
+      },
+      "curves": {
+        "jump"        : "Three weighted cubic keys; the two jumps share the same circular ease.",
+        "closeupPaper": {"keys": 2, "fitRmsPixels": 0.0246377029690541}
+      },
+      "entryFade": {
+        "frames"       : [4941, 4950, 4959, 4969, 4978],
+        "opacity"      : [0.2, 0.4, 0.6, 0.8, 1],
+        "interpolation": "step"
+      },
+      "exitFade": {
+        "range": [5531.185, 5540.21],
+        "lastVisibleSourceFrame": 5540,
+        "blur": "Measured horizontal Gaussian envelope; three envelope keys."
+      },
+      "notes": [
+        "Only the outgoing recollection is reconstructed during the final dissolve; the subsequent ship scene is not included.",
+        "Expanded cliff preserves original native cells; only the right-hand extension darkens into repeated grass silhouette."
+      ],
+      "moonSecondaryTexture": {
+        "sourceFrameStart": 5523,
+        "scope"           : "Close-up only; the regular moon uses its native sprite and procedural grain."
+      },
+      "groundCharacterAlignment": {
+        "referenceFrame": 5052,
+        "leftChildOffsetPixels": {"x": -0.2513259651760791, "y": 0},
+        "method": "Horizontal native boundaries aligned to the grass; both children retain the same standing height."
+      },
+      "entryRun": {
+        "startFrame"         : 4930,
+        "referenceCycleFrame": 4978,
+        "cycleFrames"        : 12,
+        "framesPerSecond"    : 10,
+        "method"             : "Phase-aligned start before the fade-in; no pre-start hold during visible entry."
+      }
     }
   }
 }

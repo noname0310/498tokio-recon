@@ -372,23 +372,24 @@
     "desert_mountain_tile" : {
       "type"          : "Sprite",
       "file"          : "desert_mountain_tile.png",
-      "size"          : {"x": 60, "y": 16},
+      "size"          : {"x": 64, "y": 16},
       "pixelsPerUnit" : 100,
       "pivot"         : {"x": 0, "y": 0},
       "filter"        : "point",
       "reconstruction": {
         "sourceFrames": [
-          4245, 4249, 4253, 4257, 4261, 4265, 4269, 4273, 4277, 4281, 4285, 4289, 4293, 4297, 4301, 4305, 4309, 4313,
-          4317, 4321, 4325, 4329, 4333, 4337, 4341, 4345, 4349, 4353, 4357, 4361, 4365, 4369, 4373, 4377
+          4245, 4250, 4255, 4260, 4265, 4270, 4275, 4280, 4285, 4290, 4295, 4300, 4305, 4310, 4315, 4320, 4325, 4330,
+          4335, 4340, 4345, 4350, 4355, 4360, 4365, 4370, 4375
         ],
-        "nativeCellPixels": 2.454545,
+        "nativeCellPixels": 2.299980570741747,
         "referenceFrame": 4245,
-        "originPixelsAtReference": [0, 170],
-        "screenRepeatPixels": 147.2727,
-        "screenSpeedPixelsPerFrame": 0.4,
+        "originPixelsAtReference": [-0.07107701919000567, 169.62932830780946],
+        "screenRepeatPixels": 147.1987565274718,
+        "screenSpeedPixelsPerFrame": 0.38423127134000973,
+        "samplingFraction": 0.6,
         "repeat": ["x"],
         "edgeModeY": "clamp-bottom",
-        "method": "Folded repeated hill silhouettes; central 60% cell means with temporal occlusion rejection. Sky kept transparent."
+        "method": "Desert-only 64-cell silhouette registered across repeated copies and frames. Central-cell contour samples exclude moving foregrounds; native colors are estimated through the source luminance/chroma resampling footprints. Binary alpha preserves the narrow valley spires."
       }
     },
     "snow_creature_atlas"  : {

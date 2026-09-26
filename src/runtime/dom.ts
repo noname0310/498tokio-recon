@@ -21,6 +21,7 @@ import {Math3D as M} from "./math.js";
 import {clippedBounds} from "./geometry.js";
 import {motionBounds,motionSamples} from "./sprite-motion-blur.js";
 import {DOMSpriteFocus} from './dom-sprite-focus.js';
+import {DOMSecondaryTexture} from "./dom-secondary-texture.js";
 import {spriteFocus} from "./depth-of-field.js";
 const NS="http://www.w3.org/2000/svg";
 function svg<K extends keyof SVGElementTagNameMap>(tag:K,attrs:Record<string,string|number>={},parent?:Element):SVGElementTagNameMap[K]{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));parent?.append(e);return e;}
@@ -41,6 +42,7 @@ function updateNoiseChannels(sync:DOMSync,channels:NoiseChannels,gain:RGB){
 let serial=0;
 
 class Sprite {
+  private readonly secondary?:DOMSecondaryTexture;
   private readonly motionImages:HTMLImageElement[]=[];
   private readonly focus=new DOMSpriteFocus();
   private readonly shapeFilter:SVGFilterElement;private readonly shapeDilation:SVGFEMorphologyElement;private readonly shapeSoftness:SVGFEGaussianBlurElement;
@@ -55,6 +57,7 @@ class Sprite {
   constructor(renderer:DOMRenderer,node:Entity){
     this.renderer=renderer;this.id=node.id;this.elements=new Map();this.sourceKey=null;
     const uid=`sprite-${++serial}`,defs=renderer.defs;
+    if(node.components.some(c=>c.type==="SecondaryTexture"))this.secondary=new DOMSecondaryTexture(defs,uid+"-secondary");
     const filter=(suffix:string)=>svg("filter",{id:uid+suffix,x:"-200%",y:"-200%",width:"500%",height:"500%","color-interpolation-filters":"sRGB"},defs);
     this.filters=[];
     const shadow=filter("-shadow");this.filters.push(shadow);
@@ -94,6 +97,9 @@ class Sprite {
     // Incrementing updateRevision above also cancels older pending visible work.
     if(!scene.active.get(this.id)||!state.visible||!this.renderer.resources.isImageReady(sprite.asset)){for(const {element} of this.elements.values())sync.hidden(element,true);return;}
     const source=(await this.renderer.resources.spriteFrames(scene,sprite.asset))[state.frame].src;
+    const secondary=scene.component(this.id,"SecondaryTexture");
+    const secondarySource=enabled(secondary)&&secondary.opacity>0&&this.renderer.resources.isImageReady(secondary.asset)
+      ?(await this.renderer.resources.filterImage(scene,secondary.asset)).src:null;
     if(this.disposed||revision!==this.updateRevision)return;
     // spriteFrames already decoded this source. Do not wait for another
     // decode on each newly spawned surface (or each atlas frame).
@@ -102,10 +108,12 @@ class Sprite {
     const motion=scene.component(this.id,"SpriteMotionBlur"),filtered=motion?.enabled&&(motion.dilationPixels>0||motion.softnessPixels>0);
     const graded=sprite.whiteMix!==0||sprite.color.r!==1||sprite.color.g!==1||sprite.color.b!==1||sprite.hueDegrees!==0||sprite.saturation!==1||sprite.brightness!==1||sprite.contrast!==1;
     // Gecko rasterizes a filtered image before its perspective transform. A
-    // native-sized tint surface would then be magnified with linear sampling,
-    // softening pixel art even when no blur is enabled. Keep live grading at
-    // the same fixed working resolution already used for clipped sprites.
-    const rasterScale=filtered||this.renderer.depth.enabled||(graded&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective")?Math.max(8,2**Math.ceil(Math.log2(256/Math.max(state.size.x,state.size.y)))):1;
+    // native-sized tint or translucent blend surface would then be magnified
+    // with linear sampling, softening art and leaking the backdrop around
+    // opaque crossfades. Use the working resolution of clipped sprites.
+    // A secondary tile can be finer than one native sprite texel. Give SVG
+    // filtering enough resolution to retain that detail before magnification.
+    const rasterScale=filtered||!!secondarySource||this.renderer.depth.enabled||((graded||sprite.color.a!==1)&&scene.requireComponent(scene.cameraNode.id,"Camera").projection==="perspective")?Math.max(8,2**Math.ceil(Math.log2(256/Math.max(state.size.x,state.size.y)))):1;
     const units=asset.pixelsPerUnit*rasterScale,width=state.size.x*rasterScale,height=state.size.y*rasterScale;
     const artBounds={left:-asset.pivot.x*state.size.x/asset.pixelsPerUnit,right:(1-asset.pivot.x)*state.size.x/asset.pixelsPerUnit,bottom:-asset.pivot.y*state.size.y/asset.pixelsPerUnit,top:(1-asset.pivot.y)*state.size.y/asset.pixelsPerUnit};
     const focus=motion?.enabled&&(motion.radialAmount>0||motion.translationWorld.x!==0||motion.translationWorld.y!==0)?null:spriteFocus(scene,this.id,artBounds);
@@ -163,6 +171,7 @@ class Sprite {
     const noise=scene.component(this.id,"ProceduralNoise"),hasNoise=enabled(noise)&&noise.bands.some(b=>b.variance>0);
     sync.attribute(this.shapeDilation,"radius",filtered?motion.dilationPixels*rasterScale:0);sync.attribute(this.shapeSoftness,"stdDeviation",filtered?motion.softnessPixels*rasterScale:0);
     const bodyFilters=[filtered?`url(#${this.shapeFilter.id})`:"",tinted?this.tintFilter:"",sprite.hueDegrees?`hue-rotate(${sprite.hueDegrees}deg)`:"",sprite.saturation!==1?`saturate(${sprite.saturation})`:"",sprite.brightness!==1?`brightness(${sprite.brightness})`:"",sprite.contrast!==1?`contrast(${sprite.contrast})`:""];
+    if(secondary&&secondarySource&&this.secondary){this.secondary.update(sync,secondary,secondarySource,origin,units,width,height);bodyFilters.push(this.secondary.url);}
     const applyNoise=()=>sync.style(body,{filter:[...bodyFilters,hasNoise&&this.noiseURL?this.noiseFilter:""].filter(Boolean).join(" ")||"none"});
     applyNoise();
     if(noise){
@@ -215,7 +224,7 @@ class Sprite {
     }
     this.focus.apply(sync,bodyElement,body,focus,view,bodyProjection,bodyClip);
   }
-  dispose(){this.disposed=true;this.noiseRevision++;this.filters.forEach(f=>f.remove());this.elements.forEach(({element})=>this.renderer.removeSurface(element));}
+  dispose(){this.disposed=true;this.noiseRevision++;this.secondary?.dispose();this.filters.forEach(f=>f.remove());this.elements.forEach(({element})=>this.renderer.removeSurface(element));}
 }
 
 interface TileSlot {top:SVGRectElement[];bottom:SVGRectElement[];group:SVGGElement}
@@ -564,7 +573,7 @@ export class DOMRenderer {
       for(const [type,record] of records)if(!scene.component(node.id,type)||!this.registry.has(type)){record.object.dispose();records.delete(type);changed=true;}
       for(const [type,Handler] of this.registry){
         if(!scene.component(node.id,type))continue;
-        const layout=type==="SpriteRenderer"?["DropShadow","Glow","ProceduralNoise"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="ParticleEmitter"?["Glow","ParticleMotionBlur"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="PlaneRenderer"?node.components.filter(c=>c.type==="ProceduralNoise").map(c=>c.type).join(","):"";
+        const layout=type==="SpriteRenderer"?["DropShadow","Glow","ProceduralNoise","SecondaryTexture"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="ParticleEmitter"?["Glow","ParticleMotionBlur"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="PlaneRenderer"?node.components.filter(c=>c.type==="ProceduralNoise").map(c=>c.type).join(","):"";
         const previous=records.get(type);
         if(previous?.Handler===Handler&&previous.layout===layout)continue;
         previous?.object.dispose();records.set(type,{Handler,layout,object:new Handler(this,node)});changed=true;

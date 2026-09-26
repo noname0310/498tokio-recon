@@ -45,6 +45,9 @@ export interface SpriteNumberRenderer {asset:string;value:number;rounding:"round
 export interface SpriteAnimator {start:FrameStamp;framesPerSecond:number;frames:number[];loop:boolean;hideOutside:boolean}
 /** Local-space alpha ramp on the source sprite; independent of its glow. */
 export interface OpacityGradient {start:Vec2;end:Vec2}
+/** Repeating RGBA overlay in sprite-local world units, after grading and before
+ * procedural grain. Compositing preserves the source sprite's alpha. */
+export interface SecondaryTexture {asset:string;worldSize:Vec2;origin:Vec2;opacity:number}
 export interface Flicker {mode:"periodic"|"random";frequency:number;dutyCycle:number;probability:number;seed:number;start:FrameStamp;phase:number}
 export interface TransformAnimator {position:Key<Vec3>[];rotation:Key<Vec3>[];scale:Key<Vec3>[]}
 /** Stateless local offsets, evaluated after authored animation. */
@@ -97,7 +100,7 @@ export interface ParticleEmitter {
   sizeOverLife:Key<number>[];color:Color;colorPalette:{color:Color;weight:number}[];colorOverLife:Key<Color>[];billboard:"camera"|"local";blend:"alpha"|"additive";sortMode:"depth"|"sizeAscending";
   animation:{mode:"single"|"random"|"fps"|"lifetime";timeSource:"age"|"scene";frame:number;frames:number[];framesPerSecond:number;loop:boolean;randomStart:boolean};
 }
-export interface ComponentProperties {Camera:Camera;Vignette:Vignette;ViewportFrame:ViewportFrame;ViewportTransform:ViewportTransform;ColorGrade:ColorGrade;ScanlineJitter:ScanlineJitter;SpriteRenderer:SpriteRenderer;SortingGroup:SortingGroup;SpriteNumberRenderer:SpriteNumberRenderer;SpriteAnimator:SpriteAnimator;OpacityGradient:OpacityGradient;Flicker:Flicker;TransformAnimator:TransformAnimator;TransformNoise:TransformNoise;CameraMotionBlur:CameraMotionBlur;DepthOfField:DepthOfField;TiledSpriteRenderer:TiledSpriteRenderer;CylindricalSpriteRenderer:CylindricalSpriteRenderer;GaussianBlur:GaussianBlur;SpriteMotionBlur:SpriteMotionBlur;DirectionalBlur:DirectionalBlur;PlaneRenderer:PlaneRenderer;Transition:Transition;LineRenderer:LineRenderer;ProceduralNoise:ProceduralNoise;DropShadow:DropShadow;Glow:Glow;ParticleEmitter:ParticleEmitter;ParticleMotionBlur:ParticleMotionBlur;AudioPlayer:AudioPlayerComponent;AnimationPlayer:AnimationPlayerComponent;PlayerControls:PlayerControlsComponent}
+export interface ComponentProperties {Camera:Camera;Vignette:Vignette;ViewportFrame:ViewportFrame;ViewportTransform:ViewportTransform;ColorGrade:ColorGrade;ScanlineJitter:ScanlineJitter;SpriteRenderer:SpriteRenderer;SortingGroup:SortingGroup;SpriteNumberRenderer:SpriteNumberRenderer;SpriteAnimator:SpriteAnimator;OpacityGradient:OpacityGradient;SecondaryTexture:SecondaryTexture;Flicker:Flicker;TransformAnimator:TransformAnimator;TransformNoise:TransformNoise;CameraMotionBlur:CameraMotionBlur;DepthOfField:DepthOfField;TiledSpriteRenderer:TiledSpriteRenderer;CylindricalSpriteRenderer:CylindricalSpriteRenderer;GaussianBlur:GaussianBlur;SpriteMotionBlur:SpriteMotionBlur;DirectionalBlur:DirectionalBlur;PlaneRenderer:PlaneRenderer;Transition:Transition;LineRenderer:LineRenderer;ProceduralNoise:ProceduralNoise;DropShadow:DropShadow;Glow:Glow;ParticleEmitter:ParticleEmitter;ParticleMotionBlur:ParticleMotionBlur;AudioPlayer:AudioPlayerComponent;AnimationPlayer:AnimationPlayerComponent;PlayerControls:PlayerControlsComponent}
 export type ComponentType=keyof ComponentProperties;
 export type ComponentMap={[K in ComponentType]:ComponentProperties[K]&{type:K;enabled:boolean}};
 export type Component=ComponentMap[ComponentType];
