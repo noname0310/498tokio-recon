@@ -51,7 +51,7 @@ async function main(){
    await seek(5325);const initial=await state(),first=await shot();captures[label]=first;
    for(const f of [5542,5526,4870,4941,5023,5043,5089,5236,5331,5420,5471,5514,5533,5325])await seek(f);
    assert.equal(await state(),initial,`${label}: reverse seeking restores all scene state`);assert(compare(first,await shot()).mae<.06,`${label}: stable re-entry`);
-   await seek(5541);const last=png(await shot());assert(last.pixels.every((v,i)=>i%last.channels===3||v<2),`${label}: stop after the outgoing fade`);
+   await seek(5541);assert.equal(await page.evaluate(()=>scenePlayer.scene.requireComponent('memory-fade','Transition').progress),0,`${label}: outgoing memory finishes its fade independently of the next chapter`);
    for(const viewport of [{width:390,height:844},{width:2560,height:540}]){
     await page.setViewportSize(viewport);await seek(5480);const image=png(await shot());
     for(const [x,y]of [[2,5],[viewport.width-3,5]]){const i=(y*image.width+x)*image.channels;assert(image.pixels[i+2]>0,`${label}: sky covers expanded aspect`);}

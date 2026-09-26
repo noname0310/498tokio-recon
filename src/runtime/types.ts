@@ -22,7 +22,7 @@ export interface AudioPlayerComponent {asset:string;volume:number;muted:boolean;
 export interface AnimationPlayerComponent {sequence:string;clock:ComponentReference<"AudioPlayer">|null}
 export interface PlayerControlsComponent {player:ComponentReference<"AnimationPlayer">|null;hideDelayMs:number}
 export interface Camera {projection:"orthographic"|"perspective";verticalFovDegrees:number;principalPoint:Vec2;referenceVerticalSize:number;referenceAspect:number;aspectPolicy:"expandFromReference"|"fillReference";near:number;far:number;clearColor:Color}
-export interface Vignette {centerViewport:Vec2;quadratic:number;quartic:number;verticalWeight:number;depth:number|null}
+export interface Vignette {centerViewport:Vec2;quadratic:number;quartic:number;verticalWeight:number;color:Color;blend:"normal"|"multiply";depth:number|null}
 /** Camera-space rounded aperture. Dimensions use world units so aspect expansion
  * extends the opening without stretching its circular corners or border width. */
 export interface ViewportFrame {
@@ -65,7 +65,8 @@ export interface CylindricalSpriteRenderer {asset:string;color:Color;radius:numb
 export interface GaussianBlur {sigmaWorld:Vec2}
 export interface SpriteMotionBlur {translationWorld:Vec2;radialAmount:number;center:Vec2;samples:number;dilationPixels:number;softnessPixels:number;alphaGain:number;clipToSprite:boolean}
 export interface DirectionalBlur {sigmaWorld:number;angleDegrees:number}
-  export interface PlaneRenderer {color:Color;blend:"normal"|"additive";coverage:"camera"|"fixed";shape:"rectangle"|"ellipse";size:Vec2;innerRadiusRatio:number;clipBounds:{left:number|null;right:number|null;bottom:number|null;top:number|null}|null}
+/** edgeSoftness is the half-width of a smooth ellipse edge, relative to its radius. */
+export interface PlaneRenderer {color:Color;blend:"normal"|"additive";coverage:"camera"|"fixed";shape:"rectangle"|"ellipse";size:Vec2;viewportSizing:"fixed"|"expand";innerRadiusRatio:number;edgeSoftness:number;clipBounds:{left:number|null;right:number|null;bottom:number|null;top:number|null}|null}
 export interface GridTransitionSettings {cellSize:Vec2;origin:Vec2;direction:Vec2;feather:number}
 export interface TransitionBase {progress:number;target:{entity:string}|null}
 export interface GridTransition extends TransitionBase {kind:"grid";grid:GridTransitionSettings}
@@ -94,9 +95,12 @@ export interface ParticleEmitter {
   colorMatrix:number[];
   asset:string;seed:number;maxParticles:number;start:FrameStamp;duration:number;prewarm:number;rate:number;bursts:{time:number|FrameStamp;count:number;sizeScale?:number;color?:Color;velocity?:Vec3;targetVelocity?:Vec3}[];
   cameraContinuation:{padding:number}|null;
-  space:"local"|"world";shape:{type:"point"|"box"|"ellipse"|"sphere";size:Vec3};directionMode:"cone"|"radial";direction:Vec3;spreadDegrees:number;
+  space:"local"|"world";shape:{type:"point"|"box"|"ellipse"|"sphere";size:Vec3;innerRadiusRatio:number};directionMode:"cone"|"radial";direction:Vec3;spreadDegrees:number;
   speed:Range;speedOverLife:Key<number>[];lifetime:Range;startSize:Range;rotation:Range;angularVelocity:Range;acceleration:Vec3;
   velocityRelaxation:{rate:Vec3;target:Vec3;variation:Vec3}|null;
+  /** Per-second exponential expansion about the emitter origin. The sampled
+   * rate scales local position and sprite size together, preserving angular size. */
+  radialExpansion:Range|null;
   sizeOverLife:Key<number>[];color:Color;colorPalette:{color:Color;weight:number}[];colorOverLife:Key<Color>[];billboard:"camera"|"local";blend:"alpha"|"additive";sortMode:"depth"|"sizeAscending";
   animation:{mode:"single"|"random"|"fps"|"lifetime";timeSource:"age"|"scene";frame:number;frames:number[];framesPerSecond:number;loop:boolean;randomStart:boolean};
 }

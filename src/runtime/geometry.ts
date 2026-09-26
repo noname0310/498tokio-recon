@@ -35,8 +35,17 @@ export function dissolveThreshold(x:number,y:number,seed:number):number {
   return (mod(n*173+y*71+seed*13)+.5)/4093;
 }
 
+/** Preserve shape and the reference-aspect fit while covering a larger diagonal. */
+export function planeSize(scene:Scene,view:View,c:PlaneRenderer):Vec2 {
+  if(c.viewportSizing!=="expand")return c.size;
+  const camera=scene.requireComponent(scene.cameraNode.id,"Camera"),h=camera.referenceVerticalSize;
+  const scale=Math.max(1,Math.hypot(view.worldWidth,view.worldHeight)/Math.hypot(h*camera.referenceAspect,h));
+  return {x:c.size.x*scale,y:c.size.y*scale};
+}
 export function planeBounds(scene:Scene,id:string,view:View,c:PlaneRenderer,padding=.1):Bounds|null {
-  const b=c.coverage==="camera"?scene.coverage(id,view,padding):{left:-c.size.x/2,right:c.size.x/2,bottom:-c.size.y/2,top:c.size.y/2};
+  const extent=c.shape==="ellipse"?1+c.edgeSoftness:1;
+  const size=planeSize(scene,view,c);
+  const b=c.coverage==="camera"?scene.coverage(id,view,padding):{left:-size.x*extent/2,right:size.x*extent/2,bottom:-size.y*extent/2,top:size.y*extent/2};
   if(b&&(b.left>=b.right||b.bottom>=b.top))return null;
   return clippedBounds(b,c.clipBounds);
 }

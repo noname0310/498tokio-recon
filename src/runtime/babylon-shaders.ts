@@ -109,7 +109,7 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
     B.Effect.ShadersStore.sceneSolidFragmentShader=`precision highp float;
       varying vec2 localPoint;uniform vec4 tint;uniform vec2 gridSize,gridOrigin,gridDirection,radialCenter;uniform float gridFront,gridFeather,transitionKind,transitionProgress,dissolveSeed,radialCurvature,radialInset;uniform float pinwheelFronts[64];
       #ifdef PLANE_NOISE
-      uniform float ellipse,ellipseAA,ellipseInnerRatio;uniform vec2 ellipseSize;
+      uniform float ellipse,ellipseAA,ellipseInnerRatio,ellipseSoftness;uniform vec2 ellipseSize;
       uniform sampler2D noiseTex;uniform vec2 noiseOrigin,noiseSize;uniform float noiseRange,noiseEnabled;uniform vec3 noiseChannelGain;
       #endif
       float dissolveThreshold(vec2 cell){
@@ -158,7 +158,8 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
         #ifdef PLANE_NOISE
         if(ellipse>.5){
           float radius=length(localPoint*2.0/max(ellipseSize,vec2(.000001)));
-          float aa=ellipseInnerRatio>0.0?max(.5*length(vec2(dFdx(radius),dFdy(radius))),.000001):ellipseAA;
+          float pixelAA=max(.5*length(vec2(dFdx(radius),dFdy(radius))),.000001);
+          float aa=ellipseSoftness>0.0?max(ellipseSoftness,pixelAA):(ellipseInnerRatio>0.0?pixelAA:ellipseAA);
           gl_FragColor.a*=1.0-smoothstep(1.0-aa,1.0+aa,radius);
           if(ellipseInnerRatio>0.0)gl_FragColor.a*=ellipseInnerRatio>=1.0?0.0:smoothstep(ellipseInnerRatio-aa,ellipseInnerRatio+aa,radius);
         }
@@ -170,8 +171,9 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
         #endif
       }`;
     B.Effect.ShadersStore.sceneVignettePlaneFragmentShader=`
-      precision highp float;varying vec2 localPoint;uniform vec2 halfSize,center;uniform vec3 shape;
-      void main(){vec2 uv=localPoint/(2.0*halfSize)+0.5,d=(uv-center)*vec2(2.0,2.0*shape.z);float r2=dot(d,d);gl_FragColor=vec4(0.0,0.0,0.0,1.0-exp(-shape.x*r2-shape.y*r2*r2));}`;
+      precision highp float;varying vec2 localPoint;uniform vec2 halfSize,center;uniform vec3 shape;uniform vec4 tint;uniform float multiplyBlend;
+      // ALPHA_MULTIPLY uses dstColor * srcColor, so encode coverage in RGB.
+      void main(){vec2 uv=localPoint/(2.0*halfSize)+0.5,d=(uv-center)*vec2(2.0,2.0*shape.z);float r2=dot(d,d),alpha=tint.a*(1.0-exp(-shape.x*r2-shape.y*r2*r2));gl_FragColor=vec4(mix(tint.rgb,mix(vec3(1.0),tint.rgb,alpha),multiplyBlend),alpha);}`;
     B.Effect.ShadersStore.sceneLineFragmentShader=`
       precision highp float;varying vec2 localPoint;
       uniform vec2 lineStart,lineEnd;uniform vec4 tint;uniform float halfWidth,sigma,gain,pixelWidth;
@@ -241,9 +243,9 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
         gl_FragColor=vec4(clamp(color*exp(grain*noiseEnabled*noiseChannelGain),0.0,1.0),mix(t.a,t.r,maskOnly)*tint.a*intensity*opacity);}`;
     B.Effect.ShadersStore.sceneVignetteFragmentShader=`
       precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;
-      uniform vec2 center;uniform vec3 shape;uniform float enabled;
+      uniform vec2 center;uniform vec3 shape;uniform vec4 tint;uniform float enabled,multiplyBlend;
       void main(){vec2 d=(vUV-center)*vec2(2.0,2.0*shape.z);float r2=dot(d,d);
-        vec4 c=texture2D(textureSampler,vUV);gl_FragColor=vec4(c.rgb*exp((-shape.x*r2-shape.y*r2*r2)*enabled),1.0);}`;
+        vec4 c=texture2D(textureSampler,vUV);float alpha=tint.a*(1.0-exp((-shape.x*r2-shape.y*r2*r2)*enabled));gl_FragColor=vec4(mix(c.rgb,mix(tint.rgb,c.rgb*tint.rgb,multiplyBlend),alpha),1.0);}`;
     B.Effect.ShadersStore.sceneViewportFrameFragmentShader=`
       precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;
       uniform vec2 viewportSize,shadowOffset;uniform vec4 aperture,borderColor,shadowColor;uniform float radius,deviceScale;

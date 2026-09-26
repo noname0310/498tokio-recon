@@ -1,6 +1,7 @@
 import type { DOMRenderer } from "./dom.js";
 import type { Scene } from "./scene.js";
 import type { Entity, View, Matrix, Vec2, ParticleState, RGB } from "./types.js";
+import {rectangleBlurMask} from "./dom-rectangle-blur.js";
 interface ParticleEntry {element:HTMLDivElement;surface:HTMLDivElement;blurFrame?:HTMLDivElement;image:HTMLImageElement;mask?:HTMLDivElement;glow:boolean;source:string;pending:Promise<void>}
 interface DOMParticleGlow {filter:SVGFilterElement;matrix:SVGFEColorMatrixElement;blur:SVGFEGaussianBlurElement;gain:SVGFEFuncAElement}
 interface DOMParticle {entries:ParticleEntry[];matrix:SVGFEColorMatrixElement;tint:string;tintFilter:SVGFilterElement;glow?:DOMParticleGlow;motion?:{filter:SVGFilterElement;spread:SVGFilterElement;blur:SVGFEGaussianBlurElement;dilate:SVGFEMorphologyElement;gain:SVGFEFuncAElement}}
@@ -27,6 +28,7 @@ export class DOMParticles {
   readonly renderer:DOMRenderer;readonly id:string;readonly pool:DOMParticle[];count:number;readonly filters:SVGFilterElement[];readonly hasGlow:boolean;readonly hasMotionBlur:boolean;readonly uid:string;
   private revision=0;private disposed=false;
   private colorSource="";private solidColor:RGB|null=null;
+  private opaqueRectangle=false;
   private readonly sortGroup:number;
   private readonly activeParticles=new Map<string,DOMParticle>();private readonly spareParticles:DOMParticle[]=[];
   constructor(renderer:DOMRenderer,node:Entity){
@@ -50,7 +52,7 @@ export class DOMParticles {
     for(const glow of [...(this.hasGlow?[true]:[]),false]){
       const element=this.renderer.createSurface(this.id,glow?"Glow":"ParticleEmitter");element.classList.add("particle");
       const blurFrame=motion?div("particle-blur",element):undefined,surface=div("sprite-surface",blurFrame||element),clip=div("sprite-clip",surface),image=new Image();image.alt="";clip.append(image);
-      const mask=!this.hasMotionBlur?div(glow?"particle-glow-mask":"particle-color-mask",surface):undefined;
+      const mask=div(glow?"particle-glow-mask":"particle-color-mask",surface);
       entries.push({element,surface,blurFrame,image,mask,glow,source:"",pending:Promise.resolve()});
     }
     const particle={entries,matrix,tint:`url(#${tint.id})`,tintFilter:tint,glow,motion};this.pool.push(particle);return particle;
@@ -71,7 +73,7 @@ export class DOMParticles {
     const c=scene.requireComponent(this.id,"ParticleEmitter"),asset=scene.asset(c.asset),cell=asset.atlas?.cellSize||asset.size,source=scene.source(c.asset),glow=scene.component(this.id,"Glow"),states=scene.particleStates(this.id,scene.timelineTime,view),loading=[];
     if(!states.length||!this.renderer.resources.isImageReady(c.asset)){if(this.count)for(const p of this.pool)for(const entry of p.entries)sync.hidden(entry.element,true);this.count=0;return;}
     const [frames,glowFrames]=await Promise.all([this.renderer.resources.spriteFrames(scene,c.asset),glow?.enabled&&!this.hasMotionBlur?this.renderer.particleGlow.frames(scene,c.asset,glow):undefined]);
-    if(!this.hasMotionBlur&&this.colorSource!==source){
+    if(this.colorSource!==source){
       const pixels=await this.renderer.resources.image(scene,c.asset),data=pixels.data;
       if(this.disposed||revision!==this.revision)return;
       // Single-color artwork can be tinted by a CSS background through its
@@ -82,6 +84,7 @@ export class DOMParticles {
         else if(data[i]/255!==color.r||data[i+1]/255!==color.g||data[i+2]/255!==color.b){color=null;break;}
       }
       this.colorSource=source;this.solidColor=color;
+      this.opaqueRectangle=!!color&&data.every((v,i)=>i%4!==3||v===255);
     }
     if(this.disposed||revision!==this.revision)return;
     this.count=states.length;
@@ -97,7 +100,9 @@ export class DOMParticles {
       // their transform. Live SVG filters keep display-resolution bounds so
       // Chromium's filter raster cache does not shift fractional sprite edges.
       const t=s.color,tinted=t.r!==1||t.g!==1||t.b!==1;
-      const scale=this.solidColor&&!this.hasMotionBlur?8:Math.max(1e-6,view.pixelsPerUnit*Math.hypot(s.matrix[4],s.matrix[5],s.matrix[6])/cell.y),display={x:cell.x*scale,y:cell.y*scale};
+      const rectangle=this.hasMotionBlur&&this.opaqueRectangle&&!recolored&&!this.hasGlow&&dilation===0&&alphaGain===1&&s.blurUV.x===0&&s.blurUV.y===0;
+      const projectedScale=Math.max(1e-6,view.pixelsPerUnit*Math.hypot(s.matrix[4],s.matrix[5],s.matrix[6])/cell.y);
+      const scale=rectangle?Math.max(128/Math.min(cell.x,cell.y),projectedScale):this.solidColor&&!this.hasMotionBlur?8:projectedScale,display={x:cell.x*scale,y:cell.y*scale};
       if(t.a===0||s.projectedArea===0){p.entries.forEach(entry=>sync.hidden(entry.element,true));continue;}
       const dx=s.blurUV.x*display.x,dy=s.blurUV.y*display.y,sigmaPixels=Math.hypot(dx,dy),angle=Math.atan2(dy,dx),degrees=angle*180/Math.PI;
       const spread=dilation*scale,across=softness*scale,along=Math.hypot(sigmaPixels,across),filterActive=along>0||alphaGain!==1;
@@ -133,11 +138,15 @@ export class DOMParticles {
       sync.attribute(p.matrix,"values",values);
       for(const entry of p.entries){
         const {element,surface,blurFrame,image,mask,glow:isGlow}=entry;
-        const cachedGlow=Boolean(isGlow&&mask&&glowFrames&&glow),maskedBody=Boolean(!isGlow&&mask&&this.solidColor&&tinted&&!recolored),masked=cachedGlow||maskedBody;
+        const cachedGlow=Boolean(isGlow&&mask&&glowFrames&&glow),maskedBody=Boolean(!this.hasMotionBlur&&!isGlow&&mask&&this.solidColor&&tinted&&!recolored),masked=rectangle||cachedGlow||maskedBody;
         sync.hidden(image,masked);
         if(mask){
           sync.hidden(mask,!masked);
-          if(masked){
+          if(rectangle){
+            const px=pad.x*cell.x,py=pad.y*cell.y,color=this.solidColor!;
+            const sigmaX=Math.hypot(softness,s.blurUV.x*cell.x),sigmaY=Math.hypot(softness,s.blurUV.y*cell.y);
+            sync.style(mask,{position:"absolute",left:`${-px*scale}px`,top:`${-py*scale}px`,width:`${(cell.x+2*px)*scale}px`,height:`${(cell.y+2*py)*scale}px`,backgroundColor:`rgb(${color.r*t.r*255} ${color.g*t.g*255} ${color.b*t.b*255})`,maskImage:rectangleBlurMask(cell.x,cell.y,px,py,sigmaX,sigmaY,dilation),maskSize:"100% 100%",maskRepeat:"no-repeat",imageRendering:"auto"});
+          }else if(masked){
             const padding=cachedGlow?glowFrames!.padding:{x:0,y:0},color=cachedGlow?glow!.color:this.solidColor!,src=cachedGlow?glowFrames!.images[s.frame].src:frames[s.frame].src;
             sync.style(mask,{position:"absolute",left:`${-padding.x*scale}px`,top:`${-padding.y*scale}px`,width:`${(cell.x+2*padding.x)*scale}px`,height:`${(cell.y+2*padding.y)*scale}px`,backgroundColor:`rgb(${color.r*t.r*255} ${color.g*t.g*255} ${color.b*t.b*255})`,maskImage:`url("${src}")`,maskSize:"100% 100%",maskRepeat:"no-repeat",imageRendering:cachedGlow||asset.filter!=="point"?"auto":"crisp-edges"});
           }
@@ -149,7 +158,7 @@ export class DOMParticles {
         this.renderer.setDepth(element,sortBySize||grouped?sortDepth:s.depth,sortBySize?s.projectedArea:grouped?-s.depth:0,this.sortGroup*40002+i*2+(isGlow?0:1));
         sync.hidden(element,!pr.visible||(isGlow&&!glow?.enabled));sync.attribute(element,"data-particle",s.id);sync.attribute(element,"data-frame",s.frame);
         sync.style(element,{transform:pr.transform,clipPath:pr.clip,opacity:t.a,mixBlendMode:(isGlow?glow?.blend==="additive":c.blend==="additive")?"plus-lighter":"normal"});
-        if(blurFrame&&p.motion)sync.style(blurFrame,{position:"absolute",left:"0px",top:"0px",width:`${display.x}px`,height:`${display.y}px`,transformOrigin:"50% 50%",transform:`rotate(${degrees}deg)`,filter:filterActive?`url(#${p.motion.filter.id})`:"none"});
+        if(blurFrame&&p.motion)sync.style(blurFrame,{position:"absolute",left:"0px",top:"0px",width:`${display.x}px`,height:`${display.y}px`,transformOrigin:"50% 50%",transform:`rotate(${degrees}deg)`,filter:filterActive&&!rectangle?`url(#${p.motion.filter.id})`:"none"});
         sync.style(surface,{left:"0px",top:"0px",width:`${display.x}px`,height:`${display.y}px`,transformOrigin:"50% 50%",transform:blurFrame?`rotate(${-degrees}deg)`:"none",filter:masked?"none":[dilation>0&&p.motion?`url(#${p.motion.spread.id})`:"",isGlow&&p.glow?`url(#${p.glow.filter.id})`:tinted||recolored?p.tint:""].filter(Boolean).join(" ")||"none"});
         sync.style(image,{width:`${display.x}px`,height:`${display.y}px`,left:"0px",top:"0px",imageRendering:asset.filter==="point"?"crisp-edges":"auto"});
       }

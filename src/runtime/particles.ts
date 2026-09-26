@@ -56,7 +56,7 @@ function unitSphere(random:Random){const z=2*random()-1,a=2*Math.PI*random(),r=M
 function shapePoint(shape:ParticleEmitter["shape"],random:Random):Vec3{
   const s=shape.size;
   if(shape.type==="box")return {x:(random()-.5)*s.x,y:(random()-.5)*s.y,z:(random()-.5)*s.z};
-  if(shape.type==="ellipse"){const a=2*Math.PI*random(),r=Math.sqrt(random());return {x:Math.cos(a)*r*s.x/2,y:Math.sin(a)*r*s.y/2,z:0};}
+  if(shape.type==="ellipse"){const a=2*Math.PI*random(),inner=shape.innerRadiusRatio**2,r=Math.sqrt(inner+(1-inner)*random());return {x:Math.cos(a)*r*s.x/2,y:Math.sin(a)*r*s.y/2,z:0};}
   if(shape.type==="sphere"){const p=unitSphere(random),r=Math.cbrt(random());return {x:p.x*r*s.x/2,y:p.y*r*s.y/2,z:p.z*r*s.z/2};}
   return {x:0,y:0,z:0};
 }
@@ -150,9 +150,17 @@ export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene
       const integral=c.speedOverLife.length?life*integratedSpeed(c.speedOverLife,u):age,gain=sampleKeys(c.speedOverLife,u,1);
       for(const k of axes){position[k]=point[k]+birth.velocity[k]*integral+c.acceleration[k]*accelerationTime;velocity[k]=birth.velocity[k]*gain+c.acceleration[k]*velocityTime;}
     }else for(const k of axes){position[k]=point[k]+d[k]*distance+c.acceleration[k]*accelerationTime;velocity[k]=d[k]*speedNow+c.acceleration[k]*velocityTime;}
+    let expansion=1;
+    if(c.radialExpansion){
+      const rate=range(c.radialExpansion,mulberry32(hash(c.seed,birth.id,birth.salt^0x163C80A7)));
+      expansion=Math.exp(rate*age);
+      // Differentiate the same closed form used for positions so motion blur
+      // follows the expanded trajectory, including any base velocity.
+      for(const k of axes){velocity[k]=(velocity[k]+rate*position[k])*expansion;position[k]*=expansion;}
+    }
     const birthTime=Time.add(start,birth.offset);
     const origin=c.space==="world"?scene.matrixAt(id,birthTime):current,worldPosition=M.point(origin,position),matrix=M.identity();
-    const height=size,width=size*cell.x/cell.y,co=Math.cos(spin),si=Math.sin(spin);
+    const height=size*expansion,width=height*cell.x/cell.y,co=Math.cos(spin),si=Math.sin(spin);
     let basis=origin;
     if(c.billboard==="camera"){
       basis=cameraRotation;const sx=Math.hypot(origin[0],origin[1],origin[2]),sy=Math.hypot(origin[4],origin[5],origin[6]);
@@ -190,7 +198,7 @@ export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene
   return states.sort((a,b)=>(c.sortMode==="sizeAscending"?a.projectedArea-b.projectedArea:b.depth-a.depth)||a.birthTime-b.birthTime||a.id.localeCompare(b.id));
 }
 
-export const particleDefaults:ParticleEmitter={asset:"",colorMatrix:[1,0,0,0,0,1,0,0,0,0,1,0],seed:1,maxParticles:256,start:{frame:Frame.zero,rate:frameRate(30)},duration:0,prewarm:0,rate:10,bursts:[],cameraContinuation:null,space:"local",shape:{type:"point",size:{x:0,y:0,z:0}},directionMode:"cone",direction:{x:0,y:1,z:0},spreadDegrees:0,speed:{min:1,max:1},speedOverLife:[],lifetime:{min:1,max:1},startSize:{min:.1,max:.1},rotation:{min:0,max:0},angularVelocity:{min:0,max:0},acceleration:{x:0,y:0,z:0},velocityRelaxation:null,sizeOverLife:[],color:{r:1,g:1,b:1,a:1},colorPalette:[],colorOverLife:[],billboard:"camera",blend:"alpha",sortMode:"depth",animation:{mode:"single",timeSource:"age",frame:0,frames:[],framesPerSecond:15,loop:true,randomStart:false}};
+export const particleDefaults:ParticleEmitter={asset:"",colorMatrix:[1,0,0,0,0,1,0,0,0,0,1,0],seed:1,maxParticles:256,start:{frame:Frame.zero,rate:frameRate(30)},duration:0,prewarm:0,rate:10,bursts:[],cameraContinuation:null,space:"local",shape:{type:"point",size:{x:0,y:0,z:0},innerRadiusRatio:0},directionMode:"cone",direction:{x:0,y:1,z:0},spreadDegrees:0,speed:{min:1,max:1},speedOverLife:[],lifetime:{min:1,max:1},startSize:{min:.1,max:.1},rotation:{min:0,max:0},angularVelocity:{min:0,max:0},acceleration:{x:0,y:0,z:0},velocityRelaxation:null,radialExpansion:null,sizeOverLife:[],color:{r:1,g:1,b:1,a:1},colorPalette:[],colorOverLife:[],billboard:"camera",blend:"alpha",sortMode:"depth",animation:{mode:"single",timeSource:"age",frame:0,frames:[],framesPerSecond:15,loop:true,randomStart:false}};
 
 export function validateKeys(keys:unknown,label:string,axes:string|null=null,unitTime=false,minimum=-Infinity){
   if(!Array.isArray(keys))throw new Error(`${label} must be a key array.`);
@@ -220,6 +228,7 @@ export function validateEmitter(c:ParticleEmitter,assets:Record<string,SpriteAss
   if(!["point","box","ellipse","sphere"].includes(c.shape.type))fail("unsupported emission shape.");
   for(const key of ["direction","acceleration"] as const)for(const axis of axes)if(!number(c[key][axis],-Infinity))fail(`invalid ${key}.`);
   for(const axis of axes)if(!number(c.shape.size[axis],0))fail("invalid shape size.");
+  if(!number(c.shape.innerRadiusRatio,0,1)||c.shape.innerRadiusRatio>0&&c.shape.type!=="ellipse")fail("inner radius requires an ellipse and a fraction in [0, 1].");
   if(c.directionMode==="cone"&&length(c.direction)<1e-9)fail("direction must be nonzero.");
   if(!Array.isArray(c.bursts)||c.bursts.some(b=>!Number.isInteger(b.count)||!number(b.count,1,20000)))fail("invalid bursts.");
   for(const burst of c.bursts){
@@ -237,9 +246,13 @@ export function validateEmitter(c:ParticleEmitter,assets:Record<string,SpriteAss
     if(!motion||axes.some(axis=>!number(motion.rate?.[axis],0)||!number(motion.target?.[axis],-Infinity)||!number(motion.variation?.[axis],0)))fail("invalid velocity relaxation.");
     if(c.speedOverLife.length)fail("velocity relaxation cannot be combined with a speed curve.");
   }
+  if(c.radialExpansion!==null){
+    const r=c.radialExpansion;
+    if(!r||!number(r.min,0)||!number(r.max,r.min)||!Number.isFinite(Math.exp(r.max*c.lifetime.max)))fail("invalid radial expansion rate or exponent.");
+  }
   if(c.cameraContinuation!==null){
     if(!c.cameraContinuation||!number(c.cameraContinuation.padding,0))fail("invalid camera continuation padding.");
-    if(c.space!=="local"||c.directionMode!=="cone"||c.spreadDegrees!==0||c.direction.z!==0||c.shape.size.z!==0||c.speed.min<=0||c.acceleration.z!==0||c.acceleration.x*c.direction.x+c.acceleration.y*c.direction.y<0||c.speedOverLife.length||c.velocityRelaxation||c.bursts.some(b=>b.velocity||b.targetVelocity))fail("camera continuation requires a planar local stream with positive speed, zero spread, non-reversing acceleration and no velocity overrides or curves.");
+    if(c.space!=="local"||c.directionMode!=="cone"||c.spreadDegrees!==0||c.direction.z!==0||c.shape.size.z!==0||c.speed.min<=0||c.acceleration.z!==0||c.acceleration.x*c.direction.x+c.acceleration.y*c.direction.y<0||c.speedOverLife.length||c.velocityRelaxation||c.radialExpansion||c.bursts.some(b=>b.velocity||b.targetVelocity))fail("camera continuation requires a planar local stream with positive speed, zero spread, non-reversing acceleration and no velocity overrides or curves.");
   }
   if(!Array.isArray(c.colorPalette)||c.colorPalette.length>256||c.colorPalette.some(e=>!e||!number(e.weight,0)||!e.color||[e.color.r,e.color.g,e.color.b,e.color.a].some(v=>!number(v,0,1))))fail("invalid weighted color palette.");
   const paletteWeight=c.colorPalette.reduce((sum,e)=>sum+e.weight,0);

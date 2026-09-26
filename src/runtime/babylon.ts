@@ -312,6 +312,9 @@ export class BabylonRenderer {
       const mesh=this.vignettePlane,material=this.vignetteMaterial!;mesh.setEnabled(depth>=c.near&&depth<=c.far);mesh.parent=camera;mesh.position.z=depth;
       const scale=data.frustumScale(depth);
       const offset=data.projectionOffset;mesh.position.x=-offset.x*scale;mesh.position.y=-offset.y*scale;
+      this.context!.tint(material,v.color);
+      material.alphaMode=v.blend==="multiply"?B.Engine.ALPHA_MULTIPLY:B.Engine.ALPHA_COMBINE;
+      material.setFloat("multiplyBlend",v.blend==="multiply"?1:0);
       this.context!.rect(mesh,-view.worldWidth*scale/2,-view.worldHeight*scale/2,view.worldWidth*scale/2,view.worldHeight*scale/2);this.context!.vec2(material,"halfSize",{x:view.worldWidth*scale/2,y:view.worldHeight*scale/2});this.context!.vec2(material,"center",v.centerViewport);material.setVector3("shape",new B.Vector3(v.quadratic,v.quartic,v.verticalWeight));
     }else if(this.vignettePlane){this.vignettePlane.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;}
     this.cameraBlur!.update(data,view,camera);

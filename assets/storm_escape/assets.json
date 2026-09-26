@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "assets"       : {
+    "stripes_0": {
+      "type"          : "Sprite",
+      "file"          : "stripes_0.png",
+      "size"          : {"x": 48, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5771, 5759],
+        "repeat": ["x"],
+        "sourcePixelsPerCell": 13.333333333333334,
+        "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
+      }
+    },
+    "stripes_1": {
+      "type"          : "Sprite",
+      "file"          : "stripes_1.png",
+      "size"          : {"x": 48, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5773, 5779],
+        "repeat": ["x"],
+        "sourcePixelsPerCell": 13.333333333333334,
+        "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
+      }
+    },
+    "stripes_2": {
+      "type"          : "Sprite",
+      "file"          : "stripes_2.png",
+      "size"          : {"x": 48, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5783, 5789],
+        "repeat": ["x"],
+        "sourcePixelsPerCell": 13.333333333333334,
+        "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
+      }
+    },
+    "stripes_3": {
+      "type"          : "Sprite",
+      "file"          : "stripes_3.png",
+      "size"          : {"x": 48, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5793, 5799],
+        "repeat": ["x"],
+        "sourcePixelsPerCell": 13.333333333333334,
+        "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
+      }
+    },
+    "stripes_4": {
+      "type"          : "Sprite",
+      "file"          : "stripes_4.png",
+      "size"          : {"x": 48, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5803, 5809],
+        "repeat": ["x"],
+        "sourcePixelsPerCell": 13.333333333333334,
+        "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
+      }
+    },
+    "stripes_5": {
+      "type"          : "Sprite",
+      "file"          : "stripes_5.png",
+      "size"          : {"x": 48, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5813, 5819],
+        "repeat": ["x"],
+        "sourcePixelsPerCell": 13.333333333333334,
+        "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
+      }
+    },
+    "stripes_6": {
+      "type"          : "Sprite",
+      "file"          : "stripes_6.png",
+      "size"          : {"x": 48, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5823, 5829],
+        "repeat": ["x"],
+        "sourcePixelsPerCell": 13.333333333333334,
+        "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
+      }
+    },
+    "stripes_7": {
+      "type"          : "Sprite",
+      "file"          : "stripes_7.png",
+      "size"          : {"x": 48, "y": 1},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [5833, 5834],
+        "repeat": ["x"],
+        "sourcePixelsPerCell": 13.333333333333334,
+        "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
+      }
+    }
+  }
+}

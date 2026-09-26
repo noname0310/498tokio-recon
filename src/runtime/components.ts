@@ -14,7 +14,7 @@ const transitionDefaults=new Map<Transition["kind"],Transition>([
 ]);
 export const componentTypes = new Map<ComponentType,object>([
   ["Camera", {projection:"orthographic",verticalFovDegrees:50,principalPoint:{x:.5,y:.5},referenceVerticalSize:10,referenceAspect:16/9,aspectPolicy:"expandFromReference",near:.1,far:100,clearColor:{r:0,g:0,b:0,a:1}}],
-  ["Vignette", {centerViewport:{x:.5,y:.5},quadratic:.2,quartic:.4,verticalWeight:1,depth:null}],
+  ["Vignette", {centerViewport:{x:.5,y:.5},quadratic:.2,quartic:.4,verticalWeight:1,color:{r:0,g:0,b:0,a:1},blend:"normal",depth:null}],
   ["ViewportFrame", {insetsWorld:{left:0,right:0,top:0,bottom:0},radiusWorld:0,color:{r:0,g:0,b:0,a:1},innerShadow:{offsetWorld:{x:0,y:0},color:{r:0,g:0,b:0,a:1},opacity:0}}],
   ["ViewportTransform", {scale:1,centerViewport:{x:.5,y:.5},opacity:1}],
   ["ColorGrade", {matrix:[1,0,0,0, 0,1,0,0, 0,0,1,0],midpoint:{r:.5,g:.5,b:.5},strength:1}],
@@ -36,7 +36,7 @@ export const componentTypes = new Map<ComponentType,object>([
   ["GaussianBlur", {sigmaWorld:{x:0,y:0}}],
   ["SpriteMotionBlur", {translationWorld:{x:0,y:0},radialAmount:0,center:{x:0,y:0},samples:25,dilationPixels:0,softnessPixels:0,alphaGain:1,clipToSprite:false}],
   ["DirectionalBlur", {sigmaWorld:0,angleDegrees:0}],
-  ["PlaneRenderer", {color:rgba,blend:"normal",coverage:"fixed",shape:"rectangle",size:{x:1,y:1},innerRadiusRatio:0,clipBounds:null}],
+  ["PlaneRenderer", {color:rgba,blend:"normal",coverage:"fixed",shape:"rectangle",size:{x:1,y:1},viewportSizing:"fixed",innerRadiusRatio:0,edgeSoftness:0,clipBounds:null}],
   ["Transition", {kind:"grid",progress:0,target:null}],
   ["ParticleMotionBlur", {shutterSeconds:1/30,maxSigmaWorld:.3,dilationPixels:0,softnessPixels:0,alphaGain:1}],
   ["LineRenderer", {start:{x:-.5,y:0},end:{x:.5,y:0},width:.01,color:rgba,coverage:"segment",viewportExpansion:0}],
@@ -121,7 +121,7 @@ export function normalizeScene(input:unknown):SceneData {
         vector(c.clearColor,"rgba","clearColor",0,1);
         if(!["expandFromReference","fillReference"].includes(c.aspectPolicy))fail(`Unsupported aspect policy: ${c.aspectPolicy}`);
       }
-      if(c.type==="Vignette"){vector(c.centerViewport,"xy","centerViewport");finite(c.quadratic,"quadratic",0);finite(c.quartic,"quartic",0);finite(c.verticalWeight,"verticalWeight",.0001);if(c.depth!==null)finite(c.depth,"Vignette.depth",.000001);}
+      if(c.type==="Vignette"){vector(c.centerViewport,"xy","centerViewport");finite(c.quadratic,"quadratic",0);finite(c.quartic,"quartic",0);finite(c.verticalWeight,"verticalWeight",.0001);if(!["normal","multiply"].includes(c.blend))fail("Unsupported Vignette.blend.");if(c.depth!==null)finite(c.depth,"Vignette.depth",.000001);}
       if(c.type==="ViewportFrame"){
         for(const side of ["left","right","top","bottom"] as const)finite(c.insetsWorld[side],`ViewportFrame.insetsWorld.${side}`,0);
         finite(c.radiusWorld,"ViewportFrame.radiusWorld",0);
@@ -219,6 +219,9 @@ export function normalizeScene(input:unknown):SceneData {
         if(!["normal","additive"].includes(c.blend))fail("Invalid PlaneRenderer blend mode.");
         if(!["rectangle","ellipse"].includes(c.shape)||c.shape==="ellipse"&&c.coverage!=="fixed")fail("An ellipse requires fixed plane bounds.");
         finite(c.innerRadiusRatio,"PlaneRenderer.innerRadiusRatio",0,1);
+        finite(c.edgeSoftness,"PlaneRenderer.edgeSoftness",0,1);
+        if(!["fixed","expand"].includes(c.viewportSizing))fail("Invalid PlaneRenderer viewport sizing.");
+        if(c.edgeSoftness>0&&c.shape!=="ellipse")fail("PlaneRenderer.edgeSoftness requires an ellipse.");
         if(c.innerRadiusRatio>0&&c.shape!=="ellipse")fail("PlaneRenderer.innerRadiusRatio requires an ellipse.");
         vector(c.size,"xy","PlaneRenderer.size",.000001);if(!["camera","fixed"].includes(c.coverage))fail("Invalid PlaneRenderer coverage.");
         if(c.clipBounds){for(const side of ["left","right","bottom","top"] as const)if(c.clipBounds[side]!==null)finite(c.clipBounds[side],`PlaneRenderer.clipBounds.${side}`);

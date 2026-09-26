@@ -2,7 +2,7 @@ import type * as Babylon from "@babylonjs/core/pure";
 import type {BabylonSceneContext} from "./babylon-context.js";
 import type {Scene} from "./scene.js";
 import type {Entity,View} from "./types.js";
-import {lineGeometry,planeBounds} from "./geometry.js";
+import {lineGeometry,planeBounds,planeSize} from "./geometry.js";
 import {Math3D as M} from "./math.js";
 import {BabylonTransitionUniforms,transitionUniformNames} from "./babylon-transition-uniforms.js";
 export class BabylonPlane {
@@ -10,12 +10,13 @@ export class BabylonPlane {
   private noiseKey="";private noiseRevision=0;private noisePending:Promise<void>=Promise.resolve();private noiseTexture?:Babylon.RawTexture;
   readonly id:string;readonly material:Babylon.ShaderMaterial;readonly mesh:Babylon.Mesh;
   constructor(readonly renderer:BabylonSceneContext,node:Entity){
-    this.id=node.id;const B=renderer.B;this.material=new B.ShaderMaterial(`${node.name} / PlaneRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneSolid"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint","ellipse","ellipseSize","ellipseAA","ellipseInnerRatio","noiseOrigin","noiseSize","noiseRange","noiseEnabled","noiseChannelGain",...transitionUniformNames],samplers:["noiseTex"],defines:["#define PLANE_NOISE"],needAlphaBlending:true});this.material.backFaceCulling=false;this.material.disableDepthWrite=true;this.material.setTexture("noiseTex",renderer.neutralTexture);this.mesh=renderer.quad(node.name,node.id,this.material);
+    this.id=node.id;const B=renderer.B;this.material=new B.ShaderMaterial(`${node.name} / PlaneRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneSolid"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint","ellipse","ellipseSize","ellipseAA","ellipseInnerRatio","ellipseSoftness","noiseOrigin","noiseSize","noiseRange","noiseEnabled","noiseChannelGain",...transitionUniformNames],samplers:["noiseTex"],defines:["#define PLANE_NOISE"],needAlphaBlending:true});this.material.backFaceCulling=false;this.material.disableDepthWrite=true;this.material.setTexture("noiseTex",renderer.neutralTexture);this.mesh=renderer.quad(node.name,node.id,this.material);
   }
   async update(scene:Scene,view:View):Promise<void>{
     const c=scene.requireComponent(this.id,"PlaneRenderer"),b=planeBounds(scene,this.id,view,c);this.mesh.setEnabled(c.enabled&&!!scene.active.get(this.id)&&!!b&&c.color.a>0);if(b)this.renderer.rect(this.mesh,b.left,b.bottom,b.right,b.top);this.renderer.tint(this.material,c.color);
     this.material.alphaMode=c.blend==="additive"?this.renderer.B.Engine.ALPHA_ADD:this.renderer.B.Engine.ALPHA_COMBINE;
-    this.material.setFloat("ellipse",c.shape==="ellipse"?1:0);this.renderer.vec2(this.material,"ellipseSize",c.size);this.material.setFloat("ellipseAA",1/(view.pixelsPerUnit*Math.max(.000001,Math.min(c.size.x,c.size.y))));this.material.setFloat("ellipseInnerRatio",c.innerRadiusRatio);
+    this.material.setFloat("ellipseSoftness",c.edgeSoftness);
+    this.material.setFloat("ellipse",c.shape==="ellipse"?1:0);this.renderer.vec2(this.material,"ellipseSize",planeSize(scene,view,c));this.material.setFloat("ellipseAA",1/(view.pixelsPerUnit*Math.max(.000001,Math.min(c.size.x,c.size.y))));this.material.setFloat("ellipseInnerRatio",c.innerRadiusRatio);
     const transition=scene.component(this.id,"Transition");
     this.transitionUniforms.update(this.renderer,this.material,transition,planeBounds(scene,this.id,view,c,0));
     const noise=scene.component(this.id,"ProceduralNoise"),r=this.renderer,m=this.material;

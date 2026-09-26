@@ -1,7 +1,7 @@
 import type {DOMRenderer} from "./dom.js";
 import type {Scene} from "./scene.js";
 import type {Bounds,Color,Entity,View} from "./types.js";
-import {lineGeometry,planeBounds,transitionGeometryKey} from "./geometry.js";
+import {lineGeometry,planeBounds,planeSize,transitionGeometryKey} from "./geometry.js";
 import {DOMTransitionPath} from "./dom-transition-path.js";
 import {DOMPlaneNoise} from "./dom-plane-noise.js";
 const NS="http://www.w3.org/2000/svg";
@@ -13,6 +13,7 @@ export class DOMPlane {
   private grid?:SVGSVGElement;private gridPath?:SVGPathElement;
   private shape?:HTMLDivElement;private ringClip?:SVGClipPathElement;private ringPath?:SVGPathElement;
   private readonly pathGeometry=new DOMTransitionPath();private gridKey="";
+  private softEdgeKey="";
   private readonly noise?:DOMPlaneNoise;
   constructor(readonly renderer:DOMRenderer,node:Entity){this.id=node.id;this.element=renderer.createSurface(node.id,"PlaneRenderer");this.element.append(this.fill);if(node.components.some(c=>c.type==="ProceduralNoise"))this.noise=new DOMPlaneNoise(renderer);}
   async update(scene:Scene,view:View):Promise<void>{
@@ -21,9 +22,10 @@ export class DOMPlane {
     if(!c.enabled||!scene.active.get(this.id)||c.color.a===0){sync.hidden(this.element,true);return;}
     const bounds=planeBounds(scene,this.id,view,c);
     if(!bounds){sync.hidden(this.element,true);return;}
+    const size=planeSize(scene,view,c);
     this.renderer.setDepth(this.element,this.renderer.planeDepth(scene,this.id,bounds));
     sync.style(this.element,{transform:scene.cssMatrix(this.id,view),mixBlendMode:c.blend==="additive"?"plus-lighter":"normal"});const clip=this.renderer.depth.clipPlane(scene,this.id,view,bounds);sync.hidden(this.element,!clip.visible);sync.style(this.element,{clipPath:clip.css});
-    const ring=c.shape==="ellipse"&&c.innerRadiusRatio>0;
+    const soft=c.shape==="ellipse"&&c.edgeSoftness>0,ring=c.shape==="ellipse"&&c.innerRadiusRatio>0&&!soft;
     if(ring){
       if(!this.shape){
         this.shape=document.createElement("div");this.shape.style.position="absolute";
@@ -31,12 +33,21 @@ export class DOMPlane {
         this.ringPath=document.createElementNS(NS,"path");this.ringPath.setAttribute("clip-rule","evenodd");this.ringClip.append(this.ringPath);this.renderer.defs.append(this.ringClip);
         this.shape.append(this.fill);if(this.grid)this.shape.append(this.grid);this.element.append(this.shape);
       }
-      const x=c.size.x*view.pixelsPerUnit/2,y=c.size.y*view.pixelsPerUnit/2,k=c.innerRadiusRatio;
+      const x=size.x*view.pixelsPerUnit/2,y=size.y*view.pixelsPerUnit/2,k=c.innerRadiusRatio;
       const ellipse=(x:number,y:number)=>`M ${x} 0 A ${x} ${y} 0 1 0 ${-x} 0 A ${x} ${y} 0 1 0 ${x} 0 Z`;
       sync.attribute(this.ringPath!,"d",`${ellipse(x,y)} ${ellipse(x*k,y*k)}`);
     }
     if(this.shape)sync.style(this.shape,{clipPath:ring?`url(#${this.ringClip!.id})`:"none"});
-    layout(sync,this.fill,bounds,view.pixelsPerUnit);sync.style(this.fill,{backgroundColor:color(c.color),borderRadius:c.shape==="ellipse"&&!ring?"50%":"0"});sync.style(this.fill,{opacity:String(c.color.a)});
+    layout(sync,this.fill,bounds,view.pixelsPerUnit);sync.style(this.fill,{backgroundColor:soft?"transparent":color(c.color),borderRadius:c.shape==="ellipse"&&!ring&&!soft?"50%":"0"});sync.style(this.fill,{opacity:String(c.color.a)});
+    if(soft){
+      const key=JSON.stringify([size,c.color.r,c.color.g,c.color.b,c.innerRadiusRatio,c.edgeSoftness,bounds,view.pixelsPerUnit]);
+      if(key!==this.softEdgeKey){
+        this.softEdgeKey=key;const extent=1+c.edgeSoftness,rgb=`${c.color.r*255} ${c.color.g*255} ${c.color.b*255}`;
+        const smooth=(lo:number,hi:number,x:number)=>{const t=Math.max(0,Math.min(1,(x-lo)/(hi-lo)));return t*t*(3-2*t);};
+        const stops=Array.from({length:129},(_,i)=>{const r=extent*i/128,e=c.edgeSoftness;let a=1-smooth(1-e,1+e,r);if(c.innerRadiusRatio>0)a*=c.innerRadiusRatio>=1?0:smooth(c.innerRadiusRatio-e,c.innerRadiusRatio+e,r);return `rgb(${rgb} / ${a}) ${i/128*100}%`;});
+        const u=view.pixelsPerUnit;sync.style(this.fill,{backgroundImage:`radial-gradient(ellipse ${size.x*extent*u/2}px ${size.y*extent*u/2}px at ${-bounds.left*u}px ${bounds.top*u}px,${stops.join(',')})`});
+      }
+    }else{this.softEdgeKey="";sync.style(this.fill,{backgroundImage:"none"});}
     const pendingNoise=this.noise?.update(this.fill,bounds,view.pixelsPerUnit,scene.component(this.id,"ProceduralNoise"));
     const transition=scene.component(this.id,"Transition");
     if(!transition?.enabled||transition.progress>=1){sync.hidden(this.fill,false);if(this.grid)sync.hidden(this.grid,true);await pendingNoise;return;}

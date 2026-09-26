@@ -43,12 +43,12 @@ export class BabylonSceneContext {
   vec2(material:Babylon.ShaderMaterial,name:string,value:Vec2){material.setVector2(name,new this.B.Vector2(value.x,value.y));}
   tint(material:Babylon.ShaderMaterial,c:Color,opacity=1){material.setVector4("tint",new this.B.Vector4(c.r,c.g,c.b,c.a*opacity));}
   vignetteEffect(camera:Babylon.TargetCamera):Babylon.PostProcess {
-    const effect=new B.PostProcess("Camera / Vignette","sceneVignette",["center","shape","enabled"],null,1,camera,B.Texture.NEAREST_SAMPLINGMODE,this.engine,false);
-    effect.onApply=e=>{const v=this.data.component(this.data.cameraNode.id,"Vignette");e.setFloat2("center",v?.centerViewport.x||0,v?.centerViewport.y||0);e.setFloat3("shape",v?.quadratic||0,v?.quartic||0,v?.verticalWeight||1);e.setFloat("enabled",v?.enabled&&v.depth===null?1:0);};
+    const effect=new B.PostProcess("Camera / Vignette","sceneVignette",["center","shape","tint","enabled","multiplyBlend"],null,1,camera,B.Texture.NEAREST_SAMPLINGMODE,this.engine,false);
+    effect.onApply=e=>{const v=this.data.component(this.data.cameraNode.id,"Vignette");e.setFloat2("center",v?.centerViewport.x||0,v?.centerViewport.y||0);e.setFloat3("shape",v?.quadratic||0,v?.quartic||0,v?.verticalWeight||1);e.setFloat4("tint",v?.color.r??0,v?.color.g??0,v?.color.b??0,v?.color.a??1);e.setFloat("enabled",v?.enabled&&v.depth===null?1:0);e.setFloat("multiplyBlend",v?.blend==="multiply"?1:0);};
     return effect;
   }
   depthVignetteMaterial():Babylon.ShaderMaterial {
-    const material=new B.ShaderMaterial("Camera / depth vignette",this.scene,{vertex:"sceneEntity",fragment:"sceneVignettePlane"},{attributes:["position","uv"],uniforms:["worldViewProjection","halfSize","center","shape"],needAlphaBlending:true});
+    const material=new B.ShaderMaterial("Camera / depth vignette",this.scene,{vertex:"sceneEntity",fragment:"sceneVignettePlane"},{attributes:["position","uv"],uniforms:["worldViewProjection","halfSize","center","shape","tint","multiplyBlend"],needAlphaBlending:true});
     material.backFaceCulling=false;material.disableDepthWrite=true;return material;
   }
   dispose():void {this.scene.dispose();this.nodes.clear();}

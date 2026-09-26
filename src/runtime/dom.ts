@@ -614,6 +614,7 @@ export class DOMRenderer {
     const camera=scene.requireComponent(scene.cameraNode.id,"Camera");
     sync.hidden(this.screen,!enabled(v)||v.depth!==null&&(v.depth<camera.near||v.depth>camera.far));
     if(v){
+      sync.style(this.screen,{mixBlendMode:v.blend});
       const depth=v.depth,placed=depth!==null;
       const parent=placed?this.world:this.viewport;if(this.screen.parentElement!==parent)parent.append(this.screen);
       if(placed)this.setDepth(this.screen,depth);
@@ -622,9 +623,9 @@ export class DOMRenderer {
       sync.attribute(this.screen,"class",placed?"component":"screen-effect");sync.style(this.screen,{transform:placed?scene.cssMatrix(scene.cameraNode.id,view,{x:-projectionOffset.x*projectionScale,y:-projectionOffset.y*projectionScale,z:depth}):"none"});
       const scale=placed?scene.frustumScale(depth):1,width=view.width*scale,height=view.height*scale;
       sync.style(this.screenFill,placed?{right:"auto",bottom:"auto",left:`${-width/2}px`,top:`${-height/2}px`,width:`${width}px`,height:`${height}px`}:{right:"0",bottom:"0",left:"0",top:"0",width:"100%",height:"100%"});
-      const key=JSON.stringify([v.centerViewport,v.quadratic,v.quartic,v.verticalWeight,width,height]);
+      const key=JSON.stringify([v.centerViewport,v.quadratic,v.quartic,v.verticalWeight,v.color,width,height]);
       if(key!==this.vignetteKey){this.vignetteKey=key;
-      const radius=1.5,stops=Array.from({length:129},(_,i)=>{const r2=(radius*i/128)**2;return `rgb(0 0 0 / ${1-Math.exp(-v.quadratic*r2-v.quartic*r2*r2)}) ${i/128*100}%`;});
+      const radius=1.5,rgb=`${v.color.r*255} ${v.color.g*255} ${v.color.b*255}`,stops=Array.from({length:129},(_,i)=>{const r2=(radius*i/128)**2;return `rgb(${rgb} / ${v.color.a*(1-Math.exp(-v.quadratic*r2-v.quartic*r2*r2))}) ${i/128*100}%`;});
       sync.style(this.screenFill,{backgroundImage:`radial-gradient(ellipse ${radius*width/2}px ${radius*height/(2*v.verticalWeight)}px at ${v.centerViewport.x*100}% ${(1-v.centerViewport.y)*100}%,${stops.join(",")})`});
       }
     }

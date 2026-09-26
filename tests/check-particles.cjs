@@ -28,6 +28,13 @@ async function numerical(){
     relaxed.particleStates('effect',2);assert.deepEqual(relaxed.particleStates('effect',.1)[0],r1,'Relaxed motion has no integration history');
     relaxed.setTransform('parent',{localPosition:{x:5,y:2,z:0}});assert.equal(relaxed.particleStates('effect',.1)[0].position.x,r1.position.x+5);
     const invalidMotion=fixture({velocityRelaxation:{rate:{x:-1,y:1,z:0},target:{x:0,y:0,z:0},variation:{x:0,y:0,z:0}}});assert.throws(()=>new Scene(invalidMotion,'http://localhost/'),/velocity relaxation/);
+    const expanding=new Scene(fixture({rate:0,bursts:[{time:0,count:1}],shape:{type:'ellipse',size:{x:2,y:2,z:0},innerRadiusRatio:1},speed:{min:0,max:0},radialExpansion:{min:Math.LN2,max:Math.LN2},lifetime:{min:4,max:4}}),'http://localhost/');
+    const e0=expanding.particleStates('effect',0)[0],e1=expanding.particleStates('effect',1)[0],eHalf=expanding.particleStates('effect',.5)[0];
+    assert(Math.abs(Math.hypot(e0.localPosition.x,e0.localPosition.y)-1)<1e-12,'An ellipse perimeter emits at its authored radius');
+    for(const axis of ['x','y'])assert(Math.abs(e1.localPosition[axis]-2*e0.localPosition[axis])<1e-12);
+    assert.equal(e1.matrix[0],2*e0.matrix[0]);assert(Math.abs(eHalf.matrix[0]-Math.sqrt(2)*e0.matrix[0])<1e-12,'Expansion interpolates continuously between frames');
+    expanding.particleStates('effect',3);assert.deepEqual(expanding.particleStates('effect',.5)[0],eHalf);
+    for(const bad of [{radialExpansion:{min:-1,max:2}},{radialExpansion:{min:2,max:1}},{shape:{type:'ellipse',innerRadiusRatio:1.1}},{shape:{type:'box',innerRadiusRatio:.5}}])assert.throws(()=>new Scene(fixture(bad),'http://localhost/'));
     assert.throws(()=>relaxed.setComponent('effect','ParticleEmitter',{cameraContinuation:{padding:1}}),/camera continuation/);
     const blurFixture=fixture({rate:0,bursts:[{time:0,count:1}],speed:{min:2,max:2},lifetime:{min:2,max:2}});
     blurFixture.root.children[1].children[0].components.push({type:'ParticleMotionBlur',shutterSeconds:.3,maxSigmaWorld:1});
