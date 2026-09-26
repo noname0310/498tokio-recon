@@ -1,0 +1,92 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Ending sky / final flight",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 1, "frameRate": 30, "autoplay": true, "loop": false},
+  "presentation"  : {"referenceAspect": false, "toggleKey": "KeyA"},
+  "assets"        : {
+    "background": {
+      "type"          : "Sprite",
+      "file"          : "background_tile.png",
+      "size"          : {"x": 8, "y": 144},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [6666, 6668, 6670, 6672],
+        "gridPitchPixels": 2.5,
+        "horizontalPeriodPixels": 20,
+        "lighting": "Two editable additive soft ellipses, independent of the tiled dither. This factorization does not identify unique physical lamps.",
+        "verticalExtent": "Rows concealed by the source aperture continue the nearest recovered mean and use dither observations from earlier unobstructed sky."
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "ending-background-preview",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"      : "background",
+        "children": [
+          {
+            "id"        : "pattern",
+            "transform" : {
+              "localPosition": {"z": 3}
+            },
+            "components": [
+              {
+                "type"      : "TiledSpriteRenderer",
+                "asset"     : "background",
+                "origin"    : {"x": -3.2, "y": 1.8},
+                "wrap"      : {"x": "repeat", "y": "clamp"},
+                "brightness": 1
+              }
+            ]
+          },
+          {
+            "id"        : "light-1-1",
+            "transform" : {
+              "localPosition": {"x": -2.133929399463396, "y": -3.114072416686794, "z": 2.0              },
+              "localRotation": {                                                  "z": 8.452584032836178}
+            },
+            "components": [
+              {
+                "type"        : "PlaneRenderer",
+                "shape"       : "ellipse",
+                "size"        : {"x": 5.088981198925157, "y": 6.855697248458354},
+                "edgeSoftness": 1,
+                "blend"       : "additive",
+                "color"       : {"r": 0.8930041406342366, "g": 0.6082569063722301, "b": 2.0763889294094982e-10, "a": 1}
+              }
+            ]
+          },
+          {
+            "id"        : "light-2-1",
+            "transform" : {
+              "localPosition": {"x": 2.5115185420774924, "y": -1.5863813266541797, "z":   1.9              },
+              "localRotation": {                                                   "z": -12.203588613884587}
+            },
+            "components": [
+              {
+                "type"        : "PlaneRenderer",
+                "shape"       : "ellipse",
+                "size"        : {"x": 4.834640915387522, "y": 4.7366561499334},
+                "edgeSoftness": 1,
+                "blend"       : "additive",
+                "color"       : {"r": 0.00018666444445340595, "g": 0.4176738751396871, "b": 0.00769770168356098, "a": 1}
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,3 +1,4 @@
+import {DOMText} from "./dom-text.js";
 import {DOMNumber} from "./dom-number.js";
 import {DOMScanlineJitter} from "./dom-scanline-jitter.js";
 import {cameraBlurSigma} from "./camera-motion-blur.js";
@@ -230,6 +231,8 @@ class Sprite {
 interface TileSlot {top:SVGRectElement[];bottom:SVGRectElement[];group:SVGGElement}
 interface TileEdgeRun {x:number;width:number;fill:string}
 class TiledSprite {
+  private readonly geometry:SVGGElement;
+  private readonly gradient?:{mask:SVGMaskElement;ramp:SVGLinearGradientElement;stops:SVGStopElement[];rect:SVGRectElement;body:SVGUseElement;opaque:SVGFilterElement};
   private readonly edgeRuns:Record<"top"|"bottom",TileEdgeRun[]>={top:[],bottom:[]};
   private hasAlpha=false;
   private readonly alphaNoiseFilter:SVGFilterElement;
@@ -241,6 +244,7 @@ class TiledSprite {
   private readonly crop:SVGClipPathElement;private readonly cropRect:SVGRectElement;
   private readonly repeatPattern:SVGPatternElement;private readonly repeatRect:SVGRectElement;
   private readonly glowBlur?:SVGFEGaussianBlurElement;private readonly glowGain?:SVGFEFuncAElement;
+  private readonly shadow?:{blur:SVGFEGaussianBlurElement;offset:SVGFEOffsetElement;color:SVGFEFloodElement;tint:SVGFEColorMatrixElement};
   private readonly slots:TileSlot[]=[];
   private readonly rows:SVGUseElement[]=[];
   private readonly paths=new Map<string,SVGPathElement>();
@@ -256,14 +260,42 @@ class TiledSprite {
     this.renderer=renderer;this.id=node.id;this.element=renderer.createSurface(node.id,"TiledSpriteRenderer");
     this.projection=div("tile-projection",this.element);this.projection.style.cssText="position:absolute;transform-origin:0 0";
     this.surface=div("background-surface",this.projection);this.svg=svg("svg",{class:"pattern",preserveAspectRatio:"none","aria-hidden":"true"},this.surface);
-    this.artID=`tile-${++serial}`;this.noiseAxes=svg("g",{},this.svg);this.blurAxes=svg("g",{},this.noiseAxes);this.contentAxes=svg("g",{},this.blurAxes);this.art=svg("g",{id:this.artID,"data-role":"tile-art"},this.contentAxes);this.tiles=svg("g",{},this.contentAxes);this.grain=div("noise",this.surface);
-    this.repeatPattern=svg("pattern",{id:this.artID+"-repeat",patternUnits:"userSpaceOnUse"},svg("defs",{},this.svg));this.repeatRect=svg("rect",{fill:`url(#${this.artID}-repeat)`,display:"none"},this.contentAxes);
+    this.artID=`tile-${++serial}`;this.noiseAxes=svg("g",{},this.svg);this.blurAxes=svg("g",{},this.noiseAxes);this.contentAxes=svg("g",{},this.blurAxes);
+    this.geometry=svg("g",{id:this.artID+"-geometry"},this.contentAxes);this.art=svg("g",{id:this.artID,"data-role":"tile-art"},this.geometry);this.tiles=svg("g",{},this.geometry);this.grain=div("noise",this.surface);
+    const defs=svg("defs",{},this.svg);
+    this.repeatPattern=svg("pattern",{id:this.artID+"-repeat",patternUnits:"userSpaceOnUse"},defs);this.repeatRect=svg("rect",{fill:`url(#${this.artID}-repeat)`,display:"none"},this.geometry);
+    if(node.components.some(c=>c.type==="ColorGradient")){
+      // Reference the retained geometry for both color and alpha. Opaque RGB
+      // is composited first, then masked once, preserving partial source alpha.
+      defs.append(this.geometry);
+      const mask=svg("mask",{id:this.artID+"-color-mask",maskUnits:"userSpaceOnUse",maskContentUnits:"userSpaceOnUse",style:"mask-type:alpha"},defs);
+      svg("use",{href:`#${this.geometry.id}`},mask);
+      const opaque=svg("filter",{id:this.artID+"-opaque",filterUnits:"userSpaceOnUse","color-interpolation-filters":"sRGB"},defs);
+      svg("feColorMatrix",{values:"1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 1"},opaque);
+      const body=svg("use",{href:`#${this.geometry.id}`},this.contentAxes);
+      const ramp=svg("linearGradient",{id:this.artID+"-color",gradientUnits:"userSpaceOnUse","color-interpolation":"sRGB"},defs);
+      const stops=[svg("stop",{offset:0},ramp),svg("stop",{offset:1},ramp)];
+      const rect=svg("rect",{fill:`url(#${ramp.id})`},this.contentAxes);
+      this.gradient={mask,ramp,stops,rect,body,opaque};
+    }
     this.crop=svg("clipPath",{id:this.artID+"-crop",clipPathUnits:"userSpaceOnUse"},renderer.defs);this.cropRect=svg("rect",{},this.crop);
     this.directionalFilter=svg("filter",{id:this.artID+"-directional",x:"-50%",y:"-50%",width:"200%",height:"200%","color-interpolation-filters":"sRGB"},renderer.defs);this.directionalBlur=svg("feGaussianBlur",{},this.directionalFilter);
     this.filter=svg("filter",{id:this.artID+"-blur",x:"-10%",y:"-10%",width:"120%",height:"120%","color-interpolation-filters":"sRGB"},renderer.defs);
-    this.blur=svg("feGaussianBlur",{},this.filter);this.noiseKey=null;this.noiseURL=null;this.noiseRevision=0;
+    this.blur=svg("feGaussianBlur",{result:"body"},this.filter);this.noiseKey=null;this.noiseURL=null;this.noiseRevision=0;
+    let appearance="body";
     if(node.components.some(c=>c.type==="Glow")){
-      this.blur.setAttribute("result","body");this.glowBlur=svg("feGaussianBlur",{in:"body"},this.filter);const transfer=svg("feComponentTransfer",{},this.filter);this.glowGain=svg("feFuncA",{type:"linear"},transfer);const merge=svg("feMerge",{},this.filter);svg("feMergeNode",{},merge);svg("feMergeNode",{in:"body"},merge);
+      this.glowBlur=svg("feGaussianBlur",{in:"body"},this.filter);const transfer=svg("feComponentTransfer",{},this.filter);this.glowGain=svg("feFuncA",{type:"linear"},transfer);const merge=svg("feMerge",{result:"appearance"},this.filter);svg("feMergeNode",{},merge);svg("feMergeNode",{in:"body"},merge);appearance="appearance";
+      for(const [key,value]of Object.entries({x:"-100%",y:"-100%",width:"300%",height:"300%"}))this.filter.setAttribute(key,value);
+    }
+    if(node.components.some(c=>c.type==="DropShadow")){
+      // Tint the art before composing the shadow, so an independently colored
+      // shadow is unaffected by sprite brightness/saturation. Its mask comes
+      // from the blurred body, not from the emissive halo.
+      const tint=svg("feColorMatrix",{in:appearance,result:"coloredBody"},this.filter);
+      const blur=svg("feGaussianBlur",{in:"body"},this.filter),offset=svg("feOffset",{result:"shadowMask"},this.filter);
+      const color=svg("feFlood",{},this.filter);svg("feComposite",{in2:"shadowMask",operator:"in"},this.filter);
+      const merge=svg("feMerge",{},this.filter);svg("feMergeNode",{},merge);svg("feMergeNode",{in:"coloredBody"},merge);
+      this.shadow={blur,offset,color,tint};
       for(const [key,value]of Object.entries({x:"-100%",y:"-100%",width:"300%",height:"300%"}))this.filter.setAttribute(key,value);
     }
     this.tintFilter=svg("filter",{id:this.artID+"-tint",x:"0",y:"0",width:"100%",height:"100%","color-interpolation-filters":"sRGB"},renderer.defs);
@@ -285,6 +317,7 @@ class TiledSprite {
     const updateRevision=++this.updateRevision;
     const c=scene.requireComponent(this.id,"TiledSpriteRenderer"),original=scene.asset(c.asset),state=scene.spriteState(this.id),asset={...original,size:state.size,atlas:undefined},blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise");
     const visible=!!scene.active.get(this.id)&&state.visible&&this.renderer.resources.isImageReady(c.asset);if(!visible){sync.hidden(this.element,true);sync.style(this.svg,{willChange:"auto"});return;}
+    sync.style(this.element,{mixBlendMode:c.blend==="additive"?"plus-lighter":"normal"});
     const world=scene.world.get(this.id)!;
     const worldScale=Math.max(Math.hypot(world[0],world[1],world[2]),Math.hypot(world[4],world[5],world[6]));
     const effectUnits=view.pixelsPerUnit*(c.clipBounds&&(enabled(blur)||scene.component(this.id,"Glow")?.enabled)?8:1);
@@ -331,9 +364,11 @@ class TiledSprite {
       }
     }
     if(!this.pixels||!visible)return;
-    const directional=scene.component(this.id,"DirectionalBlur"),bounds=clippedBounds(scene.coverage(this.id,view,.1+(enabled(directional)?4*directional.sigmaWorld:0)),c.clipBounds);
+    const directional=scene.component(this.id,"DirectionalBlur"),tileGlow=scene.component(this.id,"Glow"),shadow=scene.component(this.id,"DropShadow");
+    const bodySigma=enabled(blur)?Math.max(blur.sigmaWorld.x,blur.sigmaWorld.y):0;
+    const edgePad=Math.max(4*Math.max(bodySigma,enabled(tileGlow)?tileGlow.sigmaWorld:0,enabled(directional)?directional.sigmaWorld:0),enabled(shadow)?4*Math.hypot(bodySigma,shadow.sigmaWorld)+Math.max(Math.abs(shadow.offsetWorld.x),Math.abs(shadow.offsetWorld.y)):0);
+    const bounds=clippedBounds(scene.coverage(this.id,view,Math.max(.1,edgePad)),c.clipBounds);
     if(!bounds){sync.hidden(this.element,true);sync.style(this.svg,{willChange:"auto"});return;}
-    const tileGlow=scene.component(this.id,"Glow"),edgePad=4*Math.max(enabled(blur)?Math.max(blur.sigmaWorld.x,blur.sigmaWorld.y):0,enabled(tileGlow)?tileGlow.sigmaWorld:0,enabled(directional)?directional.sigmaWorld:0);
     // Transparent wrap regions contribute no pixels. Excluding them also
     // prevents SVG filters from processing an empty half-screen per cloud.
     if(c.wrap.y==="transparent"||c.wrap.y==="clampBottom"||c.wrap.y==="repeatBottom")bounds.top=Math.min(bounds.top,c.origin.y+edgePad);
@@ -364,19 +399,39 @@ class TiledSprite {
       sync.attrs(this.cropRect,{x,y,width:(clip.right===null?right:clip.right*units)-x,height:(clip.bottom===null?bottom:-clip.bottom*units)-y});
     }
     const width=right-left,height=bottom-top,hasNoise=enabled(noise)&&noise.bands.some(b=>b.variance>0);
+    if(this.gradient){
+      const g=scene.component(this.id,"ColorGradient"),fx=this.gradient,on=enabled(g);
+      sync.attribute(this.contentAxes,"mask",on?`url(#${fx.mask.id})`:"none");
+      sync.attribute(fx.body,"filter",on?`url(#${fx.opaque.id})`:"none");sync.attribute(fx.rect,"display",on?"inline":"none");
+      if(on){
+        for(const e of [fx.mask,fx.rect,fx.opaque])sync.attrs(e,{x:left,y:top,width,height});
+        sync.attrs(fx.ramp,{x1:g.start.x*units,y1:-g.start.y*units,x2:g.end.x*units,y2:-g.end.y*units});
+        [g.startColor,g.endColor].forEach((c,i)=>sync.attrs(fx.stops[i],{"stop-color":`rgb(${c.r*255} ${c.g*255} ${c.b*255})`,"stop-opacity":c.a}));
+      }
+    }
     const color=c.color,gray=color.r===color.g&&color.g===color.b,s=c.saturation,luma=[.213,.715,.072],brightness=c.brightness;
     // One sRGB matrix applies saturation, then RGB gain, with a single clamp.
     // This matches the shader even when oversaturation makes a channel negative.
     const colorMatrix=[color.r,color.g,color.b].flatMap((gain,row)=>[...luma.map((v,col)=>brightness*gain*((1-s)*v+(row===col?s:0))),0,0]);
     sync.attribute(this.tintMatrix,"values",String([...colorMatrix,0,0,0,1,0].join(" ")));
+    if(this.shadow){
+      const fx=this.shadow,gain=hasNoise&&!this.hasAlpha?2:1;
+      sync.attribute(fx.tint,"values",[...colorMatrix.map(v=>v*gain),0,0,0,1,0].join(" "));
+      sync.attribute(fx.blur,"stdDeviation",enabled(shadow)?shadow.sigmaWorld*units:0);
+      sync.attrs(fx.offset,{dx:(shadow?.offsetWorld.x??0)*units,dy:-(shadow?.offsetWorld.y??0)*units});
+      sync.attrs(fx.color,{"flood-color":`rgb(${(shadow?.color.r??0)*255} ${(shadow?.color.g??0)*255} ${(shadow?.color.b??0)*255})`,"flood-opacity":enabled(shadow)?shadow.opacity*shadow.color.a:0});
+    }
     const gain=color.r*brightness,tint=gray&&s===1?(gain===1?"":`brightness(${gain})`):`url(#${this.artID}-tint)`;
-    sync.style(this.surface,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,opacity:color.a,filter:[hasNoise&&!this.hasAlpha?"brightness(2)":"",tint].filter(Boolean).join(" ")||"none"});sync.attribute(this.svg,"viewBox",`${left} ${top} ${width} ${height}`);
+    sync.style(this.surface,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,opacity:color.a,filter:this.shadow?"none":[hasNoise&&!this.hasAlpha?"brightness(2)":"",tint].filter(Boolean).join(" ")||"none"});sync.attribute(this.svg,"viewBox",`${left} ${top} ${width} ${height}`);
     const cell=units/asset.pixelsPerUnit,tileWidth=asset.size.x*cell,tileHeight=asset.size.y*cell,y0=-c.origin.y*units,y1=y0+tileHeight,bleed=cell/2;
     // One spare tile covers every scroll phase. Geometry must not alternate
     // between two path lengths whenever the viewport crosses a tile boundary.
     const x0=c.origin.x*units,first=Math.floor((left-x0)/tileWidth),count=Math.ceil(width/tileWidth)+1;
     const repeatY=c.wrap.y==="repeat"||c.wrap.y==="repeatBottom";
-    const patternRepeat=c.wrap.y==="repeat";
+    // Keep flat pixel art as shared vector strips: Chromium resamples pattern
+    // fills at fractional translations, even inside otherwise solid cells.
+    // Perspective floors still use one pattern to bound their geometry cost.
+    const patternRepeat=c.wrap.y==="repeat"&&camera.projection==="perspective";
     const firstRow=repeatY?Math.max(c.wrap.y==="repeatBottom"?0:-Infinity,Math.floor((top-y0)/tileHeight)):0;
     const rowCount=repeatY?Math.max(0,Math.ceil((bottom-y0)/tileHeight)-firstRow):1;
     sync.style(this.art,{display:rowCount?"":"none"});
@@ -393,13 +448,13 @@ class TiledSprite {
       const rr=Math.min(right,(crop?.right??Infinity)*units),rb=Math.min(bottom,-(crop?.bottom??-Infinity)*units);
       sync.attrs(this.repeatRect,{x:rx,y:ry,width:rr-rx,height:rb-ry,"shape-rendering":"auto"});
     }else{
-      if(this.art.parentNode!==this.contentAxes)this.contentAxes.prepend(this.art);
+      if(this.art.parentNode!==this.geometry)this.geometry.prepend(this.art);
       sync.attribute(this.art,"transform",`translate(${x0+first*tileWidth} ${y0+firstRow*tileHeight}) scale(${cell})`);
     }
     sync.attribute(this.repeatRect,"display",patternRepeat?"inline":"none");
     // Repeat the retained horizontal strip with SVG references. Portrait views
     // allocate row slots once; scrolling never duplicates per-pixel geometry.
-    if(!patternRepeat)while(this.rows.length<rowCount-1)this.rows.push(svg("use",{href:`#${this.artID}`},this.contentAxes));
+    if(!patternRepeat)while(this.rows.length<rowCount-1)this.rows.push(svg("use",{href:`#${this.artID}`},this.geometry));
     this.rows.forEach((row,i)=>{sync.style(row,{display:!patternRepeat&&repeatY&&i<rowCount-1?"":"none"});if(!patternRepeat&&repeatY&&i<rowCount-1)sync.attribute(row,"transform",`translate(0 ${(i+1)*tileHeight})`);});
     const geometryCount=patternRepeat?1:count,artworkKey=JSON.stringify([source,geometryCount]);
     if(artworkKey!==this.artworkKey){
@@ -446,11 +501,11 @@ class TiledSprite {
     }
     const glow=scene.component(this.id,"Glow");
     if(this.glowBlur&&this.glowGain){sync.attribute(this.glowBlur,"stdDeviation",glow?.enabled?glow.sigmaWorld*units:0);sync.attribute(this.glowGain,"slope",glow?.enabled?glow.intensity:0);}
-    sync.style(this.svg,{filter:enabled(blur)||enabled(glow)?`url(#${this.artID}-blur)`:"none"});
+    sync.style(this.svg,{filter:enabled(blur)||enabled(glow)||this.shadow?`url(#${this.artID}-blur)`:"none"});
     // User-space filter coordinates belong to the SVG viewBox. Applying this
     // to the outer CSS box instead clips negative tile phases in Chromium.
     sync.attribute(this.noiseAxes,"filter",hasNoise&&this.hasAlpha?`url(#${this.alphaNoiseFilter.id})`:"none");
-    if(blur)sync.attribute(this.blur,"stdDeviation",`${blur.sigmaWorld.x*units} ${blur.sigmaWorld.y*units}`);
+    if(blur)sync.attribute(this.blur,"stdDeviation",enabled(blur)?`${blur.sigmaWorld.x*units} ${blur.sigmaWorld.y*units}`:"0 0");
     const liveBlur=enabled(directional)&&directional.sigmaWorld>0;
     // Chromium can present missing raster tiles when a filtered SVG changes
     // bounds under perspective. Retain its compositor layer while visible;
@@ -511,7 +566,7 @@ export class DOMRenderer {
   readonly viewport:HTMLElement;readonly registry:Map<ComponentType,DOMObjectConstructor>;objects:RenderObject[];
   resources!:Resources;world!:HTMLDivElement;definitionSVG!:SVGSVGElement;defs!:SVGDefsElement;screen!:HTMLDivElement;screenFill!:HTMLDivElement;
   particleGlow!:DOMParticleGlow;private preparationScene?:Scene;
-  constructor(viewport:HTMLElement){this.viewport=viewport;this.registry=new Map<ComponentType,DOMObjectConstructor>([["SpriteNumberRenderer",DOMNumber],["SpriteRenderer",Sprite],["TiledSpriteRenderer",TiledSprite],["CylindricalSpriteRenderer",DOMCylinder],["ParticleEmitter",DOMParticles],["PlaneRenderer",DOMPlane],["LineRenderer",DOMLine]]);this.objects=[];}
+  constructor(viewport:HTMLElement){this.viewport=viewport;this.registry=new Map<ComponentType,DOMObjectConstructor>([["TextRenderer",DOMText],["SpriteNumberRenderer",DOMNumber],["SpriteRenderer",Sprite],["TiledSpriteRenderer",TiledSprite],["CylindricalSpriteRenderer",DOMCylinder],["ParticleEmitter",DOMParticles],["PlaneRenderer",DOMPlane],["LineRenderer",DOMLine]]);this.objects=[];}
   createSurface(id:string,type:ComponentType):HTMLDivElement {
     // Hierarchy and component ownership live in Scene/records. Render surfaces
     // are siblings and receive camera-relative world matrices directly.
@@ -573,7 +628,7 @@ export class DOMRenderer {
       for(const [type,record] of records)if(!scene.component(node.id,type)||!this.registry.has(type)){record.object.dispose();records.delete(type);changed=true;}
       for(const [type,Handler] of this.registry){
         if(!scene.component(node.id,type))continue;
-        const layout=type==="SpriteRenderer"?["DropShadow","Glow","ProceduralNoise","SecondaryTexture"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="ParticleEmitter"?["Glow","ParticleMotionBlur"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="PlaneRenderer"?node.components.filter(c=>c.type==="ProceduralNoise").map(c=>c.type).join(","):"";
+        const layout=type==="SpriteRenderer"?["DropShadow","Glow","ProceduralNoise","SecondaryTexture"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="TiledSpriteRenderer"?["DropShadow","Glow","ColorGradient"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="ParticleEmitter"?["Glow","ParticleMotionBlur"].filter(effect=>node.components.some(c=>c.type===effect)).join(","):type==="PlaneRenderer"?node.components.filter(c=>c.type==="ProceduralNoise").map(c=>c.type).join(","):"";
         const previous=records.get(type);
         if(previous?.Handler===Handler&&previous.layout===layout)continue;
         previous?.object.dispose();records.set(type,{Handler,layout,object:new Handler(this,node)});changed=true;

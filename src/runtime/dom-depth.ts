@@ -23,7 +23,7 @@ export class DOMPlanarDepth {
       const c=scene.component(id,"TiledSpriteRenderer");
       const blur=scene.component(id,"GaussianBlur"),glow=scene.component(id,"Glow");
       const softCrop=c?.clipBounds&&(blur?.enabled&&(blur.sigmaWorld.x>0||blur.sigmaWorld.y>0)||glow?.enabled&&glow.sigmaWorld>0);
-      return scene.isActive(id)&&c?.enabled&&c.color.a===1&&!softCrop&&(c.wrap.y==="repeat"||c.wrap.y==="clamp")&&resources.isImageReady(c.asset);
+      return scene.isActive(id)&&c?.enabled&&c.blend==="normal"&&c.color.a===1&&!softCrop&&(c.wrap.y==="repeat"||c.wrap.y==="clamp")&&resources.isImageReady(c.asset);
     });
     const cameraWorld=scene.world.get(scene.cameraNode.id)!,camera=scene.requireComponent(scene.cameraNode.id,"Camera");
     const planes:(Occluder|null)[]=await Promise.all(candidates.map(async id=>{

@@ -27,7 +27,9 @@ function cases(){
   const jobs=[];
   function visit(node){
     if(!node||typeof node!=='object')return;
-    if(node.type==='ProceduralNoise'&&!jobs.some(job=>job.name===String(node.seed)))jobs.push({name:String(node.seed),input:{kind:'noise',component:node}});
+    // Only these seeds have archived scalar-convolution hashes. New scene
+    // presets are exercised by scene tests, not an undefined golden value.
+    if(node.type==='ProceduralNoise'&&expected[String(node.seed)]&&!jobs.some(job=>job.name===String(node.seed)))jobs.push({name:String(node.seed),input:{kind:'noise',component:node}});
     for(const value of Object.values(node))visit(value);
   }
   visit(JSON.parse(fs.readFileSync(path.join(root,'assets/final_animation.scene.json'),'utf8')));
@@ -41,7 +43,7 @@ function cases(){
   for(const alpha of [false,true])for(const repeatY of [false,true]){
     const source={width:3,height:5,channels:4,data:Array.from({length:60},(_,i)=>i%4===3?(alpha?(i*43)%256:255):(i*71)%256)};
     const asset={pixelsPerUnit:2,pivot:{x:.2,y:.8}};
-    jobs.push({name:`tile-${alpha}-${repeatY}`,input:{kind:'tile',source,asset,resolution:3,sigmaWorld:{x:2,y:.7},repeatY}});
+    jobs.push({name:`tile-${alpha}-${repeatY}`,input:{kind:'tile',source,asset,resolution:3,sigmaWorld:{x:2,y:.7},wrapY:repeatY?'repeat':'clamp'}});
     if(!repeatY)for(const type of ['Glow','DropShadow'])jobs.push({name:`mask-${alpha}-${type}`,input:{kind:'mask',source,asset,resolution:3,component:{type,sigmaWorld:.3,threshold:.2,softness:.4}}});
   }
   return jobs;

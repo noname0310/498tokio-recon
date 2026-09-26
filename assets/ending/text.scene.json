@@ -1,0 +1,177 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Ending credits typography",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 1, "frameRate": 30, "autoplay": false, "loop": false},
+  "assets"        : {
+    "misaki-gothic": {
+      "type"          : "Font",
+      "file"          : "../fonts/misaki-gothic.woff2",
+      "family"        : "Misaki Gothic 2011",
+      "ascent"        : 0.875,
+      "reconstruction": {
+        "source"           : "https://littlelimit.net/misaki.htm",
+        "version"          : "period beta 11 / 2011-03-08",
+        "glyphCount"       : 58,
+        "fontSizeReference": 8
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "ending-text-root",
+    "children": [
+      {
+        "id"        : "ending-text-camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"        : "text-music",
+        "name"      : "Music by",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 1.6, "y": 1.25, "z": 0}
+        },
+        "components": [
+          {
+            "type"         : "TextRenderer",
+            "asset"        : "misaki-gothic",
+            "text"         : "Music by",
+            "fontSize"     : 0.16,
+            "letterSpacing": 0,
+            "alignment"    : "center"
+          }
+        ]
+      },
+      {
+        "id"        : "text-musician",
+        "name"      : "ヒゲドライバー",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 1.6, "y": 1.0, "z": 0}
+        },
+        "components": [
+          {
+            "type"         : "TextRenderer",
+            "asset"        : "misaki-gothic",
+            "text"         : "ヒゲドライバー",
+            "fontSize"     : 0.16,
+            "letterSpacing": 0,
+            "alignment"    : "center"
+          }
+        ]
+      },
+      {
+        "id"        : "text-title",
+        "name"      : "４９８ Ｔｏｋｉｏ",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 1.6, "y": 0.51, "z": 0}
+        },
+        "components": [
+          {
+            "type"         : "TextRenderer",
+            "asset"        : "misaki-gothic",
+            "text"         : "４９８ Ｔｏｋｉｏ",
+            "fontSize"     : 0.16,
+            "letterSpacing": 0,
+            "alignment"    : "center"
+          }
+        ]
+      },
+      {
+        "id"        : "text-movie",
+        "name"      : "Video",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 1.6, "y": -0.08, "z": 0}
+        },
+        "components": [
+          {
+            "type"         : "TextRenderer",
+            "asset"        : "misaki-gothic",
+            "text"         : "Video",
+            "fontSize"     : 0.16,
+            "letterSpacing": 0,
+            "alignment"    : "center"
+          }
+        ]
+      },
+      {
+        "id"        : "text-creator",
+        "name"      : "サーモンラット（クロユキ）",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 1.6, "y": -0.32, "z": 0}
+        },
+        "components": [
+          {
+            "type"         : "TextRenderer",
+            "asset"        : "misaki-gothic",
+            "text"         : "サーモンラット（クロユキ）",
+            "fontSize"     : 0.16,
+            "letterSpacing": 0,
+            "alignment"    : "center"
+          }
+        ]
+      },
+      {
+        "id"        : "text-reconstruction",
+        "name"      : "Reconstruction",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 1.6, "y": -0.85, "z": 0}
+        },
+        "components": [
+          {
+            "type"         : "TextRenderer",
+            "asset"        : "misaki-gothic",
+            "text"         : "Reconstruction",
+            "fontSize"     : 0.16,
+            "letterSpacing": 0,
+            "alignment"    : "center"
+          }
+        ]
+      },
+      {
+        "id"        : "text-reconstructor",
+        "name"      : "noname0310",
+        "active"    : true,
+        "transform" : {
+          "localPosition": {"x": 1.6, "y": -1.09, "z": 0}
+        },
+        "components": [
+          {
+            "type"         : "TextRenderer",
+            "asset"        : "misaki-gothic",
+            "text"         : "noname0310",
+            "fontSize"     : 0.16,
+            "letterSpacing": 0,
+            "alignment"    : "center"
+          }
+        ]
+      },
+      {
+        "id"        : "text-thanks",
+        "name"      : "THANK YOU FOR YOUR TIME !!",
+        "active"    : false,
+        "transform" : {
+          "localPosition": {"x": -1.9418148543721199, "y": 0.06957866957797222, "z": 0}
+        },
+        "components": [
+          {
+            "type"         : "TextRenderer",
+            "asset"        : "misaki-gothic",
+            "text"         : "THANK YOU FOR YOUR TIME !!",
+            "fontSize"     : 0.28,
+            "letterSpacing": 0.012040875112910443
+          }
+        ]
+      }
+    ]
+  }
+}

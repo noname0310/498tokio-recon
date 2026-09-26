@@ -7,8 +7,8 @@
 | Website runtime | `src/runtime/index.ts` → TypeScript via `ts-loader` → public ESM library, lazy DOM/Babylon backends and normal worker chunks |
 | Website bootstrap | `src/player/bootstrap.ts` imports the runtime from source; its `dependOn: "player"` entry shares the public runtime's modules |
 | Website HTML | `html-loader` reads the plain HTML template; `HtmlWebpackPlugin` injects module entries and Webpack generates dependency paths |
-| Website data | `CopyWebpackPlugin` copies CSS, licenses, scene JSON, PNGs and M4A without changing their contents |
-| Portable HTML | `src/player/standalone.ts` directly imports Babylon and final scene JSON; PNGs and M4A use Webpack `asset/inline` |
+| Website data | `CopyWebpackPlugin` copies CSS, licenses, scene JSON, PNGs, WOFF2 fonts and M4A without changing their contents |
+| Portable HTML | `src/player/standalone.ts` directly imports Babylon and final scene JSON; PNGs, WOFF2 fonts and M4A use Webpack `asset/inline` |
 | Portable HTML document | `html-webpack-plugin` renders `src/player/standalone.html`; CSS and notices use `asset/source`; `html-inline-script-webpack-plugin` embeds the entry script |
 | Portable worker | `worker-rspack-loader`, which supports Webpack 5, compiles the worker with `inline: "no-fallback"`; no intermediate worker file or extra build phase |
 
@@ -31,7 +31,7 @@ The npm `prebuild` hooks run the project's type checks before Webpack. `ts-loade
 
 ## Project-specific code
 
-- `src/player/bundled-assets.ts` connects the standalone scene's original URLs to inline data through a small resolver. The normal website does not import it. Webpack's static context collects PNGs; there is no custom asset loader or JSON dependency parser.
+- `src/player/bundled-assets.ts` connects the standalone scene's original URLs to inline data through a small resolver. The normal website does not import it. Webpack's static context collects PNGs and WOFF2 fonts; there is no custom asset loader or JSON dependency parser.
 - `src/player/create-inline-texture-worker.ts` adapts the inline worker constructor to the same disposal interface as the website worker. A standard resolve alias selects it for standalone builds.
 - `scripts/check-types.cjs` checks project rules, including the explicit `any` ban and branded-frame type fixtures. It is validation, not a code transform.
 - `scripts/format-json.cjs` wraps FracturedJson and verifies that formatting preserves JSON values.

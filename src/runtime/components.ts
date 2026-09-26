@@ -15,23 +15,26 @@ const transitionDefaults=new Map<Transition["kind"],Transition>([
 export const componentTypes = new Map<ComponentType,object>([
   ["Camera", {projection:"orthographic",verticalFovDegrees:50,principalPoint:{x:.5,y:.5},referenceVerticalSize:10,referenceAspect:16/9,aspectPolicy:"expandFromReference",near:.1,far:100,clearColor:{r:0,g:0,b:0,a:1}}],
   ["Vignette", {centerViewport:{x:.5,y:.5},quadratic:.2,quartic:.4,verticalWeight:1,color:{r:0,g:0,b:0,a:1},blend:"normal",depth:null}],
-  ["ViewportFrame", {insetsWorld:{left:0,right:0,top:0,bottom:0},radiusWorld:0,color:{r:0,g:0,b:0,a:1},innerShadow:{offsetWorld:{x:0,y:0},color:{r:0,g:0,b:0,a:1},opacity:0}}],
+  ["ViewportFrame", {insetsWorld:{left:0,right:0,top:0,bottom:0},insetsViewport:{left:0,right:0,top:0,bottom:0},depth:null,radiusWorld:0,color:{r:0,g:0,b:0,a:1},innerShadow:{offsetWorld:{x:0,y:0},color:{r:0,g:0,b:0,a:1},opacity:0}}],
   ["ViewportTransform", {scale:1,centerViewport:{x:.5,y:.5},opacity:1}],
+  ["ViewportAnchor", {position:{x:.5,y:.5}}],
   ["ColorGrade", {matrix:[1,0,0,0, 0,1,0,0, 0,0,1,0],midpoint:{r:.5,g:.5,b:.5},strength:1}],
   ["ScanlineJitter", {seed:1,start,frequency:30,amplitudeWorld:0,lineHeightWorld:.01}],
   ["SpriteRenderer", {asset:null,color:rgba,hueDegrees:0,saturation:1,brightness:1,contrast:1,whiteMix:0,frame:0,sortingOrder:0,depthWrite:false}],
+  ["TextRenderer", {asset:null,text:"",fontSize:1,letterSpacing:0,lineHeight:1,alignment:"left",color:rgba,sortingOrder:0}],
   ["SortingGroup", {anchor:{x:0,y:0,z:0}}],
   ["SpriteNumberRenderer", {asset:null,value:0,rounding:"round",minDigits:1,suffix:"",glyphs:"0123456789",advances:[],alignment:"left",repeatWorld:null,color:rgba}],
   ["SpriteAnimator", {start,framesPerSecond:15,frames:[],loop:false,hideOutside:true}],
   ["OpacityGradient", {start:{x:0,y:0},end:{x:0,y:-1}}],
+  ["ColorGradient", {start:{x:0,y:0},end:{x:0,y:-1},startColor:{r:0,g:0,b:0,a:0},endColor:{r:0,g:0,b:0,a:0}}],
   ["SecondaryTexture", {asset:"",worldSize:{x:1,y:1},origin:{x:0,y:0},opacity:1}],
-  ["Flicker", {mode:"periodic",frequency:15,dutyCycle:.5,probability:.5,seed:1,start,phase:0}],
+  ["Flicker", {mode:"periodic",frequency:15,period:null,dutyCycle:.5,probability:.5,seed:1,start,phase:0}],
   ["TransformAnimator", {position:[],rotation:[],scale:[]}],
   ["TransformNoise", {seed:1,start,duration:1,frequency:15,strength:1,positionAmplitude:{x:0,y:0,z:0},rotationAmplitude:{x:0,y:0,z:0}}],
   ["CameraMotionBlur", {shutterSeconds:1/60,focusDistance:1,maxSigmaWorld:.1}],
   ["DepthOfField", {focusDistance:1,apertureSigma:0,maxSigmaWorld:.32}],
   ["ParticleEmitter", particleDefaults],
-  ["TiledSpriteRenderer", {asset:null,frame:0,color:rgba,saturation:1,brightness:1,coverage:"camera",clipBounds:null,wrap:{x:"repeat",y:"clamp"},origin:{x:0,y:0}}],
+  ["TiledSpriteRenderer", {asset:null,frame:0,color:rgba,blend:"normal",saturation:1,brightness:1,coverage:"camera",clipBounds:null,wrap:{x:"repeat",y:"clamp"},origin:{x:0,y:0}}],
   ["CylindricalSpriteRenderer", {asset:null,color:rgba,radius:1,length:{min:.01,max:100},tileLength:2*Math.PI,segments:100,uvOffset:{x:0,y:0},lighting:{ambient:1,diffuse:0,direction:{x:1,y:0,z:0}}}],
   ["GaussianBlur", {sigmaWorld:{x:0,y:0}}],
   ["SpriteMotionBlur", {translationWorld:{x:0,y:0},radialAmount:0,center:{x:0,y:0},samples:25,dilationPixels:0,softnessPixels:0,alphaGain:1,clipToSprite:false}],
@@ -78,6 +81,11 @@ export function normalizeScene(input:unknown):SceneData {
   for(const [id,asset] of Object.entries(data.assets)){
     if(typeof asset.file!=="string"||!asset.file)fail(`Invalid asset: ${id}`);
     if(asset.type==="Audio")continue;
+    if(asset.type==="Font"){
+      if(typeof asset.family!=="string"||!asset.family)fail(`Invalid font family: ${id}`);
+      finite(asset.ascent,`${id}.ascent`,0,2);
+      continue;
+    }
     if(asset.type!=="Sprite")fail(`Unsupported asset type: ${id}`);
     vector(asset.size,"xy",`${id}.size`,1,8192);
     if(!Number.isInteger(asset.size.x)||!Number.isInteger(asset.size.y))fail(`Sprite dimensions must be integers: ${id}`);
@@ -111,7 +119,7 @@ export function normalizeScene(input:unknown):SceneData {
       const c=merge({type:raw.type,enabled:true,...structuredClone(defaults)},raw) as Component;
       if(typeof c.enabled!=="boolean")fail(`Component enabled must be a boolean: ${node.id}.${c.type}`);
       if("asset" in c&&!data.assets[c.asset])fail(`Unknown asset ${c.asset} on ${node.id}.`);
-      if("asset" in c&&c.type!=="AudioPlayer"&&!sprites[c.asset])fail(`${c.type} requires a Sprite asset.`);
+      if("asset" in c&&c.type!=="AudioPlayer"&&c.type!=="TextRenderer"&&!sprites[c.asset])fail(`${c.type} requires a Sprite asset.`);
       if("color" in c)vector(c.color,"rgba",`${node.id}.${c.type}.color`,0,1);
       if(c.type==="Camera"){
         cameras++;if(!["orthographic","perspective"].includes(c.projection))fail("Unsupported camera projection.");
@@ -123,12 +131,14 @@ export function normalizeScene(input:unknown):SceneData {
       }
       if(c.type==="Vignette"){vector(c.centerViewport,"xy","centerViewport");finite(c.quadratic,"quadratic",0);finite(c.quartic,"quartic",0);finite(c.verticalWeight,"verticalWeight",.0001);if(!["normal","multiply"].includes(c.blend))fail("Unsupported Vignette.blend.");if(c.depth!==null)finite(c.depth,"Vignette.depth",.000001);}
       if(c.type==="ViewportFrame"){
-        for(const side of ["left","right","top","bottom"] as const)finite(c.insetsWorld[side],`ViewportFrame.insetsWorld.${side}`,0);
+        for(const side of ["left","right","top","bottom"] as const){finite(c.insetsWorld[side],`ViewportFrame.insetsWorld.${side}`,0);finite(c.insetsViewport[side],`ViewportFrame.insetsViewport.${side}`,0,1);}
+        if(c.depth!==null)finite(c.depth,"ViewportFrame.depth",.000001);
         finite(c.radiusWorld,"ViewportFrame.radiusWorld",0);
         vector(c.innerShadow.offsetWorld,"xy","ViewportFrame.innerShadow.offsetWorld");
         vector(c.innerShadow.color,"rgba","ViewportFrame.innerShadow.color",0,1);finite(c.innerShadow.opacity,"ViewportFrame.innerShadow.opacity",0,1);
       }
       if(c.type==="ViewportTransform"){finite(c.scale,"ViewportTransform.scale",0);vector(c.centerViewport,"xy","ViewportTransform.centerViewport");finite(c.opacity,"ViewportTransform.opacity",0,1);}
+      if(c.type==="ViewportAnchor")vector(c.position,"xy","ViewportAnchor.position",0,1);
       if(c.type==="ColorGrade"){if(!Array.isArray(c.matrix)||c.matrix.length!==12)fail("ColorGrade.matrix requires 12 coefficients.");for(const v of c.matrix)finite(v,"ColorGrade.matrix");vector(c.midpoint,"rgb","ColorGrade.midpoint",0,1);finite(c.strength,"ColorGrade.strength",0,1);}
       if(c.type==="SpriteRenderer"){
         if(typeof c.depthWrite!=="boolean")fail("SpriteRenderer.depthWrite must be boolean.");
@@ -137,6 +147,12 @@ export function normalizeScene(input:unknown):SceneData {
         finite(c.whiteMix,"SpriteRenderer.whiteMix",0,1);
         finite(c.saturation,"SpriteRenderer.saturation",0);finite(c.brightness,"SpriteRenderer.brightness",0);finite(c.contrast,"SpriteRenderer.contrast",0);
         if(!Number.isSafeInteger(c.frame)||c.frame<0||c.frame>=(sprites[c.asset].atlas?.frameCount||1))fail(`Invalid sprite frame: ${node.id}`);
+      }
+      if(c.type==="TextRenderer"){
+        if(data.assets[c.asset].type!=="Font")fail("TextRenderer requires a Font asset.");
+        if(typeof c.text!=="string")fail("TextRenderer.text must be a string.");
+        finite(c.fontSize,"TextRenderer.fontSize",.00001);finite(c.letterSpacing,"TextRenderer.letterSpacing");finite(c.lineHeight,"TextRenderer.lineHeight",.00001);
+        if(!["left","center","right"].includes(c.alignment)||!Number.isSafeInteger(c.sortingOrder))fail("Invalid TextRenderer layout.");
       }
       if(c.type==="SpriteAnimator"||c.type==="Flicker"||c.type==="ParticleEmitter"||c.type==="TransformNoise"||c.type==="ScanlineJitter"){
         if("startTime" in c)fail(`${c.type}.startTime has been replaced by start: {frame, rate}.`);
@@ -151,6 +167,7 @@ export function normalizeScene(input:unknown):SceneData {
       if(c.type==="Flicker"){
         if(c.mode!=="periodic"&&c.mode!=="random")fail("Invalid Flicker mode.");
         finite(c.frequency,"Flicker.frequency",.001,10000);finite(c.dutyCycle,"Flicker.dutyCycle",0,1);finite(c.probability,"Flicker.probability",0,1);
+        if(c.period){Frame.from(c.period.frame);if(c.period.frame<=0)fail("Flicker.period must be positive.");frameRate(c.period.rate.numerator,c.period.rate.denominator);}
         finite(c.phase,"Flicker.phase",0,1);
         if(!Number.isSafeInteger(c.seed)||c.seed<0||c.seed>0xffffffff)fail("Invalid Flicker seed.");
       }
@@ -203,6 +220,7 @@ export function normalizeScene(input:unknown):SceneData {
         finite(c.lighting.ambient,"cylinder ambient",0);finite(c.lighting.diffuse,"cylinder diffuse",0);
       }
       if(c.type==="TiledSpriteRenderer"){
+        if(!["normal","additive"].includes(c.blend))fail("Unsupported TiledSpriteRenderer.blend.");
         finite(c.saturation,"saturation",0);
         finite(c.brightness,"TiledSpriteRenderer.brightness",0);
         const count=sprites[c.asset].atlas?.frameCount||1;
@@ -229,6 +247,7 @@ export function normalizeScene(input:unknown):SceneData {
       }
       if(c.type==="SecondaryTexture"){vector(c.worldSize,"xy","SecondaryTexture.worldSize",.000001);vector(c.origin,"xy","SecondaryTexture.origin");finite(c.opacity,"SecondaryTexture.opacity",0,1);if(sprites[c.asset].atlas)fail("SecondaryTexture requires a standalone tile.");}
       if(c.type==="OpacityGradient"){vector(c.start,"xy","OpacityGradient.start");vector(c.end,"xy","OpacityGradient.end");if(Math.hypot(c.end.x-c.start.x,c.end.y-c.start.y)<1e-9)fail("OpacityGradient needs distinct endpoints.");}
+      if(c.type==="ColorGradient"){vector(c.start,"xy","ColorGradient.start");vector(c.end,"xy","ColorGradient.end");vector(c.startColor,"rgba","ColorGradient.startColor",0,1);vector(c.endColor,"rgba","ColorGradient.endColor",0,1);if(Math.hypot(c.end.x-c.start.x,c.end.y-c.start.y)<1e-9)fail("ColorGradient needs distinct endpoints.");}
       if(c.type==="Transition"){
         finite(c.progress,"Transition.progress",0,1);
         if(c.target!==null&&(!c.target||typeof c.target.entity!=="string"))fail("Transition.target must reference an entity.");
@@ -239,7 +258,7 @@ export function normalizeScene(input:unknown):SceneData {
           const g=c.grid;vector(g.cellSize,"xy","Transition.grid.cellSize",.0001);vector(g.origin,"xy","Transition.grid.origin");vector(g.direction,"xy","Transition.grid.direction");finite(g.feather,"Transition.grid.feather",.0001);
           if(Math.hypot(g.direction.x,g.direction.y)<1e-9)fail("Transition.grid needs a nonzero direction.");
         }else if(c.kind==="radialGrid"){
-          const g=c.radialGrid;vector(g.cellSize,"xy","Transition.radialGrid.cellSize",.0001);vector(g.origin,"xy","Transition.radialGrid.origin");vector(g.center,"xy","Transition.radialGrid.center");finite(g.curvature,"Transition.radialGrid.curvature",0);finite(g.inset,"Transition.radialGrid.inset",0,.25);
+          const g=c.radialGrid;vector(g.cellSize,"xy","Transition.radialGrid.cellSize",.0001);vector(g.origin,"xy","Transition.radialGrid.origin");vector(g.center,"xy","Transition.radialGrid.center");finite(g.curvature,"Transition.radialGrid.curvature",0);finite(g.inset,"Transition.radialGrid.inset",0);
           if(g.curvature*(g.cellSize.x*g.cellSize.x+g.cellSize.y*g.cellSize.y)>=1)fail("Radial grid curvature must keep one boundary crossing per cell ray.");
         }else if(c.kind==="dissolve"){
           vector(c.dissolve.direction,"xy","dissolve.direction");finite(c.dissolve.feather,"dissolve.feather",.0001);
@@ -273,7 +292,7 @@ export function normalizeScene(input:unknown):SceneData {
       }
       return c;
     });
-    if(["SpriteRenderer","SpriteNumberRenderer","TiledSpriteRenderer","CylindricalSpriteRenderer","PlaneRenderer","LineRenderer","ParticleEmitter"].filter(t=>types.has(t as ComponentType)).length>1)fail(`Use one renderer per entity: ${node.id}`);
+    if(["SpriteRenderer","TextRenderer","SpriteNumberRenderer","TiledSpriteRenderer","CylindricalSpriteRenderer","PlaneRenderer","LineRenderer","ParticleEmitter"].filter(t=>types.has(t as ComponentType)).length>1)fail(`Use one renderer per entity: ${node.id}`);
     if(types.has("SpriteAnimator")){
       const sprite=node.components.find(c=>c.type==="SpriteRenderer"||c.type==="TiledSpriteRenderer"),animator=node.components.find(c=>c.type==="SpriteAnimator");
       if(!sprite||!sprites[sprite.asset].atlas)fail(`SpriteAnimator requires a sprite atlas: ${node.id}`);
@@ -283,8 +302,8 @@ export function normalizeScene(input:unknown):SceneData {
     if(types.has("Glow")&&!types.has("TiledSpriteRenderer")&&!types.has("SpriteNumberRenderer")&&!types.has("SpriteRenderer")&&!types.has("ParticleEmitter")&&!types.has("LineRenderer"))fail(`Glow requires SpriteRenderer, LineRenderer or ParticleEmitter on ${node.id}.`);
     if(types.has("SpriteMotionBlur")&&!types.has("SpriteRenderer"))fail(`SpriteMotionBlur requires SpriteRenderer on ${node.id}.`);
     if(types.has("DepthOfField")&&!types.has("Camera"))fail(`DepthOfField requires Camera on ${node.id}.`);
-    if(types.has("DropShadow")&&!types.has("SpriteRenderer"))fail(`DropShadow requires SpriteRenderer on ${node.id}.`);
-    if(types.has("GaussianBlur")&&!types.has("TiledSpriteRenderer")&&!types.has("Camera"))fail(`GaussianBlur requires TiledSpriteRenderer or Camera on ${node.id}.`);
+    if(types.has("DropShadow")&&!types.has("SpriteRenderer")&&!types.has("TiledSpriteRenderer"))fail(`DropShadow requires SpriteRenderer or TiledSpriteRenderer on ${node.id}.`);
+    if(types.has("GaussianBlur")&&!types.has("TiledSpriteRenderer")&&!types.has("Camera")&&!node.components.some(c=>c.type==="Transition"&&c.kind==="fade"&&c.target))fail(`GaussianBlur requires TiledSpriteRenderer, Camera or a targeted fade Transition on ${node.id}.`);
     if(types.has("CameraMotionBlur")&&!types.has("Camera"))fail(`CameraMotionBlur requires Camera on ${node.id}.`);
     if(types.has("DirectionalBlur")&&!types.has("TiledSpriteRenderer"))fail(`DirectionalBlur requires TiledSpriteRenderer on ${node.id}.`);
     const transition=node.components.find(c=>c.type==="Transition");
@@ -295,6 +314,7 @@ export function normalizeScene(input:unknown):SceneData {
     if(types.has("Vignette")&&!types.has("Camera"))fail(`Vignette requires Camera on ${node.id}.`);
     if(types.has("SecondaryTexture")&&!types.has("SpriteRenderer"))fail(`SecondaryTexture requires SpriteRenderer on ${node.id}.`);
     if(types.has("OpacityGradient")&&!types.has("SpriteRenderer"))fail(`OpacityGradient requires SpriteRenderer on ${node.id}.`);
+    if(types.has("ColorGradient")&&!types.has("TiledSpriteRenderer"))fail(`ColorGradient requires TiledSpriteRenderer on ${node.id}.`);
     for(const type of ["ViewportTransform","ColorGrade","ScanlineJitter"] as const)if(types.has(type)&&!types.has("Camera"))fail(`${type} requires Camera on ${node.id}.`);
     if(types.has("ViewportFrame")&&!types.has("Camera"))fail(`ViewportFrame requires Camera on ${node.id}.`);
     node.children.forEach(visit);

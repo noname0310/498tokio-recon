@@ -3,10 +3,10 @@ import {createScanlineJitterEffect} from "./babylon-scanline-jitter.js";
 import type * as Babylon from "@babylonjs/core/pure";
 import {BabylonSceneContext,type BabylonObjectConstructor,type BabylonRenderObject} from "./babylon-context.js";
 import {createDilationEffect,createSoftnessEffect} from "./babylon-particle-filter.js";
-import {createViewportFrameEffect} from "./babylon-viewport-frame.js";
+import {createViewportFrameEffect,createViewportFramePlane} from "./babylon-viewport-frame.js";
 import {createCameraBlurEffect} from "./babylon-camera-blur.js";
 import {createTransitionMask} from "./babylon-transitions.js";
-import {BabylonFade} from "./babylon-fade.js";
+import {BabylonFade,createFadeBlurEffect} from "./babylon-fade.js";
 import type {ComponentType} from "./types.js";
 import type {LoadingProgress} from "./loading-status.js";
 
@@ -59,9 +59,14 @@ export class BabylonShaderPreparation {
         }
         if(c.type==="Camera")post("Camera / Vignette",()=>r.vignetteEffect(camera));
         if((c.type==="GaussianBlur"||c.type==="CameraMotionBlur")&&node.components.some(c=>c.type==="Camera"))post("Camera / GaussianBlur",()=>createCameraBlurEffect(r));
+        if(c.type==="GaussianBlur"&&node.components.some(c=>c.type==="Transition"&&c.kind==="fade"))post("Transition / GaussianBlur",()=>createFadeBlurEffect(r));
         if(c.type==="ColorGrade")post("Camera / ColorGrade",()=>createColorGradeEffect(r));
         if(c.type==="ScanlineJitter")post("Camera / ScanlineJitter",()=>createScanlineJitterEffect(r));
-        if(c.type==="ViewportFrame")post("Camera / ViewportFrame",()=>createViewportFrameEffect(r,camera));
+        if(c.type==="ViewportFrame"){
+          // A depth can also be animated from the default post-process mode.
+          post("Camera / ViewportFrame",()=>createViewportFrameEffect(r,camera));
+          if(!features.has("depth-frame")){material(createViewportFramePlane(r).mesh);features.add("depth-frame");}
+        }
         if(c.type==="Vignette"&&c.depth!==null&&!features.has("depth-vignette")){
           const mesh=r.quad("Camera / depth vignette",null,r.depthVignetteMaterial());material(mesh);
           features.add("depth-vignette");

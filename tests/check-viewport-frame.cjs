@@ -10,7 +10,8 @@ function fixture(){return {schemaVersion:1,presentation:{activeCamera:'framed'},
 ]}};}
 function distance(x,y,rect,r){const qx=Math.abs(x-rect.x-rect.width/2)-rect.width/2+r,qy=Math.abs(y-rect.y-rect.height/2)-rect.height/2+r;return Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-r;}
 function verify(buffer,view,c,enabled=true){
-  const shot=png(buffer),i=c.insetsWorld,u=view.pixelsPerUnit;
+  const shot=png(buffer),v=c.insetsViewport||{left:0,right:0,top:0,bottom:0},w=c.insetsWorld,u=view.pixelsPerUnit;
+  const i={left:w.left+v.left*view.worldWidth,right:w.right+v.right*view.worldWidth,top:w.top+v.top*view.worldHeight,bottom:w.bottom+v.bottom*view.worldHeight};
   const xs=Math.min(1,view.worldWidth/Math.max(i.left+i.right,Number.EPSILON)),ys=Math.min(1,view.worldHeight/Math.max(i.top+i.bottom,Number.EPSILON));
   const rect={x:i.left*xs*u,y:i.top*ys*u,width:Math.max(0,view.width-(i.left+i.right)*xs*u),height:Math.max(0,view.height-(i.top+i.bottom)*ys*u)};
   const radius=Math.min(c.radiusWorld*u,rect.width/2,rect.height/2),s=c.innerShadow,off={x:s.offsetWorld.x*u,y:-s.offsetWorld.y*u};
@@ -29,7 +30,7 @@ async function settled(page){await page.evaluate(async()=>{await scenePlayer.whe
 async function main(){
   const {normalizeScene}=await import(pathToFileURL(path.join(root,'dist/runtime/player.js')));
   normalizeScene(data);
-  for(const change of [c=>c.radiusWorld=-1,c=>c.insetsWorld.top=Infinity,c=>c.innerShadow.opacity=2]){
+  for(const change of [c=>c.radiusWorld=-1,c=>c.insetsWorld.top=Infinity,c=>c.innerShadow.opacity=2,c=>c.depth=0,c=>c.insetsViewport={right:1.1}]){
     const input=fixture();change(input.root.children[0].components[1]);assert.throws(()=>normalizeScene(input));
   }
   const detached=fixture();detached.root.children.push({id:'invalid',components:[structuredClone(component)]});assert.throws(()=>normalizeScene(detached),/requires Camera/);
@@ -58,6 +59,27 @@ async function main(){
       for(const enabled of [false,true]){
         await page.evaluate(async enabled=>scenePlayer.setComponent('framed','ViewportFrame',{enabled}),enabled);await settled(page);verify(await page.locator('#viewport').screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),view,component,enabled);
       }
+      const expanding={...component,depth:8,insetsWorld:{left:.23,right:.10,top:.23,bottom:.21},insetsViewport:{left:0,right:.5,top:0,bottom:0},radiusWorld:.2};
+      await page.evaluate(c=>scenePlayer.setComponent('framed','ViewportFrame',c),expanding);await settled(page);
+      for(const size of [{width:640,height:360},{width:390,height:844},{width:1280,height:320}]){
+        await page.setViewportSize(size);await settled(page);
+        for(const fraction of [.5,.25,0]){
+          expanding.insetsViewport.right=fraction;
+          await page.evaluate(c=>scenePlayer.setComponent('framed','ViewportFrame',c),expanding);await settled(page);
+          verify(await page.locator('#viewport').screenshot({style:'.runtime-loading-status{visibility:hidden!important}'}),await page.evaluate(()=>scenePlayer.view),expanding);
+        }
+      }
+      await page.setViewportSize({width:640,height:360});await settled(page);
+      // A title in front of the camera-space frame remains visible outside its
+      // aperture; a farther title is covered. The radius never follows width.
+      const depthScene=fixture();Object.assign(depthScene.root.children[0].components[1],expanding,{insetsViewport:{left:0,right:.5,top:0,bottom:0}});
+      depthScene.root.children.push({id:'title',transform:{localPosition:{x:1.6,y:0,z:-3}},components:[{type:'PlaneRenderer',size:{x:.2,y:.2}}]});
+      await page.evaluate(c=>scenePlayer.loadScene(c),depthScene);await settled(page);
+      const pixel=async()=>{const p=png(await page.screenshot({style:'.runtime-loading-status{visibility:hidden!important}'}));const i=((180*dpr)*p.width+480*dpr)*p.channels;return [...p.pixels.subarray(i,i+3)];};
+      assert.deepEqual(await pixel(),[255,255,255],'A foreground title survives the black surround');
+      await page.evaluate(()=>scenePlayer.setTransform('title',{localPosition:{z:-1}}));await settled(page);
+      assert.deepEqual(await pixel(),[0,0,0],'The same title behind the frame is covered');
+      await page.evaluate(c=>scenePlayer.loadScene(c),fixture());await settled(page);
       const collapsed={...component,insetsWorld:{left:4,right:4,top:2,bottom:2}};
       await page.evaluate(async insetsWorld=>scenePlayer.setComponent('framed','ViewportFrame',{insetsWorld}),collapsed.insetsWorld);await settled(page);verify(await page.locator('#viewport').screenshot({style:".runtime-loading-status { visibility: hidden !important; }"}),view,collapsed);
       assert.deepEqual(errors,[]);console.log(`${label}: measured geometry, shadow compositing, portrait/ultrawide resize, camera cuts, enable/disable and collapsed aperture passed.`);

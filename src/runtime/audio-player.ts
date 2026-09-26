@@ -49,7 +49,7 @@ export class AudioPlayer extends ObservableClock implements AnimationClock {
     }
     for(const event of ["seeking","seeked","timeupdate"]){audio.addEventListener(event,()=>{
       // Completion from an older request may still be queued after a new seek.
-      if(event==="seeked"&&(audio.seeking||this.ownedSeekEvents>0))return;
+      if(event==="seeked"&&audio.seeking)return;
       if(event!=="timeupdate"){
         if(event==="seeking"){
           this.pauseOffsetHint=undefined;
@@ -57,6 +57,10 @@ export class AudioPlayer extends ObservableClock implements AnimationClock {
           // by delivery. Match our assignments by event, not rounded timestamps.
           if(this.ownedSeekEvents>0)this.ownedSeekEvents--;else this.seekAnchor=undefined;
         }
+        // Firefox coalesces several assignments into one seeking event. The
+        // settled media state completes the batch; an assignment/event count
+        // must never keep the exact seek anchor pinned during playback.
+        if(event==="seeked")this.ownedSeekEvents=0;
         if(event==="seeked"&&this.seekAnchor?.pending){
           // Decoder settlement may quantize again, with timeupdate preceding
           // seeked. It completes the same seek; it is not playback progression.

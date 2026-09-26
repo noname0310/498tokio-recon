@@ -2333,6 +2333,131 @@
         "sourcePixelsPerCell": 13.333333333333334,
         "method": "Central bar-cell color modes pooled over unoccluded rows and frames. No foreground sprites or edge vignette are baked."
       }
+    },
+    "ending_background": {
+      "type"          : "Sprite",
+      "file"          : "ending/background_tile.png",
+      "size"          : {"x": 8, "y": 144},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [6666, 6668, 6670, 6672],
+        "gridPitchPixels": 2.5,
+        "horizontalPeriodPixels": 20,
+        "lighting": "Two editable additive soft ellipses, independent of the tiled dither. This factorization does not identify unique physical lamps.",
+        "verticalExtent": "Rows concealed by the source aperture continue the nearest recovered mean and use dither observations from earlier unobstructed sky."
+      }
+    },
+    "ending_city": {
+      "type"          : "Sprite",
+      "file"          : "ending/city.png",
+      "size"          : {"x": 139, "y": 64},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame": 6475,
+        "sourceFrames": [6420, 6658],
+        "gridPitchPixels": 2.5,
+        "referenceTopLeftPixels": {"x": -27.61, "y": 176.48},
+        "registeredFrames": 117,
+        "observedOpaqueCells": 4924,
+        "extendedFacadeCells": 160,
+        "extent": "Observed skyline strip; the complete source tile period is not verified.",
+        "completion": "Clipped lower-left facade cells use the measured dark row tone. No inferred glowing-layer pixels are included."
+      }
+    },
+    "ending_font": {
+      "type"          : "Font",
+      "file"          : "fonts/misaki-gothic.woff2",
+      "family"        : "Misaki Gothic 2011",
+      "ascent"        : 0.875,
+      "reconstruction": {
+        "source"           : "https://littlelimit.net/misaki.htm",
+        "version"          : "period beta 11 / 2011-03-08",
+        "glyphCount"       : 58,
+        "fontSizeReference": 8
+      }
+    },
+    "ending_ship_red": {
+      "type"          : "Sprite",
+      "file"          : "landing/ship.png",
+      "size"          : {"x": 78, "y": 30},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "samplingFraction"     : 0.6,
+        "states"               : ["unoccupied"],
+        "notes"                : [
+          "Requested ship at 154 seconds; the same settled ship at frames 4678-4696 exposes the cockpit after its occupant leaves.",
+          "Pilot and background inside the open cockpit are fully transparent.",
+          "Upper canopy highlights and all native outline cells were reviewed individually; no inpainting.",
+          "Manually selected black outlines, antennae and any body/limb cells are pinned to RGB [0, 0, 0] after source sampling; alpha and colored cells are unchanged."
+        ],
+        "manualColorCorrection": {
+          "color"               : {"r": 0, "g": 0, "b": 0},
+          "selectedCellsByFrame": [464],
+          "definition"          : "Explicit reviewed cell spans in the recovery recipe; baked into the native PNG."
+        }
+      }
+    },
+    "ending_ship_blue": {
+      "type"          : "Sprite",
+      "file"          : "landing/ship_blue.png",
+      "size"          : {"x": 78, "y": 30},
+      "pixelsPerUnit" : 100,
+      "pivot"         : {"x": 0.5, "y": 0.5},
+      "filter"        : "point",
+      "reconstruction": {
+        "baseAsset"         : "ship",
+        "sampleFrames"      : [
+          [3910, 3934],
+          [6680, 6708]
+        ],
+        "samplingFraction"  : 0.6,
+        "engineColorCells"  : 134,
+        "smallShotOnlyCells": 17,
+        "notes"             : [
+          "The small shot has about 1.19 source pixels per native cell; its thin, otherwise occluded blue strip remains an estimate after MP4 chroma subsampling.",
+          "Geometry, unoccupied cockpit, metal struts and hull shading reuse the approved red ship, as requested. No pilot or plume pixels are added to the asset.",
+          "Only blue-engine RGB cells are changed. Alpha, black outlines, the empty cockpit and all other RGB values match ship.png exactly."
+        ]
+      }
+    },
+    "ending_city_extended": {
+      "type"          : "Sprite",
+      "file"          : "ending/city_extended.png",
+      "size"          : {"x": 186, "y": 64},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "observedColumns": [0, 138],
+        "extendedColumns": [139, 185],
+        "continuation": "Reuse the observed lower facades. Original period is not uniquely verified; the estimated 186-cell spacing follows the far twin towers."
+      }
+    },
+    "ending_city_windows": {
+      "type"          : "Sprite",
+      "file"          : "ending/city_windows.png",
+      "size"          : {"x": 186, "y": 64},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "observedColumns": [0, 138],
+        "extendedColumns": [139, 185],
+        "continuation": "Reuse the observed lower facades. Original period is not uniquely verified; the estimated 186-cell spacing follows the far twin towers."
+      }
+    },
+    "ending_helmet_closed": {
+      "type"         : "Sprite",
+      "file"         : "ending/helmet_closed.png",
+      "size"         : {"x": 17, "y": 17},
+      "pixelsPerUnit": 100,
+      "pivot"        : {"x": 0.5, "y": 0.5}
     }
   },
   "root"            : {
@@ -2727,6 +2852,32 @@
             "blend"         : "multiply",
             "depth"         : 12.5,
             "color"         : {"r": 0.0, "g": 0.0, "b": 0.7, "a": 1.0}
+          }
+        ],
+        "children"  : [],
+        "transform" : {
+          "localPosition": {"x": 0.0, "y": 0.0, "z": -10.0}
+        }
+      },
+      {
+        "id"        : "ending-camera",
+        "name"      : "camera",
+        "components": [
+          {
+            "type": "Camera",
+            "enabled": false,
+            "referenceVerticalSize": 3.6,
+            "referenceAspect": 1.7777777777777777,
+            "near": 0.01,
+            "far": 100
+          },
+          {
+            "type"          : "ViewportFrame",
+            "enabled"       : false,
+            "depth"         : 8,
+            "insetsWorld"   : {"left": 0.23, "right": 0.1, "top": 0.23, "bottom": 0.21},
+            "insetsViewport": {"left": 0, "right": 0.5, "top": 0, "bottom": 0},
+            "radiusWorld"   : 0.2
           }
         ],
         "children"  : [],
@@ -5312,9 +5463,9 @@
       "helmet-helmet-flat-camera-visible@global": {
         "type"       : "AnimationTrackBoolean",
         "frameNumber": [
-          1680800, 1766400, 2029600, 2088800, 2148800, 2208800, 2428000, 2507200, 3262400, 3952800, 4433600, 4782400
+          1680800, 1766400, 2029600, 2088800, 2148800, 2208800, 2428000, 2507200, 3262400, 3952800, 4425600, 4782400
         ],
-        "value"      : [0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1]
+        "value"      : [0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0]
       },
       "forward-grid-visible@paper-flight": {
         "type"         : "AnimationTrackBoolean",
@@ -12395,17 +12546,6 @@
         "value"        : [0.2, 0.4, 0.6, 0.8, 1.0, 1.0, 0.0],
         "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 5, -1, 5, -1, 5, -1]
       },
-      "memory-helmet-flat-camera-GaussianBlur-enabled": {
-        "type"         : "AnimationTrackBoolean",
-        "frameNumber"  : [0, 472800],
-        "value"        : [0, 1],
-        "interpolation": [0, -1, 0, -1]
-      },
-      "memory-helmet-flat-camera-GaussianBlur-sigmaWorld.x": {
-        "type"       : "AnimationTrackFloat32",
-        "frameNumber": [0, 472000, 472800, 479368],
-        "value"      : [0.0, 0.0, 0.0848, 0.5964]
-      },
       "memory-echo-pulse-opacity": {
         "type"         : "AnimationTrackFloat32",
         "frameNumber"  : [
@@ -12425,7 +12565,7 @@
       },
       "storm-camera-enabled@global": {
         "type"       : "AnimationTrackBoolean",
-        "frameNumber": [0, 4433600, 4782400],
+        "frameNumber": [0, 4425600, 4782400],
         "value"      : [0, 1, 0]
       },
       "storm-storm-corridor-Entity-active": {
@@ -14062,7 +14202,7 @@
       },
       "storm-storm-entry-Entity-active": {
         "type"         : "AnimationTrackBoolean",
-        "frameNumber"  : [0, 8000],
+        "frameNumber"  : [0, 7200],
         "value"        : [1, 0],
         "interpolation": [0, -1, 0, -1]
       },
@@ -15687,6 +15827,498 @@
            0.00018918603777116894, -1,                       0.00018918603777116894, -1,
            0.0004963280950875025,  -1,                       0.0004963280950875025,  -1
         ]
+      },
+      "storm-storm-camera-Vignette-depth": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200],
+        "value"        : [1, 12.5],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-memory-fade-GaussianBlur-enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 472800],
+        "value"        : [0, 1],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "memory-memory-fade-GaussianBlur-sigmaWorld.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 472000, 472800, 479368],
+        "value"      : [0.0, 0.0, 0.0848, 0.5964]
+      },
+      "ending-camera-enabled": {
+        "type"       : "AnimationTrackBoolean",
+        "frameNumber": [0, 4782400],
+        "value"      : [0, 1]
+      },
+      "ending-city-front/Transform/localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 116000],
+        "value"      : [0.5843924449373128, 0.9425424449373128]
+      },
+      "ending-city-middle/Transform/localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 116000],
+        "value"      : [0.6993148547657358, 0.9500198547657358]
+      },
+      "ending-city-far/Transform/localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 116000],
+        "value"      : [0.09960724092270454, 0.2070522409227047]
+      },
+      "ending-city-ship/Transform/localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 116000],
+        "value"      : [-0.49069969184548823, -0.09626097527599882]
+      },
+      "ending-city-reveal/PlaneRenderer/color.a": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 39200],
+        "value"      : [1.0, 0.0]
+      },
+      "ending-departure-pilot/Entity/active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 59200],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "ending-departure-pilot/SpriteAnimator/enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 29600],
+        "value"        : [0, 1],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "ending-departure-pilot/Transform/localScale.x": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 29600],
+        "value"        : [-1.0, 1.0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "ending-departure-pilot/Transform/localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [29600, 45600],
+        "value"      : [-0.0330633520449077, 0.15388933440256614]
+      },
+      "ending-pilot-standing/Entity/active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 59200, 81600],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "ending-pilot-on-hull/Transform/localPosition.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [59200, 64800, 66400],
+        "value": [-0.09588612670408993, 0.18335111535590073, 0.11614274258219724],
+        "interpolation": [9, 0, 10, 2, 6, 6],
+        "interpolationParameters": [
+           0.00044400783835966544,  0.2804640782849039,      0,                       0.16268646508428644,
+           0,                      -1,                      -8.401046596712936e-05,  -1
+        ]
+      },
+      "ending-pilot-left/Entity/active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 81600, 234400],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "ending-paper-held/Entity/active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 59200, 118400],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "ending-paper-held/Transform/localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [91200, 93600],
+        "value"      : [-0.08500400962309539, -0.11631916599839612]
+      },
+      "ending-paper-held/Transform/localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [91200, 93600],
+        "value"      : [0.09063352044907773, 0.15342421812349638]
+      },
+      "ending-paper-launched/Entity/active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 118400, 203200],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "ending-paper-launched/Transform/localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [118400, 165600],
+        "value"      : [0.125, -8.878400000000001]
+      },
+      "ending-paper-launched/Transform/localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [118400, 165600],
+        "value"      : [0.6729999999999999, 2.0123]
+      },
+      "ending-departure-ship/SpriteRenderer/whiteMix": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [155200, 156000, 163200, 172000, 179200, 187200, 194400, 203200, 211200],
+        "value"        : [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-departure-flash-original": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [155200, 156000, 163200, 172000, 179200, 187200, 194400, 203200, 211200],
+        "value"        : [1, 0, 1, 0, 1, 0, 1, 0, 1],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-departure-exhaust/Glow/color.r": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [155200, 156000, 163200, 172000, 179200, 187200, 194400, 203200, 211200],
+        "value"        : [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-departure-exhaust/Glow/color.g": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [155200, 156000, 163200, 172000, 179200, 187200, 194400, 203200, 211200],
+        "value"        : [0.4, 1.0, 0.4, 1.0, 0.4, 1.0, 0.4, 1.0, 0.4],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-departure-exhaust/Glow/color.b": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [155200, 156000, 163200, 172000, 179200, 187200, 194400, 203200, 211200],
+        "value"        : [0.08, 1.0, 0.08, 1.0, 0.08, 1.0, 0.08, 1.0, 0.08],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-departure-pivot/Transform/localScale.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [205600, 213600, 227200],
+        "value": [1.0, 0.45, 0.24],
+        "interpolation": [10, 0, 10, 4, 10, 8],
+        "interpolationParameters": [
+          -0.0001375, -1,         -0.0001375, -1,         -3.125e-05, -1,         -3.125e-05, -1,         -7.5e-06,
+          -1,         -7.5e-06,   -1
+        ]
+      },
+      "ending-departure-pivot/Transform/localScale.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [205600, 213600, 227200],
+        "value": [1.0, 0.45, 0.24],
+        "interpolation": [10, 0, 10, 4, 10, 8],
+        "interpolationParameters": [
+          -0.0001375, -1,         -0.0001375, -1,         -3.125e-05, -1,         -3.125e-05, -1,         -7.5e-06,
+          -1,         -7.5e-06,   -1
+        ]
+      },
+      "ending-departure-ship/SpriteRenderer/brightness": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [211200, 218400, 224800],
+        "value"      : [1.0, 0.38, 0.0]
+      },
+      "ending-pilot-left/SpriteRenderer/brightness": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [211200, 218400, 224800],
+        "value"      : [1.0, 0.38, 0.0]
+      },
+      "ending-impact/background-dim/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [203200, 205600, 211200, 229600],
+        "value"        : [0, 0.4, 0.6, 0.6],
+        "interpolation": [5, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "ending-impact/impact-disc/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [204800, 227200],
+        "value": [1e-05, 2.978592380224418],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [
+          0.0007661009453945511, 1.0039781024717096,    2.936526553364495e-06, 0.7953011189232985
+        ]
+      },
+      "ending-impact/impact-disc/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [204800, 227200],
+        "value": [1e-05, 2.978592380224418],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [
+          0.0007661009453945511, 1.0039781024717096,    2.936526553364495e-06, 0.7953011189232985
+        ]
+      },
+      "ending-impact/impact-disc/Entity/active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [203200, 204800],
+        "value"        : [0, 1],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "ending-impact/shockwave-a/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [204160, 205600],
+        "value": [1e-05, 16.16],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.013457045748820473, 5.7023644067498545, 0.013788876704638141, 6.180952622899892]
+      },
+      "ending-impact/shockwave-a/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [204160, 205600],
+        "value": [1e-05, 16.16],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.013457045748820473, 5.7023644067498545, 0.013788876704638141, 6.180952622899892]
+      },
+      "ending-impact/shockwave-a/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [204160, 204800, 205600],
+        "value"        : [0, 1, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1]
+      },
+      "ending-impact/shockwave-b/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [204800, 208000],
+        "value": [1e-05, 11.0],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.036867810602661075, 6.405558218980558, 0.0048787374496267275, 10.980927354071719]
+      },
+      "ending-impact/shockwave-b/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [204800, 208000],
+        "value": [1e-05, 11.0],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.036867810602661075, 6.405558218980558, 0.0048787374496267275, 10.980927354071719]
+      },
+      "ending-impact/shockwave-b/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [204800, 205600, 206400, 207200, 208000],
+        "value"        : [0, 1, 1, 1, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "ending-impact/shockwave-c/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [205200, 208000],
+        "value": [1e-05, 9.4],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.003110942922123329, 2.739931671334364, 0.00492866159527163, 8.297033290638936]
+      },
+      "ending-impact/shockwave-c/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [205200, 208000],
+        "value": [1e-05, 9.4],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.003110942922123329, 2.739931671334364, 0.00492866159527163, 8.297033290638936]
+      },
+      "ending-impact/shockwave-c/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [205200, 205600, 206400, 207200, 208000],
+        "value"        : [0, 1, 0.75, 0.49, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "ending-impact/shockwave-d/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [207440, 208800],
+        "value": [1e-05, 13.200000000000001],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.01147664861935462, 4.6386022586139966, 0.012105419016138031, 5.082541679417578]
+      },
+      "ending-impact/shockwave-d/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [207440, 208800],
+        "value": [1e-05, 13.200000000000001],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.01147664861935462, 4.6386022586139966, 0.012105419016138031, 5.082541679417578]
+      },
+      "ending-impact/shockwave-d/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [207440, 208000, 208800],
+        "value"        : [0, 0.406, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1]
+      },
+      "ending-impact/shockwave-e/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [208080, 210400],
+        "value": [1e-05, 9.6],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.008954867383120018, 5.872119679977024, 0.014485435285459498, 6.2641306951531215]
+      },
+      "ending-impact/shockwave-e/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [208080, 210400],
+        "value": [1e-05, 9.6],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.008954867383120018, 5.872119679977024, 0.014485435285459498, 6.2641306951531215]
+      },
+      "ending-impact/shockwave-e/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [208080, 208800, 209600, 210400],
+        "value"        : [0, 0.305, 0.189, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "ending-impact/shockwave-f/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [209840, 211200],
+        "value": [1e-05, 9.22],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.008043425302138002, 3.2432701311708825, 0.00842495168411788, 3.5444051074638]
+      },
+      "ending-impact/shockwave-f/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [209840, 211200],
+        "value": [1e-05, 9.22],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.008043425302138002, 3.2432701311708825, 0.00842495168411788, 3.5444051074638]
+      },
+      "ending-impact/shockwave-f/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [209840, 210400, 211200],
+        "value"        : [0, 0.071, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1]
+      },
+      "ending-impact/diamond-wipe/Transition/progress": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [220000, 221600, 224800, 227200],
+        "value": [0.0, 0.2107357199836612, 0.3941370758954608, 1.0],
+        "interpolation": [10, 0, 10, 4, 10, 8, 10, 12],
+        "interpolationParameters": [
+           0.00015192127330745762, -1,                       0.00015192127330745762, -1,
+           0.00010629394185950951, -1,                       0.00010629394185950951, -1,
+           2.178551849505546e-05,  -1,                       2.178551849505546e-05,  -1,
+           0.0002788322159916059,  -1,                       0.0002788322159916059,  -1
+        ]
+      },
+      "ending-impact/diamond-wipe/Transition/radialGrid.inset": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [220000, 221600, 224800, 227200],
+        "value": [0.6, 0.4735585680098032, 0.36351775446272355, 0.0],
+        "interpolation": [10, 0, 10, 4, 10, 8, 10, 12],
+        "interpolationParameters": [
+          -9.115276398447457e-05,  -1,                      -9.115276398447457e-05,  -1,
+          -6.37763651157057e-05,   -1,                      -6.37763651157057e-05,   -1,
+          -1.3071311097033274e-05, -1,                      -1.3071311097033274e-05, -1,
+          -0.00016729932959496353, -1,                      -0.00016729932959496353, -1
+        ]
+      },
+      "ending-impact/diamond-wipe/Transition/radialGrid.curvature": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [220000, 221600, 224800, 227200],
+        "value": [0.016679456435200433, 0.018312986855028256, 0.053992545144744025, 0.10809312157092422],
+        "interpolation": [10, 0, 10, 4, 10, 8, 10, 12],
+        "interpolationParameters": [
+           4.060325675764417e-06,  -1,                       4.060325675764417e-06,  -1,
+           3.711582760119295e-06,  -1,                       3.711582760119295e-06,  -1,
+           2.8456014976184464e-05, -1,                       2.8456014976184464e-05, -1,
+           6.315530504222323e-17,  -1,                       6.315530504222323e-17,  -1
+        ]
+      },
+      "ending-camera/ViewportFrame/enabled": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 236000],
+        "value"        : [1, 0],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "ending-camera/ViewportFrame/insetsViewport.right": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 177600, 199200],
+        "value"      : [0.5, 0.5, 0.0]
+      },
+      "ending-camera/ViewportFrame/insetsWorld.right": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 177600, 199200],
+        "value"      : [0.1, 0.1, 0.2]
+      },
+      "ending-credits-city/Transform/localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 236000],
+        "value"      : [-3.6875560000000003, -2.6302760000000003]
+      },
+      "ending-credits-city/Transform/localPosition.y": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 148000, 236000],
+        "value"      : [0.0352000000000001, 0.0352000000000001, -2.784606]
+      },
+      "ending-credits-paper/Transform/localPosition.x": {
+        "type"       : "AnimationTrackFloat32",
+        "frameNumber": [0, 236000],
+        "value"      : [-0.5160000000000002, -5.236000000000001]
+      },
+      "ending-text-music/TextRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600, 118400, 125600, 133600, 140800, 148000, 156000],
+        "value"        : [
+          0.17647058823529413, 0.38247011952191234, 0.584,               0.784,               0.984,
+          0.8346774193548387,  0.624,               0.42857142857142855, 0.19183673469387755, 0.0,
+          0.0
+        ],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-text-musician/TextRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600, 118400, 125600, 133600, 140800, 148000, 156000],
+        "value"        : [
+          0.17647058823529413, 0.38247011952191234, 0.584,               0.784,               0.984,
+          0.8346774193548387,  0.624,               0.42857142857142855, 0.19183673469387755, 0.0,
+          0.0
+        ],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-text-title/TextRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600, 118400, 125600, 133600, 140800, 148000, 156000],
+        "value"        : [
+          0.17647058823529413, 0.38247011952191234, 0.584,               0.784,               0.984,
+          0.8346774193548387,  0.624,               0.42857142857142855, 0.19183673469387755, 0.0,
+          0.0
+        ],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-text-movie/TextRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600, 118400, 125600, 133600, 140800, 148000, 156000],
+        "value"        : [
+          0.17647058823529413, 0.38247011952191234, 0.584,               0.784,               0.984,
+          0.8346774193548387,  0.624,               0.42857142857142855, 0.19183673469387755, 0.0,
+          0.0
+        ],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-text-creator/TextRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600, 118400, 125600, 133600, 140800, 148000, 156000],
+        "value"        : [
+          0.17647058823529413, 0.38247011952191234, 0.584,               0.784,               0.984,
+          0.8346774193548387,  0.624,               0.42857142857142855, 0.19183673469387755, 0.0,
+          0.0
+        ],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-text-reconstruction/TextRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600, 118400, 125600, 133600, 140800, 148000, 156000],
+        "value"        : [
+          0.17647058823529413, 0.38247011952191234, 0.584,               0.784,               0.984,
+          0.8346774193548387,  0.624,               0.42857142857142855, 0.19183673469387755, 0.0,
+          0.0
+        ],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-text-reconstructor/TextRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600, 118400, 125600, 133600, 140800, 148000, 156000],
+        "value"        : [
+          0.17647058823529413, 0.38247011952191234, 0.584,               0.784,               0.984,
+          0.8346774193548387,  0.624,               0.42857142857142855, 0.19183673469387755, 0.0,
+          0.0
+        ],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-credits-reveal/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 7200, 14400, 22400, 29600],
+        "value"        : [
+          0.8235294117647058,   0.6175298804780877,   0.41600000000000004,  0.21599999999999997,  0.016000000000000014
+        ],
+        "interpolation": [0, -1, 0, -1, 0, -1, 0, -1, 0, -1]
+      },
+      "ending-final-ship/Entity/active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 204000, 236000],
+        "value"        : [0, 1, 0],
+        "interpolation": [0, -1, 0, -1, 0, -1]
+      },
+      "ending-final-ship/Transform/localPosition.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [204000, 215200],
+        "value": [21.0565634169032, -0.08399999999999977],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [-0.08979636011645924, 18.639556329972017, 0, 0.39999995576365155]
       }
     },
     "sequences": {
@@ -16587,7 +17219,7 @@
       "master": {
         "tickResolution": {"numerator": 24000, "denominator": 1},
         "displayRate"   : {"numerator": 30, "denominator": 1},
-        "playbackRange" : {"start": 0, "end": 5520000},
+        "playbackRange" : {"start": 0, "end": 5520800},
         "objects"       : [
           {
             "id"    : "camera",
@@ -16658,6 +17290,11 @@
             "id"    : "storm-camera",
             "kind"  : "possessable",
             "target": {"entity": "storm-camera"}
+          },
+          {
+            "id"    : "ending-camera",
+            "kind"  : "possessable",
+            "target": {"entity": "ending-camera"}
           }
         ],
         "bindings"      : [
@@ -16756,6 +17393,12 @@
             "object"  : "storm-camera",
             "property": {"component": "Camera", "path": "enabled"},
             "track"   : "storm-camera-enabled@global"
+          },
+          {
+            "id"      : "ending-camera-enabled",
+            "object"  : "ending-camera",
+            "property": {"component": "Camera", "path": "enabled"},
+            "track"   : "ending-camera-enabled"
           }
         ],
         "sequences"     : [
@@ -16874,6 +17517,26 @@
             "id"      : "storm-escape",
             "sequence": "storm-escape",
             "range"   : {"start": 4425600, "end": 4782400}
+          },
+          {
+            "id"      : "ending-city-flight",
+            "sequence": "ending-city-flight",
+            "range"   : {"start": 4782400, "end": 4898400}
+          },
+          {
+            "id"      : "ending-departure",
+            "sequence": "ending-departure",
+            "range"   : {"start": 4898400, "end": 5132800}
+          },
+          {
+            "id"      : "ending-credits",
+            "sequence": "ending-credits",
+            "range"   : {"start": 5132800, "end": 5368800}
+          },
+          {
+            "id"      : "ending-thanks",
+            "sequence": "ending-thanks",
+            "range"   : {"start": 5368800, "end": 5520800}
           }
         ]
       },
@@ -34828,42 +35491,44 @@
                   },
                   "components": [
                     {
-                      "type"         : "ParticleEmitter",
-                      "asset"        : "boss_smoke_atlas",
-                      "seed"         : 4982863,
-                      "maxParticles" : 80,
-                      "start"        : {
+                      "type"           : "ParticleEmitter",
+                      "asset"          : "boss_smoke_atlas",
+                      "seed"           : 4982863,
+                      "maxParticles"   : 80,
+                      "start"          : {
                         "frame": 2863,
                         "rate" : {"numerator": 30, "denominator": 1}
                       },
-                      "duration"     : 4.0,
-                      "rate"         : 55,
-                      "lifetime"     : {"min": 0.3333333333333333, "max": 0.3333333333333333},
-                      "shape"        : {
+                      "duration"       : 4.0,
+                      "rate"           : 55,
+                      "lifetime"       : {"min": 0.3333333333333333, "max": 0.3333333333333333},
+                      "shape"          : {
                         "type": "ellipse",
                         "size": {"x": 0.89, "y": 0.58, "z": 0}
                       },
-                      "directionMode": "radial",
-                      "direction"    : {"x": 0, "y": 1, "z": 0},
-                      "speed"        : {"min": 0.015, "max": 0.18},
-                      "startSize"    : {"min": 0.045, "max": 0.22},
-                      "space"        : "local",
-                      "billboard"    : "camera",
-                      "sortMode"     : "depth",
-                      "colorPalette" : [
+                      "directionMode"  : "radial",
+                      "direction"      : {"x": 0, "y": 1, "z": 0},
+                      "speed"          : {"min": 0.015, "max": 0.18},
+                      "startSize"      : {"min": 0.045, "max": 0.22},
+                      "space"          : "local",
+                      "billboard"      : "camera",
+                      "sortMode"       : "depth",
+                      "colorPalette"   : [
                         { "color": {"r": 0,    "g": 0,    "b": 0,    "a": 1}, "weight": 1 },
                         { "color": {"r": 0.22, "g": 0.22, "b": 0.22, "a": 1}, "weight": 1 },
                         { "color": {"r": 0.43, "g": 0.43, "b": 0.43, "a": 1}, "weight": 2 },
                         { "color": {"r": 0.66, "g": 0.66, "b": 0.66, "a": 1}, "weight": 2 },
                         { "color": {"r": 1,    "g": 1,    "b": 1,    "a": 1}, "weight": 5 }
                       ],
-                      "animation"    : {
+                      "animation"      : {
                         "mode"           : "fps",
                         "frames"         : [0, 1, 2, 3, 4],
                         "framesPerSecond": 15,
                         "loop"           : false,
                         "randomStart"    : false
-                      }
+                      },
+                      "rotation"       : {"min": 0, "max": 0},
+                      "angularVelocity": {"min": 0, "max": 0}
                     },
                     {"type": "SortingGroup"}
                   ],
@@ -34877,39 +35542,41 @@
                   },
                   "components": [
                     {
-                      "type"         : "ParticleEmitter",
-                      "asset"        : "boss_smoke_atlas",
-                      "seed"         : 4982910,
-                      "maxParticles" : 40,
-                      "start"        : {
+                      "type"           : "ParticleEmitter",
+                      "asset"          : "boss_smoke_atlas",
+                      "seed"           : 4982910,
+                      "maxParticles"   : 40,
+                      "start"          : {
                         "frame": 2863,
                         "rate" : {"numerator": 30, "denominator": 1}
                       },
-                      "duration"     : 4.0,
-                      "rate"         : 18,
-                      "lifetime"     : {"min": 0.3333333333333333, "max": 0.3333333333333333},
-                      "shape"        : {
+                      "duration"       : 4.0,
+                      "rate"           : 18,
+                      "lifetime"       : {"min": 0.3333333333333333, "max": 0.3333333333333333},
+                      "shape"          : {
                         "type": "ellipse",
                         "size": {"x": 0.2, "y": 0.28, "z": 0}
                       },
-                      "directionMode": "radial",
-                      "speed"        : {"min": 0.015, "max": 0.13},
-                      "startSize"    : {"min": 0.08, "max": 0.23},
-                      "space"        : "local",
-                      "billboard"    : "camera",
-                      "colorPalette" : [
+                      "directionMode"  : "radial",
+                      "speed"          : {"min": 0.015, "max": 0.13},
+                      "startSize"      : {"min": 0.08, "max": 0.23},
+                      "space"          : "local",
+                      "billboard"      : "camera",
+                      "colorPalette"   : [
                         { "color": {"r": 0,    "g": 0,    "b": 0,    "a": 1}, "weight": 1 },
                         { "color": {"r": 0.4,  "g": 0.4,  "b": 0.4,  "a": 1}, "weight": 2 },
                         { "color": {"r": 0.75, "g": 0.75, "b": 0.75, "a": 1}, "weight": 1 },
                         { "color": {"r": 1,    "g": 1,    "b": 1,    "a": 1}, "weight": 3 }
                       ],
-                      "animation"    : {
+                      "animation"      : {
                         "mode"           : "fps",
                         "frames"         : [0, 1, 2, 3, 4],
                         "framesPerSecond": 15,
                         "loop"           : false,
                         "randomStart"    : false
-                      }
+                      },
+                      "rotation"       : {"min": 0, "max": 0},
+                      "angularVelocity": {"min": 0, "max": 0}
                     },
                     {"type": "SortingGroup"}
                   ],
@@ -35539,16 +36206,16 @@
                           "asset"        : "exhaust",
                           "seed"         : 4983090,
                           "maxParticles" : 96,
-                          "rate"         : 46,
+                          "rate"         : 23,
                           "prewarm"      : 1,
                           "space"        : "local",
                           "shape"        : {
                             "type": "ellipse",
                             "size": {"x": 0.026000000000000002, "y": 0.02, "z": 0}
                           },
-                          "direction"    : {"x": 0, "y": 0, "z": -1},
+                          "direction"    : {"x": 0, "y": -0.65, "z": -1},
                           "spreadDegrees": 70,
-                          "speed"        : {"min": 0.22000000000000003, "max": 0.36},
+                          "speed"        : {"min": 0.22, "max": 0.36},
                           "lifetime"     : {"min": 0.6, "max": 0.9},
                           "startSize"    : {"min": 0.011, "max": 0.015},
                           "acceleration" : {"x": 0, "y": -0.03, "z": 0},
@@ -35578,7 +36245,8 @@
                           "sigmaWorld": 0.008,
                           "intensity" : 0.35,
                           "color"     : {"r": 1, "g": 0.4, "b": 0.08, "a": 1}
-                        }
+                        },
+                        {"type": "SortingGroup"}
                       ],
                       "transform" : {
                         "localPosition": {"x": 0, "y": -0.065, "z": -0.005},
@@ -47757,7 +48425,8 @@
                   "id"        : "memory-fade",
                   "name"      : "fade",
                   "components": [
-                    { "type": "Transition", "kind": "fade", "target": {"entity": "memory-content"} }
+                    { "type": "Transition", "kind": "fade", "target": {"entity": "memory-content"} },
+                    { "type": "GaussianBlur", "enabled": false, "sigmaWorld": {"x": 0, "y": 0} }
                   ],
                   "children"  : [],
                   "transform" : {
@@ -48095,16 +48764,16 @@
             "track"   : "memory-memory-fade-Transition-progress"
           },
           {
-            "id"      : "memory-helmet-flat-camera-GaussianBlur-enabled",
-            "object"  : "helmet-flat-camera",
+            "id"      : "memory-memory-fade-GaussianBlur-enabled",
+            "object"  : "memory-fade",
             "property": {"component": "GaussianBlur", "path": "enabled"},
-            "track"   : "memory-helmet-flat-camera-GaussianBlur-enabled"
+            "track"   : "memory-memory-fade-GaussianBlur-enabled"
           },
           {
-            "id"      : "memory-helmet-flat-camera-GaussianBlur-sigmaWorld.x",
-            "object"  : "helmet-flat-camera",
+            "id"      : "memory-memory-fade-GaussianBlur-sigmaWorld.x",
+            "object"  : "memory-fade",
             "property": {"component": "GaussianBlur", "path": "sigmaWorld.x"},
-            "track"   : "memory-helmet-flat-camera-GaussianBlur-sigmaWorld.x"
+            "track"   : "memory-memory-fade-GaussianBlur-sigmaWorld.x"
           }
         ],
         "sequences"     : [
@@ -49471,33 +50140,37 @@
                           "name"      : "smoke",
                           "components": [
                             {
-                              "type"         : "ParticleEmitter",
-                              "asset"        : "boss_smoke_atlas",
-                              "seed"         : 4986685,
-                              "start"        : {
+                              "type"           : "ParticleEmitter",
+                              "asset"          : "boss_smoke_atlas",
+                              "seed"           : 4986685,
+                              "start"          : {
                                 "frame": 5532,
                                 "rate" : {"numerator": 30, "denominator": 1}
                               },
-                              "maxParticles" : 192,
-                              "space"        : "local",
-                              "billboard"    : "local",
-                              "rate"         : 15,
-                              "duration"     : 9.266666666666667,
-                              "prewarm"      : 0.6,
-                              "shape"        : {
+                              "maxParticles"   : 192,
+                              "space"          : "local",
+                              "billboard"      : "local",
+                              "rate"           : 10,
+                              "duration"       : 9.266666666666667,
+                              "prewarm"        : 0.6,
+                              "shape"          : {
                                 "type": "box",
-                                "size": {"x": 0.45, "y": 0.15, "z": 0.0}
+                                "size": {"x": 0.6, "y": 0.5, "z": 0}
                               },
-                              "direction"    : {"x": 0.0, "y": 1.0, "z": 0.0},
-                              "spreadDegrees": 170,
-                              "speed"        : {"min": 0.1, "max": 0.3},
-                              "lifetime"     : {"min": 0.28, "max": 0.52},
-                              "startSize"    : {"min": 0.075, "max": 0.135},
-                              "animation"    : {
-                                "mode"  : "lifetime",
-                                "frames": [0, 1, 2, 3, 4]
+                              "direction"      : {"x": 0.0, "y": 1.0, "z": 0.0},
+                              "spreadDegrees"  : 180,
+                              "speed"          : {"min": 0.02, "max": 0.18},
+                              "lifetime"       : {"min": 0.3333333333333333, "max": 0.3333333333333333},
+                              "startSize"      : {"min": 0.05, "max": 0.2},
+                              "animation"      : {
+                                "mode"           : "fps",
+                                "framesPerSecond": 15,
+                                "loop"           : false,
+                                "frames"         : [0, 1, 2, 3, 4]
                               },
-                              "rotation"     : {"min": 0, "max": 360}
+                              "rotation"       : {"min": 0, "max": 0},
+                              "angularVelocity": {"min": 0, "max": 0},
+                              "directionMode"  : "planar"
                             }
                           ],
                           "children"  : [],
@@ -49893,36 +50566,36 @@
                       "name"      : "meteors 0",
                       "components": [
                         {
-                          "type"              : "ParticleEmitter",
-                          "asset"             : "asteroid_meteor_atlas",
-                          "seed"              : 4987002,
-                          "start"             : {
+                          "type"                : "ParticleEmitter",
+                          "asset"               : "asteroid_meteor_atlas",
+                          "seed"                : 4987002,
+                          "start"               : {
                             "frame": 5565,
                             "rate" : {"numerator": 30, "denominator": 1}
                           },
-                          "maxParticles"      : 192,
-                          "space"             : "local",
-                          "billboard"         : "local",
-                          "rate"              : 30,
-                          "duration"          : 8.066666666666666,
-                          "prewarm"           : 0,
-                          "cameraContinuation": {"padding": 1.5},
-                          "shape"             : {
+                          "maxParticles"        : 192,
+                          "space"               : "local",
+                          "billboard"           : "local",
+                          "rate"                : 30,
+                          "duration"            : 8.066666666666666,
+                          "prewarm"             : 0,
+                          "cameraContinuation"  : {"padding": 1.5},
+                          "shape"               : {
                             "type": "box",
                             "size": {"x": 0.0, "y": 14.0, "z": 0.0}
                           },
-                          "direction"         : {"x": 1.0, "y": 0.0, "z": 0.0},
-                          "speed"             : {"min": 6.8, "max": 8.6},
-                          "lifetime"          : {"min": 2, "max": 2},
-                          "startSize"         : {"min": 0.12, "max": 0.32},
-                          "sortMode"          : "sizeAscending",
-                          "animation"         : {
+                          "direction"           : {"x": 1.0, "y": 0.0, "z": 0.0},
+                          "speed"               : {"min": 4.8, "max": 11.4},
+                          "lifetime"            : {"min": 2, "max": 2},
+                          "startSize"           : {"min": 0.1, "max": 0.35},
+                          "sortMode"            : "sizeAscending",
+                          "animation"           : {
                             "mode"           : "fps",
                             "framesPerSecond": 15,
                             "loop"           : true,
                             "randomStart"    : true
                           },
-                          "colorPalette"      : [
+                          "colorPalette"        : [
                             { "color": {"r": 1.0,  "g": 0.035, "b": 0.005, "a": 1.0}, "weight": 0.83  },
                             { "color": {"r": 0.02, "g": 0.28,  "b": 1.0,   "a": 1.0}, "weight": 0.065 },
                             { "color": {"r": 0.7,  "g": 0.015, "b": 0.65,  "a": 1.0}, "weight": 0.065 },
@@ -49930,7 +50603,8 @@
                             { "color": {"r": 0.0,  "g": 0.75,  "b": 0.9,   "a": 1.0}, "weight": 0.04  },
                             { "color": {"r": 0.4,  "g": 0.04,  "b": 0.7,   "a": 1.0}, "weight": 0.04  }
                           ],
-                          "colorMatrix"       : [1.04, 0, 0, 0, 1.04, 0, 0, 0, 1.04, 0, 0, 0]
+                          "colorMatrix"         : [1.04, 0, 0, 0, 1.04, 0, 0, 0, 1.04, 0, 0, 0],
+                          "speedSizeCorrelation": 0.65
                         }
                       ],
                       "children"  : [],
@@ -49943,36 +50617,36 @@
                       "name"      : "meteors 1",
                       "components": [
                         {
-                          "type"              : "ParticleEmitter",
-                          "asset"             : "asteroid_meteor_atlas",
-                          "seed"              : 4987003,
-                          "start"             : {
-                            "frame": 5565,
+                          "type"                : "ParticleEmitter",
+                          "asset"               : "asteroid_meteor_atlas",
+                          "seed"                : 4987003,
+                          "start"               : {
+                            "frame": 5574,
                             "rate" : {"numerator": 30, "denominator": 1}
                           },
-                          "maxParticles"      : 192,
-                          "space"             : "local",
-                          "billboard"         : "local",
-                          "rate"              : 40,
-                          "duration"          : 8.066666666666666,
-                          "prewarm"           : 0,
-                          "cameraContinuation": {"padding": 1.5},
-                          "shape"             : {
+                          "maxParticles"        : 192,
+                          "space"               : "local",
+                          "billboard"           : "local",
+                          "rate"                : 40,
+                          "duration"            : 7.766666666666667,
+                          "prewarm"             : 0,
+                          "cameraContinuation"  : {"padding": 1.5},
+                          "shape"               : {
                             "type": "box",
                             "size": {"x": 0.0, "y": 14.0, "z": 0.0}
                           },
-                          "direction"         : {"x": 1.0, "y": 0.0, "z": 0.0},
-                          "speed"             : {"min": 7.5, "max": 10.3},
-                          "lifetime"          : {"min": 2, "max": 2},
-                          "startSize"         : {"min": 0.35, "max": 0.85},
-                          "sortMode"          : "sizeAscending",
-                          "animation"         : {
+                          "direction"           : {"x": 1.0, "y": 0.0, "z": 0.0},
+                          "speed"               : {"min": 7.8, "max": 22.8},
+                          "lifetime"            : {"min": 2, "max": 2},
+                          "startSize"           : {"min": 0.35, "max": 0.85},
+                          "sortMode"            : "sizeAscending",
+                          "animation"           : {
                             "mode"           : "fps",
                             "framesPerSecond": 15,
                             "loop"           : true,
                             "randomStart"    : true
                           },
-                          "colorPalette"      : [
+                          "colorPalette"        : [
                             { "color": {"r": 1.0,  "g": 0.035, "b": 0.005, "a": 1.0}, "weight": 0.83  },
                             { "color": {"r": 0.02, "g": 0.28,  "b": 1.0,   "a": 1.0}, "weight": 0.065 },
                             { "color": {"r": 0.7,  "g": 0.015, "b": 0.65,  "a": 1.0}, "weight": 0.065 },
@@ -49980,7 +50654,8 @@
                             { "color": {"r": 0.0,  "g": 0.75,  "b": 0.9,   "a": 1.0}, "weight": 0.04  },
                             { "color": {"r": 0.4,  "g": 0.04,  "b": 0.7,   "a": 1.0}, "weight": 0.04  }
                           ],
-                          "colorMatrix"       : [1.04, 0, 0, 0, 1.04, 0, 0, 0, 1.04, 0, 0, 0]
+                          "colorMatrix"         : [1.04, 0, 0, 0, 1.04, 0, 0, 0, 1.04, 0, 0, 0],
+                          "speedSizeCorrelation": 0.65
                         }
                       ],
                       "children"  : [],
@@ -49993,36 +50668,36 @@
                       "name"      : "meteors 2",
                       "components": [
                         {
-                          "type"              : "ParticleEmitter",
-                          "asset"             : "asteroid_meteor_atlas",
-                          "seed"              : 4987004,
-                          "start"             : {
-                            "frame": 5565,
+                          "type"                : "ParticleEmitter",
+                          "asset"               : "asteroid_meteor_atlas",
+                          "seed"                : 4987004,
+                          "start"               : {
+                            "frame": 5555,
                             "rate" : {"numerator": 30, "denominator": 1}
                           },
-                          "maxParticles"      : 192,
-                          "space"             : "local",
-                          "billboard"         : "local",
-                          "rate"              : 8,
-                          "duration"          : 8.066666666666666,
-                          "prewarm"           : 0,
-                          "cameraContinuation": {"padding": 1.5},
-                          "shape"             : {
+                          "maxParticles"        : 192,
+                          "space"               : "local",
+                          "billboard"           : "local",
+                          "rate"                : 8,
+                          "duration"            : 8.4,
+                          "prewarm"             : 0,
+                          "cameraContinuation"  : {"padding": 1.5},
+                          "shape"               : {
                             "type": "box",
                             "size": {"x": 0.0, "y": 14.0, "z": 0.0}
                           },
-                          "direction"         : {"x": 1.0, "y": 0.0, "z": 0.0},
-                          "speed"             : {"min": 10, "max": 14},
-                          "lifetime"          : {"min": 2, "max": 2},
-                          "startSize"         : {"min": 1, "max": 2.1},
-                          "sortMode"          : "sizeAscending",
-                          "animation"         : {
+                          "direction"           : {"x": 1.0, "y": 0.0, "z": 0.0},
+                          "speed"               : {"min": 22, "max": 48},
+                          "lifetime"            : {"min": 2, "max": 2},
+                          "startSize"           : {"min": 1, "max": 2.1},
+                          "sortMode"            : "sizeAscending",
+                          "animation"           : {
                             "mode"           : "fps",
                             "framesPerSecond": 15,
                             "loop"           : true,
                             "randomStart"    : true
                           },
-                          "colorPalette"      : [
+                          "colorPalette"        : [
                             { "color": {"r": 1.0,  "g": 0.035, "b": 0.005, "a": 1.0}, "weight": 0.83  },
                             { "color": {"r": 0.02, "g": 0.28,  "b": 1.0,   "a": 1.0}, "weight": 0.065 },
                             { "color": {"r": 0.7,  "g": 0.015, "b": 0.65,  "a": 1.0}, "weight": 0.065 },
@@ -50030,7 +50705,8 @@
                             { "color": {"r": 0.0,  "g": 0.75,  "b": 0.9,   "a": 1.0}, "weight": 0.04  },
                             { "color": {"r": 0.4,  "g": 0.04,  "b": 0.7,   "a": 1.0}, "weight": 0.04  }
                           ],
-                          "colorMatrix"       : [1.04, 0, 0, 0, 1.04, 0, 0, 0, 1.04, 0, 0, 0]
+                          "colorMatrix"         : [1.04, 0, 0, 0, 1.04, 0, 0, 0, 1.04, 0, 0, 0],
+                          "speedSizeCorrelation": 0.65
                         }
                       ],
                       "children"  : [],
@@ -50602,20 +51278,20 @@
                             {
                               "type"         : "ParticleEmitter",
                               "asset"        : "exhaust",
-                              "seed"         : 28035,
+                              "seed"         : 4983090,
                               "maxParticles" : 96,
-                              "rate"         : 44,
-                              "prewarm"      : 0.3,
+                              "rate"         : 23,
+                              "prewarm"      : 1,
                               "space"        : "local",
                               "shape"        : {
                                 "type": "ellipse",
                                 "size": {"x": 0.026000000000000002, "y": 0.02, "z": 0}
                               },
-                              "direction"    : {"x": 0.0, "y": -1.0, "z": 0.0},
-                              "spreadDegrees": 65,
-                              "speed"        : {"min": 0.13, "max": 0.35},
+                              "direction"    : {"x": 0, "y": -0.65, "z": -1},
+                              "spreadDegrees": 70,
+                              "speed"        : {"min": 0.22, "max": 0.36},
                               "lifetime"     : {"min": 0.6, "max": 0.9},
-                              "startSize"    : {"min": 0.011, "max": 0.02},
+                              "startSize"    : {"min": 0.011, "max": 0.015},
                               "acceleration" : {"x": 0, "y": -0.03, "z": 0},
                               "sizeOverLife" : [
                                 {"time": 0,   "value": 1  },
@@ -50633,7 +51309,8 @@
                                 "rate" : {"numerator": 30, "denominator": 1}
                               },
                               "duration"     : 4.566666666666666,
-                              "billboard"    : "local"
+                              "billboard"    : "local",
+                              "color"        : {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
                             },
                             {
                               "type"      : "Glow",
@@ -50656,33 +51333,37 @@
                           "name"      : "rear smoke",
                           "components": [
                             {
-                              "type"         : "ParticleEmitter",
-                              "asset"        : "boss_smoke_atlas",
-                              "seed"         : 4987156,
-                              "start"        : {
+                              "type"           : "ParticleEmitter",
+                              "asset"          : "boss_smoke_atlas",
+                              "seed"           : 4987156,
+                              "start"          : {
                                 "frame": 5841,
                                 "rate" : {"numerator": 30, "denominator": 1}
                               },
-                              "maxParticles" : 192,
-                              "space"        : "local",
-                              "billboard"    : "local",
-                              "rate"         : 9,
-                              "duration"     : 4.566666666666666,
-                              "prewarm"      : 0.3,
-                              "shape"        : {
+                              "maxParticles"   : 192,
+                              "space"          : "local",
+                              "billboard"      : "local",
+                              "rate"           : 9,
+                              "duration"       : 4.566666666666666,
+                              "prewarm"        : 0.3,
+                              "shape"          : {
                                 "type": "box",
-                                "size": {"x": 0.2, "y": 0.14, "z": 0.0}
+                                "size": {"x": 0.28, "y": 0.26, "z": 0}
                               },
-                              "direction"    : {"x": 0.0, "y": 1.0, "z": 0.0},
-                              "spreadDegrees": 160,
-                              "speed"        : {"min": 0.08, "max": 0.18},
-                              "lifetime"     : {"min": 0.32, "max": 0.48},
-                              "startSize"    : {"min": 0.055, "max": 0.11},
-                              "animation"    : {
-                                "mode"  : "lifetime",
-                                "frames": [0, 1, 2, 3, 4]
+                              "direction"      : {"x": 0.0, "y": 1.0, "z": 0.0},
+                              "spreadDegrees"  : 180,
+                              "speed"          : {"min": 0.015, "max": 0.1},
+                              "lifetime"       : {"min": 0.3333333333333333, "max": 0.3333333333333333},
+                              "startSize"      : {"min": 0.055, "max": 0.1},
+                              "animation"      : {
+                                "mode"           : "fps",
+                                "framesPerSecond": 15,
+                                "loop"           : false,
+                                "frames"         : [0, 1, 2, 3, 4]
                               },
-                              "rotation"     : {"min": 0, "max": 360}
+                              "rotation"       : {"min": 0, "max": 0},
+                              "angularVelocity": {"min": 0, "max": 0},
+                              "directionMode"  : "planar"
                             }
                           ],
                           "children"  : [],
@@ -54005,8 +54686,2131 @@
             "object"  : "storm-white-exit",
             "property": {"component": "Transform", "path": "localScale.y"},
             "track"   : "storm-storm-white-exit-Transform-localScale.y"
+          },
+          {
+            "id"      : "storm-storm-camera-Vignette-depth",
+            "object"  : "storm-camera",
+            "property": {"component": "Vignette", "path": "depth"},
+            "track"   : "storm-storm-camera-Vignette-depth"
           }
         ],
+        "sequences"     : []
+      },
+      "ending-city-flight": {
+        "tickResolution": {"numerator": 24000, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 116000},
+        "objects"       : [
+          {
+            "id"      : "chapter",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "ending-city-flight-world",
+              "name"      : "city flight world",
+              "components": [],
+              "children"  : [
+                {
+                  "id"        : "ending-city-background",
+                  "name"      : "city background",
+                  "components": [],
+                  "children"  : [
+                    {
+                      "id"        : "ending-city-pattern",
+                      "name"      : "city pattern",
+                      "components": [
+                        {
+                          "type"      : "TiledSpriteRenderer",
+                          "asset"     : "ending_background",
+                          "origin"    : {"x": -3.2, "y": 1.8},
+                          "wrap"      : {"x": "repeat", "y": "clamp"},
+                          "brightness": 1.7999999999999998,
+                          "color"     : {"r": 1.0, "g": 0.7966922096546969, "b": 0.6535925894777882, "a": 1.0}
+                        },
+                        {
+                          "type"      : "GaussianBlur",
+                          "sigmaWorld": {"x": 0.01, "y": 0.01}
+                        },
+                        {
+                          "type"       : "ProceduralNoise",
+                          "enabled"    : true,
+                          "seed"       : 4986670,
+                          "textureSize": {"x": 512, "y": 512},
+                          "worldSize"  : {"x": 5.12, "y": 5.12},
+                          "origin"     : {"x": -3.2, "y": 1.8},
+                          "range"      : 0.4,
+                          "bands"      : [
+                            { "sigmaTexels": {"x": 0.45, "y": 0.7}, "variance": 0.0004251554994887537  },
+                            { "sigmaTexels": {"x": 0.6,  "y": 1.2}, "variance": 1.3233465857774759e-05 },
+                            { "sigmaTexels": {"x": 0.9,  "y": 1.8}, "variance": 0.00029332541702004966 },
+                            { "sigmaTexels": {"x": 1.3,  "y": 3.2}, "variance": 2.664831060818885e-05  },
+                            { "sigmaTexels": {"x": 2.2,  "y": 5  }, "variance": 4.1193904107844916e-05 },
+                            { "sigmaTexels": {"x": 8,    "y": 8  }, "variance": 6.699952740506142e-05  }
+                          ]
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 0.0, "y": 0.0, "z": 3.0}
+                      }
+                    },
+                    {
+                      "id"        : "ending-city-light-0-0",
+                      "name"      : "city light 0 0",
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 5.02247767140891, "y": 8.181029788579927},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.9759077018847252,
+                            "g": 0.1564622032852499,
+                            "b": 0.0010422346850548245,
+                            "a": 1.0
+                          }
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -2.5388616660164227, "y": -4.1999995241673584, "z":  2.0             },
+                        "localRotation": {                                                    "z": -9.38432690147535}
+                      }
+                    },
+                    {
+                      "id"        : "ending-city-light-0-1",
+                      "name"      : "city light 0 1",
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 5.02247767140891, "y": 8.181029788579927},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.9759077018847252,
+                            "g": 0.1564622032852499,
+                            "b": 0.0010422346850548245,
+                            "a": 1.0
+                          }
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -2.5388616660164227, "y": -4.1999995241673584, "z":  1.99            },
+                        "localRotation": {                                                    "z": -9.38432690147535}
+                      }
+                    },
+                    {
+                      "id"        : "ending-city-light-1-0",
+                      "name"      : "city light 1 0",
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 15.385960941049323, "y": 1.8877848519722509},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.07821253642434231,
+                            "g": 0.2859338681357175,
+                            "b": 0.10662332059430618,
+                            "a": 1.0
+                          }
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 2.5046312640687223, "y": 0.38130873792027414, "z":  1.9               },
+                        "localRotation": {                                                   "z": -0.5446474292238757}
+                      }
+                    }
+                  ],
+                  "transform" : {}
+                },
+                {
+                  "id"        : "ending-city-front",
+                  "name"      : "city front",
+                  "components": [
+                    {
+                      "type"      : "TiledSpriteRenderer",
+                      "asset"     : "ending_city_extended",
+                      "wrap"      : {"x": "repeat", "y": "clampBottom"},
+                      "brightness": 1
+                    },
+                    {
+                      "type"      : "GaussianBlur",
+                      "sigmaWorld": {"x": 0.0095, "y": 0.0095}
+                    },
+                    {
+                      "type"      : "ColorGradient",
+                      "start"     : {"x": 0, "y": 0},
+                      "end"       : {"x": 0, "y": -1.3},
+                      "startColor": {"r": 0.0, "g": 0.0, "b": 0.0, "a": 0.75},
+                      "endColor"  : {"r": 0.025, "g": 0.065, "b": 0.68, "a": 0.7}
+                    },
+                    {
+                      "type"       : "DropShadow",
+                      "offsetWorld": {"x": -0.0035, "y": -0.015},
+                      "sigmaWorld" : 0.0045,
+                      "color"      : {"r": 0, "g": 0, "b": 0, "a": 1},
+                      "opacity"    : 0.65
+                    }
+                  ],
+                  "children"  : [
+                    {
+                      "id"        : "ending-city-front-windows",
+                      "name"      : "city front windows",
+                      "components": [
+                        {
+                          "type"      : "TiledSpriteRenderer",
+                          "asset"     : "ending_city_windows",
+                          "blend"     : "additive",
+                          "wrap"      : {"x": "repeat", "y": "transparent"},
+                          "brightness": 1.9,
+                          "saturation": 4.8
+                        },
+                        {
+                          "type"      : "GaussianBlur",
+                          "sigmaWorld": {"x": 0.0095, "y": 0.0095}
+                        },
+                        {"type": "Glow", "sigmaWorld": 0.018, "intensity": 2.1}
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 0.0, "y": 0.0, "z": -0.002}
+                      }
+                    }
+                  ],
+                  "transform" : {
+                    "localPosition": {"x": -5.306441433383236, "y": 0.9227824449373128, "z": 0.6},
+                    "localScale"   : {"x":  2.0,               "y": 2.0,                "z": 1.0}
+                  }
+                },
+                {
+                  "id"        : "ending-city-middle",
+                  "name"      : "city middle",
+                  "components": [
+                    {
+                      "type"      : "TiledSpriteRenderer",
+                      "asset"     : "ending_city_extended",
+                      "wrap"      : {"x": "repeat", "y": "clampBottom"},
+                      "brightness": 0.7
+                    },
+                    {
+                      "type"      : "GaussianBlur",
+                      "sigmaWorld": {"x": 0.013571428571428571, "y": 0.013571428571428571}
+                    },
+                    {
+                      "type"       : "DropShadow",
+                      "offsetWorld": {"x": -0.005, "y": -0.02142857142857143},
+                      "sigmaWorld" : 0.0064285714285714285,
+                      "color"      : {"r": 0, "g": 0, "b": 0, "a": 1},
+                      "opacity"    : 0.65
+                    }
+                  ],
+                  "children"  : [
+                    {
+                      "id"        : "ending-city-middle-windows",
+                      "name"      : "city middle windows",
+                      "components": [
+                        {
+                          "type"      : "TiledSpriteRenderer",
+                          "asset"     : "ending_city_windows",
+                          "blend"     : "additive",
+                          "wrap"      : {"x": "repeat", "y": "transparent"},
+                          "brightness": 0.9,
+                          "saturation": 4.8
+                        },
+                        {
+                          "type"      : "GaussianBlur",
+                          "sigmaWorld": {"x": 0.013571428571428571, "y": 0.013571428571428571}
+                        },
+                        {"type": "Glow", "sigmaWorld": 0.02285714285714286, "intensity": 1.8}
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 0.0, "y": 0.0, "z": -0.002}
+                      }
+                    }
+                  ],
+                  "transform" : {
+                    "localPosition": {"x": -1.693384486201021, "y": 0.9361878547657357, "z": 0.95},
+                    "localScale"   : {"x":  1.4,               "y": 1.4,                "z": 1.0 }
+                  }
+                },
+                {
+                  "id"        : "ending-city-far",
+                  "name"      : "city far",
+                  "components": [
+                    {
+                      "type"      : "TiledSpriteRenderer",
+                      "asset"     : "ending_city_extended",
+                      "wrap"      : {"x": "repeat", "y": "clampBottom"},
+                      "brightness": 0.48
+                    },
+                    {
+                      "type"      : "GaussianBlur",
+                      "sigmaWorld": {"x": 0.03166666666666667, "y": 0.03166666666666667}
+                    },
+                    {
+                      "type"       : "DropShadow",
+                      "offsetWorld": {"x": -0.011666666666666667, "y": -0.05},
+                      "sigmaWorld" : 0.015,
+                      "color"      : {"r": 0, "g": 0, "b": 0, "a": 1},
+                      "opacity"    : 0.65
+                    }
+                  ],
+                  "children"  : [
+                    {
+                      "id"        : "ending-city-far-windows",
+                      "name"      : "city far windows",
+                      "components": [
+                        {
+                          "type"      : "TiledSpriteRenderer",
+                          "asset"     : "ending_city_windows",
+                          "blend"     : "additive",
+                          "wrap"      : {"x": "repeat", "y": "transparent"},
+                          "brightness": 0.55,
+                          "saturation": 4.8
+                        },
+                        {
+                          "type"      : "GaussianBlur",
+                          "sigmaWorld": {"x": 0.03166666666666667, "y": 0.03166666666666667}
+                        },
+                        {"type": "Glow", "sigmaWorld": 0.04, "intensity": 1.6}
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 0.0, "y": 0.0, "z": -0.002}
+                      }
+                    }
+                  ],
+                  "transform" : {
+                    "localPosition": {"x": -2.9117672601405054, "y": 0.2011242409227046, "z": 1.2999999999999998},
+                    "localScale"   : {"x":  0.6,                "y": 0.6,                "z": 1.0               }
+                  }
+                },
+                {
+                  "id"        : "ending-city-ship",
+                  "name"      : "city ship",
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "ship_rear_red", "brightness": 0.34}
+                  ],
+                  "children"  : [
+                    {
+                      "id"        : "ending-city-exhaust",
+                      "name"      : "Rear nozzle / local exhaust",
+                      "components": [
+                        {
+                          "type"         : "ParticleEmitter",
+                          "asset"        : "exhaust",
+                          "seed"         : 4983090,
+                          "maxParticles" : 96,
+                          "rate"         : 23,
+                          "prewarm"      : 1,
+                          "space"        : "local",
+                          "shape"        : {
+                            "type": "ellipse",
+                            "size": {"x": 0.026000000000000002, "y": 0.02, "z": 0}
+                          },
+                          "direction"    : {"x": 0, "y": -0.65, "z": -1},
+                          "spreadDegrees": 70,
+                          "speed"        : {"min": 0.22, "max": 0.36},
+                          "lifetime"     : {"min": 0.6, "max": 0.9},
+                          "startSize"    : {"min": 0.011, "max": 0.015},
+                          "acceleration" : {"x": 0, "y": -0.03, "z": 0},
+                          "sizeOverLife" : [
+                            {"time": 0,   "value": 1  },
+                            {"time": 0.7, "value": 4.3},
+                            {"time": 1,   "value": 5.5}
+                          ],
+                          "colorOverLife": [
+                            { "time": 0,    "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                            { "time": 0.92, "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                            { "time": 1,    "value": {"r": 1, "g": 1, "b": 1, "a": 0} }
+                          ],
+                          "animation"    : {"mode": "fps", "framesPerSecond": 15, "loop": true},
+                          "start"        : {
+                            "frame": 5978,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          },
+                          "duration"     : 4.833333333333333,
+                          "billboard"    : "local",
+                          "color"        : {"r": 0.25, "g": 0.25, "b": 0.25, "a": 1.0}
+                        },
+                        {
+                          "type"      : "Glow",
+                          "threshold" : 0.18,
+                          "softness"  : 0.6,
+                          "sigmaWorld": 0.008,
+                          "intensity" : 0.35,
+                          "color"     : {"r": 1, "g": 0.4, "b": 0.08, "a": 1}
+                        },
+                        {"type": "SortingGroup"}
+                      ],
+                      "transform" : {
+                        "localPosition": {"x": 0, "y": -0.065, "z": -0.005},
+                        "localRotation": {"x": 0, "y":  0,     "z":  0    },
+                        "localScale"   : {"x": 1, "y":  1,     "z":  1    }
+                      }
+                    }
+                  ],
+                  "transform" : {
+                    "localPosition": {"x": 0.0, "y": -0.34, "z": -0.1},
+                    "localScale"   : {"x": 2.5, "y":  2.5,  "z":  1.0}
+                  }
+                },
+                {
+                  "id"        : "ending-city-reveal",
+                  "name"      : "city reveal",
+                  "components": [
+                    {
+                      "type"    : "PlaneRenderer",
+                      "coverage": "camera",
+                      "color"   : {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
+                    }
+                  ],
+                  "children"  : [],
+                  "transform" : {
+                    "localPosition": {"x": 0.0, "y": 0.0, "z": -3.0}
+                  }
+                }
+              ],
+              "transform" : {}
+            }
+          },
+          {
+            "id"    : "ending-city-front",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-city-front"}
+          },
+          {
+            "id"    : "ending-city-middle",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-city-middle"}
+          },
+          {
+            "id"    : "ending-city-far",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-city-far"}
+          },
+          {
+            "id"    : "ending-city-ship",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-city-ship"}
+          },
+          {
+            "id"    : "ending-city-reveal",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-city-reveal"}
+          }
+        ],
+        "bindings"      : [
+          {
+            "id"      : "ending-city-front/Transform/localPosition.y",
+            "object"  : "ending-city-front",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "ending-city-front/Transform/localPosition.y"
+          },
+          {
+            "id"      : "ending-city-middle/Transform/localPosition.y",
+            "object"  : "ending-city-middle",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "ending-city-middle/Transform/localPosition.y"
+          },
+          {
+            "id"      : "ending-city-far/Transform/localPosition.y",
+            "object"  : "ending-city-far",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "ending-city-far/Transform/localPosition.y"
+          },
+          {
+            "id"      : "ending-city-ship/Transform/localPosition.y",
+            "object"  : "ending-city-ship",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "ending-city-ship/Transform/localPosition.y"
+          },
+          {
+            "id"      : "ending-city-reveal/PlaneRenderer/color.a",
+            "object"  : "ending-city-reveal",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-city-reveal/PlaneRenderer/color.a"
+          }
+        ],
+        "sequences"     : []
+      },
+      "ending-departure": {
+        "tickResolution": {"numerator": 24000, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 234400},
+        "objects"       : [
+          {
+            "id"      : "chapter",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "ending-departure-world",
+              "name"      : "departure world",
+              "components": [],
+              "children"  : [
+                {
+                  "id"        : "ending-side-sky",
+                  "name"      : "side sky",
+                  "components": [],
+                  "children"  : [
+                    {
+                      "id"        : "ending-side-pattern",
+                      "name"      : "side pattern",
+                      "components": [
+                        {
+                          "type"      : "TiledSpriteRenderer",
+                          "asset"     : "ending_background",
+                          "origin"    : {"x": -3.2, "y": 1.8},
+                          "wrap"      : {"x": "repeat", "y": "clamp"},
+                          "brightness": 1.0134703905357123,
+                          "color"     : {"r": 0.1973417298301943, "g": 1.0, "b": 0.6704573107858799, "a": 1.0}
+                        },
+                        {
+                          "type"       : "ProceduralNoise",
+                          "enabled"    : true,
+                          "seed"       : 4986670,
+                          "textureSize": {"x": 512, "y": 512},
+                          "worldSize"  : {"x": 5.12, "y": 5.12},
+                          "origin"     : {"x": -3.2, "y": 1.8},
+                          "range"      : 0.4,
+                          "bands"      : [
+                            { "sigmaTexels": {"x": 0.45, "y": 0.7}, "variance": 0.002657221871804711  },
+                            { "sigmaTexels": {"x": 0.6,  "y": 1.2}, "variance": 8.270916161109224e-05 },
+                            { "sigmaTexels": {"x": 0.9,  "y": 1.8}, "variance": 0.0018332838563753103 },
+                            { "sigmaTexels": {"x": 1.3,  "y": 3.2}, "variance": 0.0001665519413011803 },
+                            { "sigmaTexels": {"x": 2.2,  "y": 5  }, "variance": 0.0002574619006740307 },
+                            { "sigmaTexels": {"x": 8,    "y": 8  }, "variance": 0.0004187470462816339 }
+                          ]
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 0.0, "y": 0.0, "z": 3.0}
+                      }
+                    },
+                    {
+                      "id"        : "ending-side-light-0-0",
+                      "name"      : "side light 0 0",
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 4.262511261285793, "y": 12.999999999999998},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.4515169859024927,
+                            "g": 1.387159155981123e-38,
+                            "b": 0.063917116938544,
+                            "a": 1.0
+                          }
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -2.9220900619751955, "y": -0.6000000000000003, "z": 2.0},
+                        "localRotation": {"z": -11.397725273631266}
+                      }
+                    },
+                    {
+                      "id"        : "ending-side-light-1-0",
+                      "name"      : "side light 1 0",
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 6.369110618315034, "y": 7.835035106559441},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.7532676123041645,
+                            "g": 0.5061644935150177,
+                            "b": 0.802975112195921,
+                            "a": 1.0
+                          }
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 1.4527631410817117, "y": -4.242057505051139, "z":  1.9             },
+                        "localRotation": {                                                  "z": 40.48831764222778}
+                      }
+                    },
+                    {
+                      "id"        : "ending-side-light-1-1",
+                      "name"      : "side light 1 1",
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 6.369110618315034, "y": 7.835035106559441},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.7532676123041645,
+                            "g": 0.5061644935150177,
+                            "b": 0.802975112195921,
+                            "a": 1.0
+                          }
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 1.4527631410817117, "y": -4.242057505051139, "z":  1.89            },
+                        "localRotation": {                                                  "z": 40.48831764222778}
+                      }
+                    },
+                    {
+                      "id"        : "ending-side-light-2-0",
+                      "name"      : "side light 2 0",
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 3.104921961682161, "y": 4.807749275201655},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.0537818433536216,
+                            "g": 0.19200211267831788,
+                            "b": 0.015748480782014924,
+                            "a": 1.0
+                          }
+                        }
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -2.3964419041176654, "y": -0.5343281056985699, "z":  1.8             },
+                        "localRotation": {                                                    "z": 56.12290111548036}
+                      }
+                    }
+                  ],
+                  "transform" : {}
+                },
+                {
+                  "id"        : "ending-departure-pivot",
+                  "name"      : "departure pivot",
+                  "components": [],
+                  "children"  : [
+                    {
+                      "id"        : "ending-departure-ship",
+                      "name"      : "Blue pilot in the red-engine ship",
+                      "active"    : true,
+                      "transform" : {
+                        "localPosition": {"x": 0.030699999999999932, "y": 0.0006999999999999318, "z": 0.0},
+                        "localScale"   : {"x": 2.494,                "y": 2.494,                 "z": 1.0}
+                      },
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "ending_ship_red"},
+                        {
+                          "type"             : "TransformNoise",
+                          "seed"             : 4986308,
+                          "start"            : {
+                            "frame": 6308,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          },
+                          "duration"         : 3.6,
+                          "frequency"        : 30,
+                          "positionAmplitude": {"x": 0.035, "y": 0.028, "z": 0.0},
+                          "rotationAmplitude": {"x": 0.0, "y": 0.0, "z": 0.0}
+                        }
+                      ],
+                      "children"  : [
+                        {
+                          "id"        : "ending-departure-pilot",
+                          "name"      : "Blue pilot",
+                          "active"    : true,
+                          "transform" : {
+                            "localPosition": {"x": -0.0330633520449077, "y": -0.14046912590216515, "z": 0.02},
+                            "localRotation": {"x":  0,                  "y":  0,                   "z": 0   },
+                            "localScale"   : {"x": -1.0,                "y":  1.0,                 "z": 1.0 }
+                          },
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "helmet_pilot_blue", "frame": 4},
+                            {
+                              "type"           : "SpriteAnimator",
+                              "enabled"        : false,
+                              "start"          : {
+                                "frame": 6160,
+                                "rate" : {"numerator": 30, "denominator": 1}
+                              },
+                              "framesPerSecond": 10,
+                              "frames"         : [0, 1, 2, 3],
+                              "loop"           : true
+                            }
+                          ],
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "ending-departure-thruster",
+                          "name"      : "Thruster flame",
+                          "transform" : {
+                            "localPosition": {"x": 0.29000000000000004, "y": -0.025055167933920194, "z": 0.03}
+                          },
+                          "components": [
+                            {"type": "SpriteRenderer", "asset": "thruster"},
+                            {
+                              "type"       : "Flicker",
+                              "mode"       : "periodic",
+                              "frequency"  : 15,
+                              "dutyCycle"  : 0.5,
+                              "probability": 0.5,
+                              "seed"       : 49821,
+                              "phase"      : 0,
+                              "start"      : {
+                                "frame": 6123,
+                                "rate" : {"numerator": 30, "denominator": 1}
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id"        : "ending-departure-exhaust",
+                          "name"      : "Local exhaust",
+                          "active"    : true,
+                          "transform" : {
+                            "localPosition": {"x": 0.35000000000000003, "y": -0.010055167933920193, "z": 0.02},
+                            "localRotation": {"x": 0,                   "y":  0,                    "z": 0   },
+                            "localScale"   : {"x": 1,                   "y":  1,                    "z": 1   }
+                          },
+                          "components": [
+                            {
+                              "type"         : "ParticleEmitter",
+                              "asset"        : "exhaust",
+                              "seed"         : 4982686,
+                              "maxParticles" : 64,
+                              "start"        : {
+                                "frame": 6123,
+                                "rate" : {"numerator": 30, "denominator": 1}
+                              },
+                              "prewarm"      : 0.7,
+                              "rate"         : 28,
+                              "duration"     : 9.766666666666667,
+                              "space"        : "local",
+                              "billboard"    : "local",
+                              "shape"        : {
+                                "type": "ellipse",
+                                "size": {"x": 0.035, "y": 0.04, "z": 0}
+                              },
+                              "direction"    : {"x": 1, "y": 0, "z": 0},
+                              "spreadDegrees": 48,
+                              "speed"        : {"min": 0.24, "max": 0.66},
+                              "lifetime"     : {"min": 0.5, "max": 0.85},
+                              "startSize"    : {"min": 0.025, "max": 0.05},
+                              "sizeOverLife" : [
+                                {"time": 0,    "value": 0.65},
+                                {"time": 0.45, "value": 1.3 },
+                                {"time": 1,    "value": 0.85}
+                              ],
+                              "colorOverLife": [
+                                { "time": 0,    "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                                { "time": 0.86, "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                                { "time": 1,    "value": {"r": 1, "g": 1, "b": 1, "a": 0} }
+                              ],
+                              "animation"    : {"mode": "fps", "framesPerSecond": 15, "loop": true}
+                            },
+                            {
+                              "type"      : "Glow",
+                              "threshold" : 0.18,
+                              "softness"  : 0.6,
+                              "sigmaWorld": 0.009,
+                              "intensity" : 0.6,
+                              "color"     : {"r": 1, "g": 0.4, "b": 0.08, "a": 1}
+                            }
+                          ],
+                          "children"  : []
+                        },
+                        {
+                          "id"        : "ending-pilot-on-hull",
+                          "name"      : "pilot on hull",
+                          "components": [],
+                          "children"  : [
+                            {
+                              "id"        : "ending-pilot-standing",
+                              "name"      : "pilot standing",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "helmet_pilot_front"}
+                              ],
+                              "children"  : [],
+                              "transform" : {}
+                            },
+                            {
+                              "id"        : "ending-pilot-left",
+                              "name"      : "pilot left",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "helmet_pilot_blue", "frame": 4}
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localScale": {"x": -1.0, "y": 1.0, "z": 1.0}
+                              }
+                            },
+                            {
+                              "id"        : "ending-paper-held",
+                              "name"      : "paper held",
+                              "components": [
+                                {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small"}
+                              ],
+                              "children"  : [],
+                              "transform" : {
+                                "localPosition": {"x": -0.08500400962309539, "y": 0.09063352044907773, "z": 0.01}
+                              }
+                            }
+                          ],
+                          "transform" : {
+                            "localPosition": {"x": 0.15412991178829188, "y": 0.1161427425821973, "z": 0.02}
+                          }
+                        },
+                        {
+                          "id"        : "ending-departure-smoke",
+                          "name"      : "departure smoke",
+                          "components": [
+                            {
+                              "type"           : "ParticleEmitter",
+                              "asset"          : "boss_smoke_atlas",
+                              "seed"           : 4988214,
+                              "start"          : {
+                                "frame": 6123,
+                                "rate" : {"numerator": 30, "denominator": 1}
+                              },
+                              "duration"       : 9.766666666666667,
+                              "maxParticles"   : 128,
+                              "space"          : "local",
+                              "billboard"      : "local",
+                              "rate"           : 10,
+                              "prewarm"        : 0.3333333333333333,
+                              "shape"          : {
+                                "type": "box",
+                                "size": {"x": 0.6, "y": 0.5, "z": 0.0}
+                              },
+                              "directionMode"  : "planar",
+                              "direction"      : {"x": 0.0, "y": 1.0, "z": 0.0},
+                              "spreadDegrees"  : 180,
+                              "speed"          : {"min": 0.02, "max": 0.18},
+                              "lifetime"       : {"min": 0.3333333333333333, "max": 0.3333333333333333},
+                              "startSize"      : {"min": 0.045, "max": 0.17},
+                              "animation"      : {
+                                "mode"           : "fps",
+                                "framesPerSecond": 15,
+                                "loop"           : false,
+                                "frames"         : [0, 1, 2, 3, 4]
+                              },
+                              "rotation"       : {"min": 0, "max": 0},
+                              "angularVelocity": {"min": 0, "max": 0},
+                              "colorPalette"   : [
+                                { "color": {"r": 1.0,  "g": 1.0,  "b": 1.0,  "a": 1.0}, "weight": 4 },
+                                { "color": {"r": 0.65, "g": 0.65, "b": 0.65, "a": 1.0}, "weight": 1 },
+                                { "color": {"r": 0.4,  "g": 0.4,  "b": 0.4,  "a": 1.0}, "weight": 1 },
+                                { "color": {"r": 0.18, "g": 0.18, "b": 0.18, "a": 1.0}, "weight": 1 }
+                              ]
+                            }
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": 0.0, "y": -0.02, "z": -0.12}
+                          }
+                        },
+                        {
+                          "id"        : "ending-departure-explosions",
+                          "name"      : "departure explosions",
+                          "components": [
+                            {
+                              "type"        : "ParticleEmitter",
+                              "asset"       : "asteroid_explosion_atlas",
+                              "seed"        : 4988779,
+                              "start"       : {
+                                "frame": 6310,
+                                "rate" : {"numerator": 30, "denominator": 1}
+                              },
+                              "duration"    : 2.466666666666667,
+                              "maxParticles": 128,
+                              "space"       : "local",
+                              "billboard"   : "local",
+                              "rate"        : 0,
+                              "bursts"      : [
+                                {
+                                  "time" : {
+                                    "frame": 0,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "count": 1
+                                },
+                                {
+                                  "time" : {
+                                    "frame": 11,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "count": 1
+                                },
+                                {
+                                  "time" : {
+                                    "frame": 22,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "count": 1
+                                },
+                                {
+                                  "time" : {
+                                    "frame": 33,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "count": 1
+                                },
+                                {
+                                  "time" : {
+                                    "frame": 44,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "count": 1
+                                },
+                                {
+                                  "time" : {
+                                    "frame": 55,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "count": 1
+                                },
+                                {
+                                  "time" : {
+                                    "frame": 66,
+                                    "rate" : {"numerator": 30, "denominator": 1}
+                                  },
+                                  "count": 1
+                                }
+                              ],
+                              "prewarm"     : 0,
+                              "shape"       : {
+                                "type": "box",
+                                "size": {"x": 0.6, "y": 0.24, "z": 0.0}
+                              },
+                              "speed"       : {"min": 0, "max": 0},
+                              "lifetime"    : {"min": 0.26666666666666666, "max": 0.26666666666666666},
+                              "startSize"   : {"min": 0.17, "max": 0.17},
+                              "animation"   : {
+                                "mode"           : "fps",
+                                "framesPerSecond": 15,
+                                "loop"           : false,
+                                "frames"         : [0, 1, 2, 3]
+                              }
+                            }
+                          ],
+                          "children"  : [],
+                          "transform" : {
+                            "localPosition": {"x": -0.03, "y": -0.02, "z": -0.15}
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "transform" : {}
+                },
+                {
+                  "id"        : "ending-paper-launched",
+                  "name"      : "paper launched",
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small"}
+                  ],
+                  "children"  : [],
+                  "transform" : {
+                    "localPosition": {"x": 0.125, "y": 0.6729999999999999, "z": 0.04},
+                    "localScale"   : {"x": 2.5,   "y": 2.5,                "z": 1.0 }
+                  }
+                },
+                {
+                  "id"        : "ending-background-dim",
+                  "transform" : {
+                    "localPosition": {"z": 1.7}
+                  },
+                  "components": [
+                    { "type": "PlaneRenderer", "coverage": "camera", "color": {"r": 0, "g": 0, "b": 0, "a": 0} }
+                  ]
+                },
+                {
+                  "id"        : "ending-impact-disc",
+                  "transform" : {
+                    "localPosition": {"z": 0.3, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    { "type": "PlaneRenderer", "shape": "ellipse", "size": {"x": 1e-05, "y": 1e-05} }
+                  ]
+                },
+                {
+                  "id"        : "ending-shockwave-a",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-shockwave-b",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-shockwave-c",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-shockwave-d",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-shockwave-e",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-shockwave-f",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-diamond-wipe",
+                  "transform" : {
+                    "localPosition": {"x": 0.005454229775295971, "y": 0.016639429141214634, "z":  -2               },
+                    "localRotation": {                                                      "z": -45.00149478423773}
+                  },
+                  "components": [
+                    {
+                      "type"    : "PlaneRenderer",
+                      "coverage": "camera",
+                      "color"   : {"r": 0, "g": 0, "b": 0, "a": 1}
+                    },
+                    {
+                      "type"      : "Transition",
+                      "kind"      : "radialGrid",
+                      "progress"  : 0,
+                      "radialGrid": {
+                        "cellSize" : {"x": 0.6400858302550305, "y": 0.6400858302550305},
+                        "origin"   : {"x": -0.32004291512751526, "y": -0.32004291512751526},
+                        "center"   : {"x": -2.2161848680126774, "y": 2.2174696400263483},
+                        "curvature": 0,
+                        "inset"    : 0.6
+                      }
+                    }
+                  ]
+                }
+              ],
+              "transform" : {}
+            }
+          },
+          {
+            "id"    : "ending-departure-pilot",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-departure-pilot"}
+          },
+          {
+            "id"    : "ending-pilot-standing",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-pilot-standing"}
+          },
+          {
+            "id"    : "ending-pilot-on-hull",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-pilot-on-hull"}
+          },
+          {
+            "id"    : "ending-pilot-left",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-pilot-left"}
+          },
+          {
+            "id"    : "ending-paper-held",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-paper-held"}
+          },
+          {
+            "id"    : "ending-paper-launched",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-paper-launched"}
+          },
+          {
+            "id"    : "ending-departure-ship",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-departure-ship"}
+          },
+          {
+            "id"    : "ending-departure-thruster",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-departure-thruster"}
+          },
+          {
+            "id"    : "ending-departure-exhaust",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-departure-exhaust"}
+          },
+          {
+            "id"    : "ending-departure-pivot",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-departure-pivot"}
+          },
+          {
+            "id"    : "ending-background-dim",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-background-dim"}
+          },
+          {
+            "id"    : "ending-impact-disc",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-impact-disc"}
+          },
+          {
+            "id"    : "ending-shockwave-a",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-shockwave-a"}
+          },
+          {
+            "id"    : "ending-shockwave-b",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-shockwave-b"}
+          },
+          {
+            "id"    : "ending-shockwave-c",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-shockwave-c"}
+          },
+          {
+            "id"    : "ending-shockwave-d",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-shockwave-d"}
+          },
+          {
+            "id"    : "ending-shockwave-e",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-shockwave-e"}
+          },
+          {
+            "id"    : "ending-shockwave-f",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-shockwave-f"}
+          },
+          {
+            "id"    : "ending-diamond-wipe",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-diamond-wipe"}
+          }
+        ],
+        "bindings"      : [
+          {
+            "id"      : "ending-departure-pilot/Entity/active",
+            "object"  : "ending-departure-pilot",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "ending-departure-pilot/Entity/active"
+          },
+          {
+            "id"      : "ending-departure-pilot/SpriteAnimator/enabled",
+            "object"  : "ending-departure-pilot",
+            "property": {"component": "SpriteAnimator", "path": "enabled"},
+            "track"   : "ending-departure-pilot/SpriteAnimator/enabled"
+          },
+          {
+            "id"      : "ending-departure-pilot/Transform/localScale.x",
+            "object"  : "ending-departure-pilot",
+            "property": {"component": "Transform", "path": "localScale.x"},
+            "track"   : "ending-departure-pilot/Transform/localScale.x"
+          },
+          {
+            "id"      : "ending-departure-pilot/Transform/localPosition.x",
+            "object"  : "ending-departure-pilot",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "ending-departure-pilot/Transform/localPosition.x"
+          },
+          {
+            "id"      : "ending-pilot-standing/Entity/active",
+            "object"  : "ending-pilot-standing",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "ending-pilot-standing/Entity/active"
+          },
+          {
+            "id"      : "ending-pilot-on-hull/Transform/localPosition.y",
+            "object"  : "ending-pilot-on-hull",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "ending-pilot-on-hull/Transform/localPosition.y"
+          },
+          {
+            "id"      : "ending-pilot-left/Entity/active",
+            "object"  : "ending-pilot-left",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "ending-pilot-left/Entity/active"
+          },
+          {
+            "id"      : "ending-paper-held/Entity/active",
+            "object"  : "ending-paper-held",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "ending-paper-held/Entity/active"
+          },
+          {
+            "id"      : "ending-paper-held/Transform/localPosition.x",
+            "object"  : "ending-paper-held",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "ending-paper-held/Transform/localPosition.x"
+          },
+          {
+            "id"      : "ending-paper-held/Transform/localPosition.y",
+            "object"  : "ending-paper-held",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "ending-paper-held/Transform/localPosition.y"
+          },
+          {
+            "id"      : "ending-paper-launched/Entity/active",
+            "object"  : "ending-paper-launched",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "ending-paper-launched/Entity/active"
+          },
+          {
+            "id"      : "ending-paper-launched/Transform/localPosition.x",
+            "object"  : "ending-paper-launched",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "ending-paper-launched/Transform/localPosition.x"
+          },
+          {
+            "id"      : "ending-paper-launched/Transform/localPosition.y",
+            "object"  : "ending-paper-launched",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "ending-paper-launched/Transform/localPosition.y"
+          },
+          {
+            "id"      : "ending-departure-ship/SpriteRenderer/whiteMix",
+            "object"  : "ending-departure-ship",
+            "property": {"component": "SpriteRenderer", "path": "whiteMix"},
+            "track"   : "ending-departure-ship/SpriteRenderer/whiteMix"
+          },
+          {
+            "id"      : "ending-departure-thruster/SpriteRenderer/whiteMix",
+            "object"  : "ending-departure-thruster",
+            "property": {"component": "SpriteRenderer", "path": "whiteMix"},
+            "track"   : "ending-departure-ship/SpriteRenderer/whiteMix"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/colorMatrix.0",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "colorMatrix.0"},
+            "track"   : "ending-departure-flash-original"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/colorMatrix.3",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "colorMatrix.3"},
+            "track"   : "ending-departure-ship/SpriteRenderer/whiteMix"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/colorMatrix.5",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "colorMatrix.5"},
+            "track"   : "ending-departure-flash-original"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/colorMatrix.7",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "colorMatrix.7"},
+            "track"   : "ending-departure-ship/SpriteRenderer/whiteMix"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/colorMatrix.10",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "colorMatrix.10"},
+            "track"   : "ending-departure-flash-original"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/colorMatrix.11",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "colorMatrix.11"},
+            "track"   : "ending-departure-ship/SpriteRenderer/whiteMix"
+          },
+          {
+            "id"      : "ending-departure-exhaust/Glow/color.r",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "Glow", "path": "color.r"},
+            "track"   : "ending-departure-exhaust/Glow/color.r"
+          },
+          {
+            "id"      : "ending-departure-exhaust/Glow/color.g",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "Glow", "path": "color.g"},
+            "track"   : "ending-departure-exhaust/Glow/color.g"
+          },
+          {
+            "id"      : "ending-departure-exhaust/Glow/color.b",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "Glow", "path": "color.b"},
+            "track"   : "ending-departure-exhaust/Glow/color.b"
+          },
+          {
+            "id"      : "ending-departure-pivot/Transform/localScale.x",
+            "object"  : "ending-departure-pivot",
+            "property": {"component": "Transform", "path": "localScale.x"},
+            "track"   : "ending-departure-pivot/Transform/localScale.x"
+          },
+          {
+            "id"      : "ending-departure-pivot/Transform/localScale.y",
+            "object"  : "ending-departure-pivot",
+            "property": {"component": "Transform", "path": "localScale.y"},
+            "track"   : "ending-departure-pivot/Transform/localScale.y"
+          },
+          {
+            "id"      : "ending-departure-ship/SpriteRenderer/brightness",
+            "object"  : "ending-departure-ship",
+            "property": {"component": "SpriteRenderer", "path": "brightness"},
+            "track"   : "ending-departure-ship/SpriteRenderer/brightness"
+          },
+          {
+            "id"      : "ending-pilot-left/SpriteRenderer/brightness",
+            "object"  : "ending-pilot-left",
+            "property": {"component": "SpriteRenderer", "path": "brightness"},
+            "track"   : "ending-pilot-left/SpriteRenderer/brightness"
+          },
+          {
+            "id"      : "ending-departure-thruster/SpriteRenderer/brightness",
+            "object"  : "ending-departure-thruster",
+            "property": {"component": "SpriteRenderer", "path": "brightness"},
+            "track"   : "ending-departure-ship/SpriteRenderer/brightness"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/color.r",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "color.r"},
+            "track"   : "ending-departure-ship/SpriteRenderer/brightness"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/color.g",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "color.g"},
+            "track"   : "ending-departure-ship/SpriteRenderer/brightness"
+          },
+          {
+            "id"      : "ending-departure-exhaust/ParticleEmitter/color.b",
+            "object"  : "ending-departure-exhaust",
+            "property": {"component": "ParticleEmitter", "path": "color.b"},
+            "track"   : "ending-departure-ship/SpriteRenderer/brightness"
+          },
+          {
+            "id"      : "ending-impact/background-dim/PlaneRenderer/color.a",
+            "object"  : "ending-background-dim",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-impact/background-dim/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "ending-impact/impact-disc/PlaneRenderer/size.x",
+            "object"  : "ending-impact-disc",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "ending-impact/impact-disc/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "ending-impact/impact-disc/PlaneRenderer/size.y",
+            "object"  : "ending-impact-disc",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "ending-impact/impact-disc/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "ending-impact/impact-disc/Entity/active",
+            "object"  : "ending-impact-disc",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "ending-impact/impact-disc/Entity/active"
+          },
+          {
+            "id"      : "ending-impact/shockwave-a/PlaneRenderer/size.x",
+            "object"  : "ending-shockwave-a",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "ending-impact/shockwave-a/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "ending-impact/shockwave-a/PlaneRenderer/size.y",
+            "object"  : "ending-shockwave-a",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "ending-impact/shockwave-a/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "ending-impact/shockwave-a/PlaneRenderer/color.a",
+            "object"  : "ending-shockwave-a",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-impact/shockwave-a/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "ending-impact/shockwave-b/PlaneRenderer/size.x",
+            "object"  : "ending-shockwave-b",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "ending-impact/shockwave-b/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "ending-impact/shockwave-b/PlaneRenderer/size.y",
+            "object"  : "ending-shockwave-b",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "ending-impact/shockwave-b/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "ending-impact/shockwave-b/PlaneRenderer/color.a",
+            "object"  : "ending-shockwave-b",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-impact/shockwave-b/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "ending-impact/shockwave-c/PlaneRenderer/size.x",
+            "object"  : "ending-shockwave-c",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "ending-impact/shockwave-c/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "ending-impact/shockwave-c/PlaneRenderer/size.y",
+            "object"  : "ending-shockwave-c",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "ending-impact/shockwave-c/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "ending-impact/shockwave-c/PlaneRenderer/color.a",
+            "object"  : "ending-shockwave-c",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-impact/shockwave-c/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "ending-impact/shockwave-d/PlaneRenderer/size.x",
+            "object"  : "ending-shockwave-d",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "ending-impact/shockwave-d/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "ending-impact/shockwave-d/PlaneRenderer/size.y",
+            "object"  : "ending-shockwave-d",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "ending-impact/shockwave-d/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "ending-impact/shockwave-d/PlaneRenderer/color.a",
+            "object"  : "ending-shockwave-d",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-impact/shockwave-d/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "ending-impact/shockwave-e/PlaneRenderer/size.x",
+            "object"  : "ending-shockwave-e",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "ending-impact/shockwave-e/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "ending-impact/shockwave-e/PlaneRenderer/size.y",
+            "object"  : "ending-shockwave-e",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "ending-impact/shockwave-e/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "ending-impact/shockwave-e/PlaneRenderer/color.a",
+            "object"  : "ending-shockwave-e",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-impact/shockwave-e/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "ending-impact/shockwave-f/PlaneRenderer/size.x",
+            "object"  : "ending-shockwave-f",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "ending-impact/shockwave-f/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "ending-impact/shockwave-f/PlaneRenderer/size.y",
+            "object"  : "ending-shockwave-f",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "ending-impact/shockwave-f/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "ending-impact/shockwave-f/PlaneRenderer/color.a",
+            "object"  : "ending-shockwave-f",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-impact/shockwave-f/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "ending-impact/diamond-wipe/Transition/progress",
+            "object"  : "ending-diamond-wipe",
+            "property": {"component": "Transition", "path": "progress"},
+            "track"   : "ending-impact/diamond-wipe/Transition/progress"
+          },
+          {
+            "id"      : "ending-impact/diamond-wipe/Transition/radialGrid.inset",
+            "object"  : "ending-diamond-wipe",
+            "property": {"component": "Transition", "path": "radialGrid.inset"},
+            "track"   : "ending-impact/diamond-wipe/Transition/radialGrid.inset"
+          },
+          {
+            "id"      : "ending-impact/diamond-wipe/Transition/radialGrid.curvature",
+            "object"  : "ending-diamond-wipe",
+            "property": {"component": "Transition", "path": "radialGrid.curvature"},
+            "track"   : "ending-impact/diamond-wipe/Transition/radialGrid.curvature"
+          }
+        ],
+        "sequences"     : []
+      },
+      "ending-credits": {
+        "tickResolution": {"numerator": 24000, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 236000},
+        "objects"       : [
+          {
+            "id"      : "chapter",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "ending-credits-world",
+              "name"      : "credits world",
+              "components": [],
+              "children"  : [
+                {
+                  "id"        : "ending-credits-city",
+                  "name"      : "credits city",
+                  "components": [
+                    {
+                      "type" : "TiledSpriteRenderer",
+                      "asset": "ending_city",
+                      "wrap" : {"x": "repeat", "y": "clampBottom"}
+                    }
+                  ],
+                  "children"  : [],
+                  "transform" : {
+                    "localPosition": {"x": -3.4761, "y": 0.0352000000000001, "z": 1.0}
+                  }
+                },
+                {
+                  "id"        : "ending-credits-paper",
+                  "name"      : "credits paper",
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "landscape_paper_plane_small"}
+                  ],
+                  "children"  : [],
+                  "transform" : {
+                    "localPosition": {"x": -1.46, "y": 0.653, "z": 0.0},
+                    "localScale"   : {"x":  2.5,  "y": 2.5,   "z": 1.0}
+                  }
+                },
+                {
+                  "id"        : "ending-credits-reveal",
+                  "name"      : "credits reveal",
+                  "components": [
+                    {
+                      "type"    : "PlaneRenderer",
+                      "coverage": "camera",
+                      "color"   : {"r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0}
+                    }
+                  ],
+                  "children"  : [],
+                  "transform" : {
+                    "localPosition": {"x": 0.0, "y": 0.0, "z": -1.5}
+                  }
+                },
+                {
+                  "id"        : "ending-final-ship",
+                  "name"      : "Blue pilot in the red-engine ship",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -0.08350000000000023, "y": 0.01, "z": 0.0},
+                    "localScale"   : {"x":  2.5,                 "y": 2.5,  "z": 1.0}
+                  },
+                  "components": [
+                    {"type": "SpriteRenderer", "asset": "ending_ship_blue"}
+                  ],
+                  "children"  : [
+                    {
+                      "id"        : "ending-final-thruster",
+                      "name"      : "Thruster flame",
+                      "transform" : {
+                        "localPosition": {"x": 0.29000000000000004, "y": -0.025055167933920194, "z": 0.03}
+                      },
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "thruster"},
+                        {
+                          "type"       : "Flicker",
+                          "mode"       : "periodic",
+                          "frequency"  : 15,
+                          "dutyCycle"  : 0.5,
+                          "probability": 0.5,
+                          "seed"       : 49821,
+                          "phase"      : 0,
+                          "start"      : {
+                            "frame": 6673,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id"        : "ending-final-exhaust",
+                      "name"      : "Local exhaust",
+                      "active"    : true,
+                      "transform" : {
+                        "localPosition": {"x": 0.35000000000000003, "y": -0.010055167933920193, "z": 0.02},
+                        "localRotation": {"x": 0,                   "y":  0,                    "z": 0   },
+                        "localScale"   : {"x": 1,                   "y":  1,                    "z": 1   }
+                      },
+                      "components": [
+                        {
+                          "type"         : "ParticleEmitter",
+                          "asset"        : "exhaust",
+                          "seed"         : 4982686,
+                          "maxParticles" : 64,
+                          "start"        : {
+                            "frame": 6673,
+                            "rate" : {"numerator": 30, "denominator": 1}
+                          },
+                          "prewarm"      : 0.7,
+                          "rate"         : 28,
+                          "duration"     : 1.2666666666666666,
+                          "space"        : "local",
+                          "billboard"    : "local",
+                          "shape"        : {
+                            "type": "ellipse",
+                            "size": {"x": 0.035, "y": 0.04, "z": 0}
+                          },
+                          "direction"    : {"x": 1, "y": 0, "z": 0},
+                          "spreadDegrees": 48,
+                          "speed"        : {"min": 0.24, "max": 0.66},
+                          "lifetime"     : {"min": 0.5, "max": 0.85},
+                          "startSize"    : {"min": 0.025, "max": 0.05},
+                          "sizeOverLife" : [
+                            {"time": 0,    "value": 0.65},
+                            {"time": 0.45, "value": 1.3 },
+                            {"time": 1,    "value": 0.85}
+                          ],
+                          "colorOverLife": [
+                            { "time": 0,    "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                            { "time": 0.86, "value": {"r": 1, "g": 1, "b": 1, "a": 1} },
+                            { "time": 1,    "value": {"r": 1, "g": 1, "b": 1, "a": 0} }
+                          ],
+                          "animation"    : {"mode": "fps", "framesPerSecond": 15, "loop": true}
+                        },
+                        {
+                          "type"      : "Glow",
+                          "threshold" : 0.18,
+                          "softness"  : 0.6,
+                          "sigmaWorld": 0.009,
+                          "intensity" : 0.6,
+                          "color"     : {"r": 1, "g": 0.4, "b": 0.08, "a": 1}
+                        }
+                      ],
+                      "children"  : []
+                    },
+                    {
+                      "id"        : "ending-final-pilot",
+                      "name"      : "final pilot",
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "ending_helmet_closed"}
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": 0.13528800000000002, "y": 0.1742532, "z": -0.02}
+                      }
+                    },
+                    {
+                      "id"        : "ending-final-adult",
+                      "name"      : "final adult",
+                      "components": [
+                        {"type": "SpriteRenderer", "asset": "landscape_adult", "frame": 4}
+                      ],
+                      "children"  : [],
+                      "transform" : {
+                        "localPosition": {"x": -0.0745999999999999, "y": -0.131, "z": 0.02},
+                        "localScale"   : {"x": -1.0,                "y":  1.0,   "z": 1.0 }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "transform" : {}
+            }
+          },
+          {
+            "id"      : "backdrop",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "parent"  : {"entity": "ending-camera"},
+            "template": {
+              "id"       : "ending-credits-background",
+              "children" : [
+                {
+                  "id"        : "ending-credits-pattern",
+                  "transform" : {
+                    "localPosition": {"z": 3}
+                  },
+                  "components": [
+                    {
+                      "type"      : "TiledSpriteRenderer",
+                      "asset"     : "ending_background",
+                      "origin"    : {"x": -3.2, "y": 1.8},
+                      "wrap"      : {"x": "repeat", "y": "clamp"},
+                      "brightness": 1
+                    },
+                    {
+                      "type"       : "ProceduralNoise",
+                      "enabled"    : true,
+                      "seed"       : 4986670,
+                      "textureSize": {"x": 512, "y": 512},
+                      "worldSize"  : {"x": 5.12, "y": 5.12},
+                      "origin"     : {"x": -3.2, "y": 1.8},
+                      "range"      : 0.4,
+                      "bands"      : [
+                        { "sigmaTexels": {"x": 0.45, "y": 0.7}, "variance": 0.002657221871804711  },
+                        { "sigmaTexels": {"x": 0.6,  "y": 1.2}, "variance": 8.270916161109224e-05 },
+                        { "sigmaTexels": {"x": 0.9,  "y": 1.8}, "variance": 0.0018332838563753103 },
+                        { "sigmaTexels": {"x": 1.3,  "y": 3.2}, "variance": 0.0001665519413011803 },
+                        { "sigmaTexels": {"x": 2.2,  "y": 5  }, "variance": 0.0002574619006740307 },
+                        { "sigmaTexels": {"x": 8,    "y": 8  }, "variance": 0.0004187470462816339 }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-credits-light-1-1",
+                  "transform" : {
+                    "localPosition": {"x": -2.133929399463396, "y": -3.114072416686794, "z": 2.0              },
+                    "localRotation": {                                                  "z": 8.452584032836178}
+                  },
+                  "components": [
+                    {
+                      "type"        : "PlaneRenderer",
+                      "shape"       : "ellipse",
+                      "size"        : {"x": 5.088981198925157, "y": 6.855697248458354},
+                      "edgeSoftness": 1,
+                      "blend"       : "additive",
+                      "color"       : {
+                        "r": 0.8930041406342366,
+                        "g": 0.6082569063722301,
+                        "b": 2.0763889294094982e-10,
+                        "a": 1
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-credits-light-2-1",
+                  "transform" : {
+                    "localPosition": {"x": 2.5115185420774924, "y": -1.5863813266541797, "z":   1.9              },
+                    "localRotation": {                                                   "z": -12.203588613884587}
+                  },
+                  "components": [
+                    {
+                      "type"        : "PlaneRenderer",
+                      "shape"       : "ellipse",
+                      "size"        : {"x": 4.834640915387522, "y": 4.7366561499334},
+                      "edgeSoftness": 1,
+                      "blend"       : "additive",
+                      "color"       : {
+                        "r": 0.00018666444445340595,
+                        "g": 0.4176738751396871,
+                        "b": 0.00769770168356098,
+                        "a": 1
+                      }
+                    }
+                  ]
+                }
+              ],
+              "transform": {
+                "localPosition": {"x": 0.0, "y": 0.0, "z": 10.0}
+              }
+            }
+          },
+          {
+            "id"    : "ending-camera",
+            "kind"  : "possessable",
+            "target": {"entity": "ending-camera"}
+          },
+          {
+            "id"    : "ending-credits-city",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-credits-city"}
+          },
+          {
+            "id"    : "ending-credits-paper",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-credits-paper"}
+          },
+          {
+            "id"      : "labels",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "parent"  : {"entity": "ending-camera"},
+            "template": {
+              "id"        : "ending-credit-labels",
+              "name"      : "credit labels",
+              "components": [
+                { "type": "ViewportAnchor", "position": {"x": 0.75, "y": 0.5} }
+              ],
+              "children"  : [
+                {
+                  "id"        : "ending-text-music",
+                  "name"      : "Music by",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": 1.25, "z": 0}
+                  },
+                  "components": [
+                    {
+                      "type"         : "TextRenderer",
+                      "asset"        : "ending_font",
+                      "text"         : "Music by",
+                      "fontSize"     : 0.16,
+                      "letterSpacing": 0,
+                      "alignment"    : "center"
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-text-musician",
+                  "name"      : "ヒゲドライバー",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": 1.0, "z": 0}
+                  },
+                  "components": [
+                    {
+                      "type"         : "TextRenderer",
+                      "asset"        : "ending_font",
+                      "text"         : "ヒゲドライバー",
+                      "fontSize"     : 0.16,
+                      "letterSpacing": 0,
+                      "alignment"    : "center"
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-text-title",
+                  "name"      : "４９８ Ｔｏｋｉｏ",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": 0.51, "z": 0}
+                  },
+                  "components": [
+                    {
+                      "type"         : "TextRenderer",
+                      "asset"        : "ending_font",
+                      "text"         : "４９８ Ｔｏｋｉｏ",
+                      "fontSize"     : 0.16,
+                      "letterSpacing": 0,
+                      "alignment"    : "center"
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-text-movie",
+                  "name"      : "Video",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": -0.08, "z": 0}
+                  },
+                  "components": [
+                    {
+                      "type"         : "TextRenderer",
+                      "asset"        : "ending_font",
+                      "text"         : "Video",
+                      "fontSize"     : 0.16,
+                      "letterSpacing": 0,
+                      "alignment"    : "center"
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-text-creator",
+                  "name"      : "サーモンラット（クロユキ）",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": -0.32, "z": 0}
+                  },
+                  "components": [
+                    {
+                      "type"         : "TextRenderer",
+                      "asset"        : "ending_font",
+                      "text"         : "サーモンラット（クロユキ）",
+                      "fontSize"     : 0.16,
+                      "letterSpacing": 0,
+                      "alignment"    : "center"
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-text-reconstruction",
+                  "name"      : "Reconstruction",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": -0.85, "z": 0}
+                  },
+                  "components": [
+                    {
+                      "type"         : "TextRenderer",
+                      "asset"        : "ending_font",
+                      "text"         : "Reconstruction",
+                      "fontSize"     : 0.16,
+                      "letterSpacing": 0,
+                      "alignment"    : "center"
+                    }
+                  ]
+                },
+                {
+                  "id"        : "ending-text-reconstructor",
+                  "name"      : "noname0310",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": 0, "y": -1.09, "z": 0}
+                  },
+                  "components": [
+                    {
+                      "type"         : "TextRenderer",
+                      "asset"        : "ending_font",
+                      "text"         : "noname0310",
+                      "fontSize"     : 0.16,
+                      "letterSpacing": 0,
+                      "alignment"    : "center"
+                    }
+                  ]
+                }
+              ],
+              "transform" : {
+                "localPosition": {"x": 1.6, "y": 0.0, "z": 7.0}
+              }
+            }
+          },
+          {
+            "id"    : "ending-text-music",
+            "kind"  : "possessable",
+            "target": {"binding": "labels", "descendant": "ending-text-music"}
+          },
+          {
+            "id"    : "ending-text-musician",
+            "kind"  : "possessable",
+            "target": {"binding": "labels", "descendant": "ending-text-musician"}
+          },
+          {
+            "id"    : "ending-text-title",
+            "kind"  : "possessable",
+            "target": {"binding": "labels", "descendant": "ending-text-title"}
+          },
+          {
+            "id"    : "ending-text-movie",
+            "kind"  : "possessable",
+            "target": {"binding": "labels", "descendant": "ending-text-movie"}
+          },
+          {
+            "id"    : "ending-text-creator",
+            "kind"  : "possessable",
+            "target": {"binding": "labels", "descendant": "ending-text-creator"}
+          },
+          {
+            "id"    : "ending-text-reconstruction",
+            "kind"  : "possessable",
+            "target": {"binding": "labels", "descendant": "ending-text-reconstruction"}
+          },
+          {
+            "id"    : "ending-text-reconstructor",
+            "kind"  : "possessable",
+            "target": {"binding": "labels", "descendant": "ending-text-reconstructor"}
+          },
+          {
+            "id"    : "ending-credits-reveal",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-credits-reveal"}
+          },
+          {
+            "id"    : "ending-final-ship",
+            "kind"  : "possessable",
+            "target": {"binding": "chapter", "descendant": "ending-final-ship"}
+          }
+        ],
+        "bindings"      : [
+          {
+            "id"      : "ending-camera/ViewportFrame/enabled",
+            "object"  : "ending-camera",
+            "property": {"component": "ViewportFrame", "path": "enabled"},
+            "track"   : "ending-camera/ViewportFrame/enabled"
+          },
+          {
+            "id"      : "ending-camera/ViewportFrame/insetsViewport.right",
+            "object"  : "ending-camera",
+            "property": {"component": "ViewportFrame", "path": "insetsViewport.right"},
+            "track"   : "ending-camera/ViewportFrame/insetsViewport.right"
+          },
+          {
+            "id"      : "ending-camera/ViewportFrame/insetsWorld.right",
+            "object"  : "ending-camera",
+            "property": {"component": "ViewportFrame", "path": "insetsWorld.right"},
+            "track"   : "ending-camera/ViewportFrame/insetsWorld.right"
+          },
+          {
+            "id"      : "ending-credits-city/Transform/localPosition.x",
+            "object"  : "ending-credits-city",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "ending-credits-city/Transform/localPosition.x"
+          },
+          {
+            "id"      : "ending-credits-city/Transform/localPosition.y",
+            "object"  : "ending-credits-city",
+            "property": {"component": "Transform", "path": "localPosition.y"},
+            "track"   : "ending-credits-city/Transform/localPosition.y"
+          },
+          {
+            "id"      : "ending-credits-paper/Transform/localPosition.x",
+            "object"  : "ending-credits-paper",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "ending-credits-paper/Transform/localPosition.x"
+          },
+          {
+            "id"      : "ending-text-music/TextRenderer/color.a",
+            "object"  : "ending-text-music",
+            "property": {"component": "TextRenderer", "path": "color.a"},
+            "track"   : "ending-text-music/TextRenderer/color.a"
+          },
+          {
+            "id"      : "ending-text-musician/TextRenderer/color.a",
+            "object"  : "ending-text-musician",
+            "property": {"component": "TextRenderer", "path": "color.a"},
+            "track"   : "ending-text-musician/TextRenderer/color.a"
+          },
+          {
+            "id"      : "ending-text-title/TextRenderer/color.a",
+            "object"  : "ending-text-title",
+            "property": {"component": "TextRenderer", "path": "color.a"},
+            "track"   : "ending-text-title/TextRenderer/color.a"
+          },
+          {
+            "id"      : "ending-text-movie/TextRenderer/color.a",
+            "object"  : "ending-text-movie",
+            "property": {"component": "TextRenderer", "path": "color.a"},
+            "track"   : "ending-text-movie/TextRenderer/color.a"
+          },
+          {
+            "id"      : "ending-text-creator/TextRenderer/color.a",
+            "object"  : "ending-text-creator",
+            "property": {"component": "TextRenderer", "path": "color.a"},
+            "track"   : "ending-text-creator/TextRenderer/color.a"
+          },
+          {
+            "id"      : "ending-text-reconstruction/TextRenderer/color.a",
+            "object"  : "ending-text-reconstruction",
+            "property": {"component": "TextRenderer", "path": "color.a"},
+            "track"   : "ending-text-reconstruction/TextRenderer/color.a"
+          },
+          {
+            "id"      : "ending-text-reconstructor/TextRenderer/color.a",
+            "object"  : "ending-text-reconstructor",
+            "property": {"component": "TextRenderer", "path": "color.a"},
+            "track"   : "ending-text-reconstructor/TextRenderer/color.a"
+          },
+          {
+            "id"      : "ending-credits-reveal/PlaneRenderer/color.a",
+            "object"  : "ending-credits-reveal",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "ending-credits-reveal/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "ending-final-ship/Transform/localPosition.x",
+            "object"  : "ending-final-ship",
+            "property": {"component": "Transform", "path": "localPosition.x"},
+            "track"   : "ending-final-ship/Transform/localPosition.x"
+          },
+          {
+            "id"      : "ending-final-ship/Entity/active",
+            "object"  : "ending-final-ship",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "ending-final-ship/Entity/active"
+          }
+        ],
+        "sequences"     : []
+      },
+      "ending-thanks": {
+        "tickResolution": {"numerator": 24000, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 152000},
+        "objects"       : [
+          {
+            "id"      : "chapter",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"        : "ending-thanks-world",
+              "name"      : "thanks world",
+              "components": [],
+              "children"  : [
+                {
+                  "id"        : "ending-thanks-text",
+                  "name"      : "THANK YOU FOR YOUR TIME !!",
+                  "active"    : true,
+                  "transform" : {
+                    "localPosition": {"x": -1.9418148543721199, "y": 0.06957866957797222, "z": 0}
+                  },
+                  "components": [
+                    {
+                      "type"         : "TextRenderer",
+                      "asset"        : "ending_font",
+                      "text"         : "THANK YOU FOR YOUR TIME !!",
+                      "fontSize"     : 0.28,
+                      "letterSpacing": 0.012040875112910443
+                    }
+                  ]
+                }
+              ],
+              "transform" : {}
+            }
+          }
+        ],
+        "bindings"      : [],
         "sequences"     : []
       }
     }
@@ -55955,6 +58759,63 @@
         "faintAnnulusPhases": [4, 5, 6, 7]
       },
       "limitations": "Particles reproduce populations rather than individual source identities. Compressed and occluded cloud colors, early color strips and annulus identity are fitted estimates."
+    },
+    "ending": {
+      "sourceFrames": [5978, 6899],
+      "chapters": {
+        "city"     : [5978, 6122],
+        "departure": [6123, 6415],
+        "credits"  : [6416, 6710],
+        "thanks"   : [6711, 6899]
+      },
+      "camera": "Fixed orthographic reference framing, expands to reveal more of the scene.",
+      "aperture": {
+        "expansionFrames": [6638, 6665],
+        "insetsPixels": {"left": 23, "top": 23, "bottom": 21, "rightFinal": 20},
+        "cornerRadiusPixels": 20,
+        "policy": "Animate aperture bounds, never scale the frame; preserve circular corners and border thickness at every aspect ratio."
+      },
+      "particles": "Seeded local emitters. Smoke and small explosions reproduce distributions rather than individual source identities.",
+      "city": "Recovered observed 139-cell strip; horizontal continuation outside its observed extent is repeated. The full original period remains unverified.",
+      "impact": {
+        "sourceFrameRange": [6377, 6410],
+        "scope": "Analytic impact geometry and transition. The ship, smoke, particles and their full ending choreography are not part of this effect study.",
+        "disc": {
+          "sourceFrames"   : [
+            6382, 6383, 6384, 6385, 6386, 6387, 6388, 6389, 6390, 6391, 6392, 6393, 6394, 6395, 6396, 6397, 6398, 6399,
+            6400, 6401, 6402
+          ],
+          "centerPixels"   : [319.94144448706254, 180.1792024844093],
+          "curveKeys"      : 2,
+          "radiusRMSPixels": 0.045480909119090376
+        },
+        "wipe": {
+          "equation": "max(abs((p-cellCenter)/halfCell)) <= progress(t) - inset(t) + curvature(t) * squaredDistance(p,center)",
+          "gridPitchPixels": 64.00858302550306,
+          "gridAngleDegrees": 45.00149478423773,
+          "fieldCenterPixels": [320.6444491252515, -135.17065724459886],
+          "curveSourceFrames": [6398, 6400, 6404, 6407],
+          "boundaryRMSPixels": 0.3827255557547984
+        },
+        "rings": {
+          "innerRadiusRatio": 0.827,
+          "correspondence": "Monotonic expanding-wave hypothesis. Cross-frame ring identity and offscreen radii are underdetermined; isolated late fronts are extrapolated."
+        }
+      },
+      "sky": {
+        "parameters": [
+           27.79099380248045,  240.00000000000003,  213.12556306428962,  649.9999999999999,    11.397725273631266,
+          465.27631410817116,  604.2057505051139,   318.4555309157517,   391.75175532797203,  -40.48831764222778,
+           80.35580958823347,  233.432810569857,    155.24609808410804,  240.38746376008274,  -56.12290111548036
+        ],
+        "baseColor" : [0.20000000000000004, 1.0134703905357123, 0.6794886325996892],
+        "colors"    : [
+          [0.4515169859024927, 1.387159155981123e-38, 0.063917116938544   ],
+          [1.506535224608329,  1.0123289870300354,    1.605950224391842   ],
+          [0.0537818433536216, 0.19200211267831788,   0.015748480782014924]
+        ],
+        "rms"       : 7.661135601103574
+      }
     }
   }
 }

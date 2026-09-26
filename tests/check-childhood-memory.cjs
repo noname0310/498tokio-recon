@@ -7,7 +7,7 @@ async function main(){
  const point=id=>{const m=scene.world.get(id);return [320+m[12]*100,180-m[13]*100];};
  for(const f of [4861.999,4862,4940.999,4941,5235.999,5236,5522.999,5523,5541.999,5542].reverse()){
   at(f);assert.equal(scene.nodes.has('memory-world'),f>=4941&&f<5542);assert.equal(scene.nodes.has('memory-echo-stage'),f>=4862&&f<4941);
-  if(f>=4941&&f<5542){assert.equal(scene.cameraNode.id,'helmet-flat-camera');assert.deepEqual([...scene.world.get(scene.cameraNode.id)],[1,0,0,0,0,1,0,0,0,0,1,0,0,0,-10,1]);}
+  if(f>=4941&&f<5542){assert.equal(scene.cameraNode.id,f<5532?'helmet-flat-camera':'storm-camera');assert.deepEqual([...scene.world.get(scene.cameraNode.id)],[1,0,0,0,0,1,0,0,0,0,1,0,0,0,-10,1]);}
  }
  for(const [f,opacity]of [[4941,.2],[4949.999,.2],[4950,.4],[4958.999,.4],[4959,.6],[4969,.8],[4978,1]]){
   at(f);assert.equal(scene.requireComponent('memory-fade','Transition').progress,Math.fround(opacity));
@@ -38,6 +38,8 @@ async function main(){
   at(f);assert(Math.abs(point('memory-closeup-paper')[0]-x)<.1,`Two-key paper deceleration at ${f}`);
  }
  at(5541);assert.equal(scene.requireComponent('memory-fade','Transition').progress,0);
+ assert.equal(scene.requireComponent('helmet-flat-camera','GaussianBlur').enabled,false,'Outgoing blur never filters the incoming storm');
+ at(5535);assert(scene.requireComponent('memory-fade','GaussianBlur').sigmaWorld.x>.2);
  const chapter=data.animation.sequences['childhood-memory'];for(const b of chapter.bindings)if(b.property.component==='Transform')assert(data.animation.tracks[b.track].frameNumber.length<=10,'Motion keys describe curves, not dense measured frames');
  const server=makeServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`,captures={};
  try{for(const [label,type,renderer]of [['dom',chromium,'dom'],['firefox-dom',firefox,'dom'],['babylon',chromium,'babylon']]){

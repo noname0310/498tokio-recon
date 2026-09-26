@@ -1,0 +1,109 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Ending sky / city illumination study",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 1, "frameRate": 30, "autoplay": true, "loop": false},
+  "presentation"  : {"referenceAspect": false, "toggleKey": "KeyA"},
+  "assets"        : {
+    "background": {
+      "type"          : "Sprite",
+      "file"          : "background_tile.png",
+      "size"          : {"x": 8, "y": 144},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [6666, 6668, 6670, 6672],
+        "gridPitchPixels": 2.5,
+        "horizontalPeriodPixels": 20,
+        "lighting": "Two editable additive soft ellipses, independent of the tiled dither. This factorization does not identify unique physical lamps.",
+        "verticalExtent": "Rows concealed by the source aperture continue the nearest recovered mean and use dither observations from earlier unobstructed sky."
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "ending-background-preview",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"      : "background",
+        "children": [
+          {
+            "id"        : "pattern",
+            "transform" : {
+              "localPosition": {"z": 3}
+            },
+            "components": [
+              {
+                "type"      : "TiledSpriteRenderer",
+                "asset"     : "background",
+                "origin"    : {"x": -3.2, "y": 1.8},
+                "wrap"      : {"x": "repeat", "y": "clamp"},
+                "brightness": 1.12
+              }
+            ]
+          },
+          {
+            "id"        : "light-1-1",
+            "transform" : {
+              "localPosition": {"x": -1.9958143360572977, "y": -1.197300031138475, "z":   2.0             },
+              "localRotation": {                                                   "z": -20.34631071543295}
+            },
+            "components": [
+              {
+                "type"        : "PlaneRenderer",
+                "shape"       : "ellipse",
+                "size"        : {"x": 4.606421200800405, "y": 4.337660695701652},
+                "edgeSoftness": 1,
+                "blend"       : "additive",
+                "color"       : {"r": 0.6069624761379, "g": 0.17924205625746176, "b": 1.9236378659343766e-06, "a": 1}
+              }
+            ]
+          },
+          {
+            "id"        : "light-1-2",
+            "transform" : {
+              "localPosition": {"x": -1.9958143360572977, "y": -1.197300031138475, "z":   1.99            },
+              "localRotation": {                                                   "z": -20.34631071543295}
+            },
+            "components": [
+              {
+                "type"        : "PlaneRenderer",
+                "shape"       : "ellipse",
+                "size"        : {"x": 4.606421200800405, "y": 4.337660695701652},
+                "edgeSoftness": 1,
+                "blend"       : "additive",
+                "color"       : {"r": 0.6069624761379, "g": 0.17924205625746176, "b": 1.9236378659343766e-06, "a": 1}
+              }
+            ]
+          },
+          {
+            "id"        : "light-2-1",
+            "transform" : {
+              "localPosition": {"x": 2.939871864978155, "y": 0.13235227336029595, "z":  1.9              },
+              "localRotation": {                                                  "z": -5.087994270088315}
+            },
+            "components": [
+              {
+                "type"        : "PlaneRenderer",
+                "shape"       : "ellipse",
+                "size"        : {"x": 11.733938122302858, "y": 3.1755161340249978},
+                "edgeSoftness": 1,
+                "blend"       : "additive",
+                "color"       : {"r": 0.13331081120684943, "g": 0.41874433410781386, "b": 0.03406429873426957, "a": 1}
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

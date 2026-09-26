@@ -8,6 +8,7 @@ let serial=0;
 const color=(c:Color)=>`rgb(${c.r*255} ${c.g*255} ${c.b*255})`;
 
 export class DOMViewportFrame {
+  private layer?:HTMLDivElement;
   private element?:SVGSVGElement;
   private aperture?:SVGPathElement;
   private shadow?:SVGPathElement;
@@ -16,15 +17,20 @@ export class DOMViewportFrame {
   constructor(private readonly renderer:DOMRenderer){}
   update(scene:Scene,view:View):void {
     const c=scene.component(scene.cameraNode.id,"ViewportFrame"),sync=this.renderer.sync;
-    if(!c?.enabled){if(this.element)sync.hidden(this.element,true);return;}
+    if(!c?.enabled){if(this.layer)sync.hidden(this.layer,true);return;}
     if(!this.element){
+      this.layer=document.createElement("div");this.layer.className="screen-effect";
       const root=this.element=document.createElementNS(NS,"svg");root.classList.add("screen-effect");root.dataset.component="ViewportFrame";root.setAttribute("aria-hidden","true");root.setAttribute("preserveAspectRatio","none");
       const defs=document.createElementNS(NS,"defs"),clip=document.createElementNS(NS,"clipPath");clip.id=`viewport-frame-${++serial}`;clip.setAttribute("clipPathUnits","userSpaceOnUse");
       this.aperture=document.createElementNS(NS,"path");clip.append(this.aperture);defs.append(clip);
       this.shadow=document.createElementNS(NS,"path");this.shadow.setAttribute("fill-rule","evenodd");this.shadow.setAttribute("clip-path",`url(#${clip.id})`);
-      this.border=document.createElementNS(NS,"path");this.border.setAttribute("fill-rule","evenodd");root.append(defs,this.shadow,this.border);this.renderer.viewport.append(root);
+      this.border=document.createElementNS(NS,"path");this.border.setAttribute("fill-rule","evenodd");root.append(defs,this.shadow,this.border);this.layer.append(root);
     }
-    sync.hidden(this.element,false);sync.attribute(this.element,"data-entity",scene.cameraNode.id);
+    const camera=scene.requireComponent(scene.cameraNode.id,"Camera"),depth=c.depth,placed=depth!==null;
+    const parent=placed?this.renderer.world:this.renderer.viewport;
+    if(this.layer!.parentElement!==parent){this.renderer.removeSurface(this.layer!);parent.append(this.layer!);sync.style(this.layer!,{zIndex:"auto"});}
+    if(placed)this.renderer.setDepth(this.layer!,depth);
+    sync.hidden(this.layer!,placed&&(depth<camera.near||depth>camera.far));sync.attribute(this.element,"data-entity",scene.cameraNode.id);
     const layout=viewportFrameLayout(c,view),key=JSON.stringify([layout,c.color,c.innerShadow.color,c.innerShadow.opacity]);
     if(this.key===key)return;this.key=key;
     const {width,height,aperture,radius,offset}=layout;
@@ -42,5 +48,5 @@ export class DOMViewportFrame {
     sync.attribute(this.border!,"fill",color(c.color));sync.attribute(this.border!,"fill-opacity",c.color.a);
     sync.attribute(this.shadow!,"fill",color(c.innerShadow.color));sync.attribute(this.shadow!,"fill-opacity",c.innerShadow.color.a*c.innerShadow.opacity);
   }
-  dispose():void {this.element?.remove();this.element=undefined;this.aperture=undefined;this.shadow=undefined;this.border=undefined;this.key="";}
+  dispose():void {if(this.layer)this.renderer.removeSurface(this.layer);this.layer=undefined;this.element=undefined;this.aperture=undefined;this.shadow=undefined;this.border=undefined;this.key="";}
 }

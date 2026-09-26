@@ -7,7 +7,7 @@ import {DOMTransitionPath} from "./dom-transition-path.js";
 import {transitionGeometryKey} from "./geometry.js";
 const NS="http://www.w3.org/2000/svg";
 let serial=0;
-interface MaskGroup {element:HTMLDivElement;clip:SVGClipPathElement;path:SVGPathElement;geometry:DOMTransitionPath;key:string}
+interface MaskGroup {element:HTMLDivElement;clip:SVGClipPathElement;path:SVGPathElement;geometry:DOMTransitionPath;key:string;filter:SVGFilterElement;blur:SVGFEGaussianBlurElement}
 
 export class DOMTransitions {
   private readonly groups=new Map<string,MaskGroup>();
@@ -23,11 +23,17 @@ export class DOMTransitions {
         const element=document.createElement("div"),clip=document.createElementNS(NS,"clipPath"),path=document.createElementNS(NS,"path");
         element.className="transition-layer";element.dataset.transition=group.id;
         clip.id=`transition-mask-${++serial}`;clip.setAttribute("clipPathUnits","userSpaceOnUse");path.setAttribute("clip-rule","nonzero");clip.append(path);r.defs.append(clip);r.world.append(element);
-        record={element,clip,path,geometry:new DOMTransitionPath(),key:""};this.groups.set(group.id,record);
+        const filter=document.createElementNS(NS,"filter"),blur=document.createElementNS(NS,"feGaussianBlur");filter.id=clip.id+"-blur";
+        for(const [k,v]of Object.entries({x:"-50%",y:"-50%",width:"200%",height:"200%","color-interpolation-filters":"sRGB"}))filter.setAttribute(k,v);
+        filter.append(blur);r.defs.append(filter);
+        record={element,clip,path,geometry:new DOMTransitionPath(),key:"",filter,blur};this.groups.set(group.id,record);
       }
       const {component:c,bounds,frameBounds}=group;
       sync.hidden(record.element,false);r.setDepth(record.element,group.depth);
       const fade=c.kind==="fade",masked=!fade&&c.enabled&&c.progress<1;
+      const blur=scene.component(group.id,"GaussianBlur"),blurred=fade&&blur?.enabled&&(blur.sigmaWorld.x>0||blur.sigmaWorld.y>0);
+      sync.style(record.element,{filter:blurred?`url(#${record.filter.id})`:"none"});
+      if(blurred)sync.attribute(record.blur,"stdDeviation",`${blur.sigmaWorld.x*view.pixelsPerUnit} ${blur.sigmaWorld.y*view.pixelsPerUnit}`);
       sync.attribute(record.element,"data-composition",fade&&c.enabled?c.composition:null);
       sync.style(record.element,{opacity:fade&&c.enabled?c.progress:1,visibility:(fade&&c.enabled&&c.progress<=0)||masked&&(c.progress<=0||!bounds||!frameBounds)?"hidden":"visible",clipPath:masked?`url(#${record.clip.id})`:"none"});
       if(masked&&c.progress>0&&bounds&&frameBounds){
@@ -48,5 +54,5 @@ export class DOMTransitions {
     const active=new Set(groups.map(g=>g.id));
     for(const [id,record] of this.groups)if(!active.has(id))sync.hidden(record.element,true);
   }
-  dispose():void {for(const record of this.groups.values()){this.renderer.removeSurface(record.element);record.clip.remove();}this.groups.clear();this.parents.clear();}
+  dispose():void {for(const record of this.groups.values()){this.renderer.removeSurface(record.element);record.clip.remove();record.filter.remove();}this.groups.clear();this.parents.clear();}
 }

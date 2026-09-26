@@ -5,8 +5,10 @@ import { spriteRect } from "./atlas.js";
 import {TextureProcessor,type TextureWorkerFactory} from "./texture-processor.js";
 import type {LoadingProgress} from "./loading-status.js";
 import {scanlineNoise} from "./scanline-jitter.js";
+import {FontResources} from "./text.js";
 
 export class Resources {
+  readonly fonts=new FontResources();
   readonly images=new Map<string,Promise<PixelImage>>();
   readonly jobs=new Map<string,Promise<PixelImage>>();
   readonly atlasFrames=new Map<string,Promise<readonly HTMLImageElement[]>>();
@@ -32,7 +34,11 @@ export class Resources {
       const key=JSON.stringify([scene.source(id),asset.size,asset.atlas]),ids=unique.get(key);
       if(ids)ids.push(id);else unique.set(key,[id]);
     }
-    return this.whenLoaded=Promise.all([...unique.values()].map(async ids=>{
+    const fonts=Object.entries(scene.data.assets).filter(([,asset])=>asset.type==="Font").map(async([id])=>{
+      const finish=this.progress?.begin("Fonts",scene.fontAsset(id).family);
+      try{await this.fonts.prepare(scene,id);if(!this.disposed)this.imageReady?.();}finally{finish?.();}
+    });
+    return this.whenLoaded=Promise.all([...fonts,...[...unique.values()].map(async ids=>{
       const id=ids[0];
       const file=scene.asset(id).file,name=file.startsWith("data:")?id:file.split("/").at(-1)||id;
       const finish=this.progress?.begin("Images",name);
@@ -44,7 +50,7 @@ export class Resources {
       }catch(error){
         throw new Error(`Could not prepare ${name}: ${error instanceof Error?error.message:String(error)}`,{cause:error});
       }finally{finish?.();}
-    })).then(async()=>{
+    })]).then(async()=>{
       if(this.disposed)return;
       const noises=new Map<string,{name:string;component:ProceduralNoise}>();
       for(const node of scene.declaredEntities())for(const c of node.components)if(c.type==="ProceduralNoise"){
@@ -183,5 +189,5 @@ export class Resources {
     }
     return pending;
   }
-  dispose(){this.disposed=true;this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.atlasPixels.clear();this.decodedImages.clear();this.filterImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
+  dispose(){this.disposed=true;this.fonts.dispose();this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.atlasPixels.clear();this.decodedImages.clear();this.filterImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
 }

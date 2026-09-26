@@ -17,6 +17,7 @@ export class Scene {
   animationEnabled=true;
   private seconds=0;private exactTime?:FrameTime;private timelinePosition=Time.fromFrame(Frame.zero);
   private cameraWorld?:Matrix;private inverseCamera?:Matrix;
+  private viewport?:Pick<View,"worldWidth"|"worldHeight">;
   cameraNode!:Entity;sequence?:SequenceRuntime;
   /** World matrices are replaced on evaluation. Invert the active camera only
    * once for all surfaces/particles in that evaluation, including camera cuts. */
@@ -76,6 +77,7 @@ export class Scene {
   }
   asset(id:string):SpriteAsset {const a=this.data.assets[id];if(a?.type!=="Sprite")throw new Error(`Unknown Sprite asset: ${id}`);return a;}
   audioAsset(id:string):AudioAsset {const a=this.data.assets[id];if(a?.type!=="Audio")throw new Error(`Unknown Audio asset: ${id}`);return a;}
+  fontAsset(id:string):import("./types.js").FontAsset {const a=this.data.assets[id];if(a?.type!=="Font")throw new Error(`Unknown Font asset: ${id}`);return a;}
   source(id:string):string{const a=this.data.assets[id];if(!a)throw new Error(`Unknown asset: ${id}`);return this.resolveAsset(new URL(a.file,this.baseURL).href);}
   spriteState(id:string):SpriteState {
     const sprite=this.component(id,"SpriteRenderer")||this.requireComponent(id,"TiledSpriteRenderer"),asset=this.asset(sprite.asset),atlas=asset.atlas,animation=this.component(id,"SpriteAnimator");
@@ -109,12 +111,20 @@ export class Scene {
     return result;
   }
   transformAt(id:string,time:FrameTime|number=this.timelineTime):Transform {
-    if(time===this.timelineTime||time===this.time){const node=this.overlays.get(id)||this.find(id),transform=this.overlays.get(id)?.transform||this.baseTransform(node,this.time),noise=node.components.find(c=>c.type==="TransformNoise");return noise?.enabled?applyTransformNoise(transform,noise,this.timelineTime):transform;}
+    if(time===this.timelineTime||time===this.time){const node=this.overlays.get(id)||this.find(id),transform=this.overlays.get(id)?.transform||this.baseTransform(node,this.time),noise=node.components.find(c=>c.type==="TransformNoise");return this.anchorTransform(node,noise?.enabled?applyTransformNoise(transform,noise,this.timelineTime):transform);}
     const seconds=typeof time==="number"?time:Time.toDecimal(time),sequence=this.sequence;
     const phase=sequence?(typeof time==="number"?sequence.fromSeconds(time):Time.add(Time.fromFrame(sequence.master.start),Time.convert(time,frameRate(1),sequence.tickResolution))):undefined;
     const overlay=this.animationEnabled&&sequence?this.evaluateOverlays(sequence.evaluate(phase!),seconds).get(id):undefined;
     const node=overlay||this.find(id),transform=overlay?.transform||this.baseTransform(node,seconds),noise=node.components.find(c=>c.type==="TransformNoise");
-    return noise?.enabled?applyTransformNoise(transform,noise,typeof time==="number"?Time.fromDecimal(time):time):transform;
+    return this.anchorTransform(node,noise?.enabled?applyTransformNoise(transform,noise,typeof time==="number"?Time.fromDecimal(time):time):transform);
+  }
+  private anchorTransform(node:Entity,transform:Transform):Transform {
+    const anchor=node.components.find(c=>c.type==="ViewportAnchor");if(!anchor?.enabled||!this.viewport)return transform;
+    const parent=this.parents.get(node.id),camera=parent?this.component(parent.id,"Camera"):undefined;
+    if(!camera)throw new Error(`ViewportAnchor requires a Camera parent: ${node.id}`);
+    const p=transform.localPosition,referenceHeight=camera.referenceVerticalSize;
+    const scale=camera.projection==="perspective"?p.z/(referenceHeight/(2*Math.tan(camera.verticalFovDegrees*Math.PI/360))):1;
+    return {...transform,localPosition:{x:p.x+(anchor.position.x-.5)*(this.viewport.worldWidth-referenceHeight*camera.referenceAspect)*scale,y:p.y+(anchor.position.y-.5)*(this.viewport.worldHeight-referenceHeight)*scale,z:p.z}};
   }
   matrixAt(id:string,time:FrameTime|number=this.timelineTime):Matrix {
     const current=time===this.timelineTime||time===this.time,seconds=typeof time==="number"?time:Time.toDecimal(time),exact=typeof time==="number"?Time.fromDecimal(time):time,sequence=this.sequence;
@@ -127,6 +137,7 @@ export class Scene {
     for(let i=chain.length-1;i>=0;i--){
       const base=chain[i],overlay=overlays?.get(base.id),entity=overlay||base,noise=entity.components.find(c=>c.type==="TransformNoise");
       let transform=overlay?.transform||this.baseTransform(base,seconds);if(noise?.enabled)transform=applyTransformNoise(transform,noise,exact);
+      transform=this.anchorTransform(entity,transform);
       matrix=M.multiply(matrix,M.trs(transform));
     }
     return matrix;
@@ -134,6 +145,14 @@ export class Scene {
   particleStates(id:string,time:FrameTime|number=this.timelineTime,view?:Pick<View,"worldWidth"|"worldHeight">){return particleStates(this,id,time,view);}
   updateWorld():void {
     this.snapshot=this.animationEnabled?this.sequence?.evaluate(this.frameTime!):undefined;this.index();this.overlays=this.evaluateOverlays(this.snapshot,this.time);this.world.clear();this.active.clear();
+    this.updateMatrices();
+  }
+  /** Resizing changes only layout, never the authored animation time or keys. */
+  setViewport(view:Pick<View,"worldWidth"|"worldHeight">):void {
+    if(this.viewport?.worldWidth===view.worldWidth&&this.viewport.worldHeight===view.worldHeight)return;
+    this.viewport={worldWidth:view.worldWidth,worldHeight:view.worldHeight};this.world.clear();this.active.clear();this.updateMatrices();
+  }
+  private updateMatrices():void {
     const visit=(id:string):void=>{if(this.world.has(id))return;const parent=this.parents.get(id);if(parent)visit(parent.id);const n=this.overlays.get(id)||this.find(id);this.world.set(id,M.multiply(parent?this.world.get(parent.id)!:M.identity(),M.trs(this.transformAt(id))));const flicker=n.components.find(c=>c.type==="Flicker");this.active.set(id,(parent?this.active.get(parent.id)!:true)&&n.active&&(!flicker?.enabled||flickerVisible(flicker,this.timelineTime)));};for(const id of this.nodes.keys())visit(id);
     const cameras=[...this.nodes.values()].filter(n=>this.active.get(n.id)&&this.component(n.id,"Camera")?.enabled);
     const camera=cameras.find(n=>n.id===this.data.presentation.activeCamera)||cameras[0];if(!camera)throw new Error("The scene has no active Camera.");this.cameraNode=camera;

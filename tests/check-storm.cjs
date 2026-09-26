@@ -7,7 +7,7 @@ async function main(){
  const scene=new Scene(data,pathToFileURL(file).href),at=f=>{scene.setFrameTime(Time.fromDecimal(f),frameRate(30));scene.updateWorld();};
  for(const f of [5531.999,5532,5542,5977.999,5978,5977,5826,5531]){
   at(f);assert.equal(scene.nodes.has('storm-world'),f>=5532&&f<5978);
-  if(f>=5542&&f<5978)assert.equal(scene.cameraNode.id,'storm-camera');
+  if(f>=5532&&f<5978)assert.equal(scene.cameraNode.id,'storm-camera');
  }
  for(const [i,f]of [5753,5773,5783,5793,5803,5813,5823,5833].entries()){
   at(f);for(let j=0;j<8;j++)assert.equal(scene.isActive(`storm-stripes-${j}`),j===i,`Exactly one strip at F${f}`);

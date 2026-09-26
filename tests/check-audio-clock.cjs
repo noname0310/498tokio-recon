@@ -4,15 +4,16 @@ const assert=require("node:assert/strict"),path=require("node:path"),{pathToFile
 class Media extends EventTarget {
   static HAVE_FUTURE_DATA=3;
   dataset={};duration=120;readyState=4;paused=true;ended=false;seeking=false;
-  mediaTime=0;quantum=0;settlementOffset=0;settleBeforeSeeking=false;playbackRate=1;volume=1;muted=false;loop=false;seekWrites=0;
+  mediaTime=0;quantum=0;settlementOffset=0;settleBeforeSeeking=false;coalesceSeeking=false;playbackRate=1;volume=1;muted=false;loop=false;seekWrites=0;
   get currentTime(){return this.mediaTime;}
   set currentTime(time){
     const revision=++this.seekWrites;
     this.mediaTime=this.quantum?Math.floor(time/this.quantum)*this.quantum:time;this.seeking=true;
-    if(!this.settleBeforeSeeking)this.send("seeking");
+    if(!this.settleBeforeSeeking&&!this.coalesceSeeking)this.send("seeking");
     queueMicrotask(()=>{
+      if(this.coalesceSeeking&&revision!==this.seekWrites)return;
       if(revision===this.seekWrites){this.mediaTime+=this.settlementOffset;this.seeking=false;}
-      if(this.settleBeforeSeeking)this.send("seeking");
+      if(this.settleBeforeSeeking||this.coalesceSeeking)this.send("seeking");
       if(revision!==this.seekWrites)return;if(this.settlementOffset)this.send("timeupdate");this.send("seeked");
     });
   }
@@ -117,6 +118,18 @@ async function main(){
       close(sample(),audio.currentTime,"A native seek still supersedes an application seek before settlement");
     }
     audio.settlementOffset=0;audio.settleBeforeSeeking=false;
+    // Firefox emits one seeking/seeked pair for multiple currentTime writes.
+    // The last rational anchor must settle and then release on media progress.
+    audio.coalesceSeeking=true;
+    for(const targets of [[851,2236,2692],[2236,2236,2236]]){
+      const requests=targets.map(f=>player.seek(Time.fromFrame(Frame.from(f)),frameRate(30)));
+      const settled=await Promise.race([Promise.all(requests).then(()=>true),new Promise(r=>setTimeout(()=>r(false),100))]);
+      assert(settled,"A coalesced seek batch must complete without counting one event per assignment");
+      assert.equal(Time.key(player.sample(frameRate(30))),`${targets.at(-1)}:0/1`);
+      await player.play();audio.mediaTime+=.02;now+=20;close(sample(),audio.currentTime,"Coalesced seek releases the anchor when playback advances");
+      player.pause();await Promise.resolve();
+    }
+    audio.coalesceSeeking=false;
     // The displayed offset is independent of media quantization and later reads
     // by controls. Both wrapper and native pauses must retain that exact pose.
     for(const quantum of [0,.000001,.002,.1])for(const sourceRate of [frameRate(30),frameRate(30000,1001)])for(const native of [false,true])for(const drift of [-.08,.08]){

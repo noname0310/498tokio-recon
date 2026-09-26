@@ -62,6 +62,10 @@ function shapePoint(shape:ParticleEmitter["shape"],random:Random):Vec3{
 }
 function direction(c:ParticleEmitter,point:Vec3,random:Random):Vec3{
   if(c.directionMode==="radial")return length(point)>1e-9?normalized(point):unitSphere(random);
+  if(c.directionMode==="planar"){
+    const angle=Math.atan2(c.direction.y,c.direction.x)+(random()*2-1)*c.spreadDegrees*Math.PI/180;
+    return {x:Math.cos(angle),y:Math.sin(angle),z:0};
+  }
   const d=normalized(c.direction),u=normalized(cross(Math.abs(d.z)<.9?{x:0,y:0,z:1}:{x:0,y:1,z:0},d)),v=cross(d,u);
   const co=lerp(Math.cos(c.spreadDegrees*Math.PI/180),1,random()),si=Math.sqrt(Math.max(0,1-co*co)),angle=2*Math.PI*random();
   const result={x:0,y:0,z:0};for(const k of axes)result[k]=d[k]*co+si*(u[k]*Math.cos(angle)+v[k]*Math.sin(angle));return result;
@@ -124,7 +128,9 @@ export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene
   for(const birth of spawns){
     const random=mulberry32(hash(c.seed,birth.id,birth.salt)),life=range(c.lifetime,random),ageTime=Time.subtract(now,birth.offset),age=Time.toDecimal(ageTime);
     if(!bounds&&(ageTime.frame<0||Time.compare(ageTime,Time.fromDecimal(life))>=0))continue;
-    const u=Math.max(0,Math.min(1,age/life)),point=shapePoint(c.shape,random),d=direction(c,point,random),speed=range(c.speed,random),size=range(c.startSize,random)*sampleKeys(c.sizeOverLife,u,1)*(birth.sizeScale??1);
+    const u=Math.max(0,Math.min(1,age/life)),point=shapePoint(c.shape,random),d=direction(c,point,random),sampledSpeed=range(c.speed,random),birthSize=range(c.startSize,random);
+    const sizeQuantile=c.startSize.max>c.startSize.min?(birthSize-c.startSize.min)/(c.startSize.max-c.startSize.min):.5;
+    const speed=lerp(sampledSpeed,lerp(c.speed.min,c.speed.max,sizeQuantile),c.speedSizeCorrelation),size=birthSize*sampleKeys(c.sizeOverLife,u,1)*(birth.sizeScale??1);
     const accelerationTime=bounds?(age<0?0:age>life?life*(age-life/2):age*age/2):age*age/2;
     const velocityTime=bounds?Math.max(0,Math.min(life,age)):age;
     if(bounds){const x=point.x+d.x*speed*age+c.acceleration.x*accelerationTime,y=point.y+d.y*speed*age+c.acceleration.y*accelerationTime;if(x<bounds.left||x>bounds.right||y<bounds.bottom||y>bounds.top)continue;}
@@ -198,7 +204,7 @@ export function particleStates(scene:Scene,id:string,time:FrameTime|number=scene
   return states.sort((a,b)=>(c.sortMode==="sizeAscending"?a.projectedArea-b.projectedArea:b.depth-a.depth)||a.birthTime-b.birthTime||a.id.localeCompare(b.id));
 }
 
-export const particleDefaults:ParticleEmitter={asset:"",colorMatrix:[1,0,0,0,0,1,0,0,0,0,1,0],seed:1,maxParticles:256,start:{frame:Frame.zero,rate:frameRate(30)},duration:0,prewarm:0,rate:10,bursts:[],cameraContinuation:null,space:"local",shape:{type:"point",size:{x:0,y:0,z:0},innerRadiusRatio:0},directionMode:"cone",direction:{x:0,y:1,z:0},spreadDegrees:0,speed:{min:1,max:1},speedOverLife:[],lifetime:{min:1,max:1},startSize:{min:.1,max:.1},rotation:{min:0,max:0},angularVelocity:{min:0,max:0},acceleration:{x:0,y:0,z:0},velocityRelaxation:null,radialExpansion:null,sizeOverLife:[],color:{r:1,g:1,b:1,a:1},colorPalette:[],colorOverLife:[],billboard:"camera",blend:"alpha",sortMode:"depth",animation:{mode:"single",timeSource:"age",frame:0,frames:[],framesPerSecond:15,loop:true,randomStart:false}};
+export const particleDefaults:ParticleEmitter={asset:"",colorMatrix:[1,0,0,0,0,1,0,0,0,0,1,0],seed:1,maxParticles:256,start:{frame:Frame.zero,rate:frameRate(30)},duration:0,prewarm:0,rate:10,bursts:[],cameraContinuation:null,space:"local",shape:{type:"point",size:{x:0,y:0,z:0},innerRadiusRatio:0},directionMode:"cone",direction:{x:0,y:1,z:0},spreadDegrees:0,speed:{min:1,max:1},speedSizeCorrelation:0,speedOverLife:[],lifetime:{min:1,max:1},startSize:{min:.1,max:.1},rotation:{min:0,max:0},angularVelocity:{min:0,max:0},acceleration:{x:0,y:0,z:0},velocityRelaxation:null,radialExpansion:null,sizeOverLife:[],color:{r:1,g:1,b:1,a:1},colorPalette:[],colorOverLife:[],billboard:"camera",blend:"alpha",sortMode:"depth",animation:{mode:"single",timeSource:"age",frame:0,frames:[],framesPerSecond:15,loop:true,randomStart:false}};
 
 export function validateKeys(keys:unknown,label:string,axes:string|null=null,unitTime=false,minimum=-Infinity){
   if(!Array.isArray(keys))throw new Error(`${label} must be a key array.`);
@@ -222,14 +228,16 @@ export function validateEmitter(c:ParticleEmitter,assets:Record<string,SpriteAss
   if(!Number.isInteger(c.maxParticles)||!number(c.maxParticles,1,20000))fail("maxParticles must be an integer in [1, 20000].");
   for(const key of ["duration","prewarm","rate"] as const)if(!number(c[key],0))fail(`invalid ${key}.`);
   if(!number(c.spreadDegrees,0,180))fail("invalid cone angle.");
+  if(!number(c.speedSizeCorrelation,0,1))fail("invalid speedSizeCorrelation.");
   for(const key of ["speed","lifetime","startSize","rotation","angularVelocity"] as const){const r=c[key],min=["speed","startSize"].includes(key)?0:key==="lifetime"?1e-5:-Infinity;if(!r||!number(r.min,min)||!number(r.max,r.min))fail(`invalid ${key} range.`);}
-  if(!["local","world"].includes(c.space)||!["camera","local"].includes(c.billboard)||!["alpha","additive"].includes(c.blend)||!["cone","radial"].includes(c.directionMode))fail("invalid space, alignment, blend or direction mode.");
+  if(!["local","world"].includes(c.space)||!["camera","local"].includes(c.billboard)||!["alpha","additive"].includes(c.blend)||!["cone","radial","planar"].includes(c.directionMode))fail("invalid space, alignment, blend or direction mode.");
   if(!["depth","sizeAscending"].includes(c.sortMode))fail("unsupported sort mode.");
   if(!["point","box","ellipse","sphere"].includes(c.shape.type))fail("unsupported emission shape.");
   for(const key of ["direction","acceleration"] as const)for(const axis of axes)if(!number(c[key][axis],-Infinity))fail(`invalid ${key}.`);
   for(const axis of axes)if(!number(c.shape.size[axis],0))fail("invalid shape size.");
   if(!number(c.shape.innerRadiusRatio,0,1)||c.shape.innerRadiusRatio>0&&c.shape.type!=="ellipse")fail("inner radius requires an ellipse and a fraction in [0, 1].");
   if(c.directionMode==="cone"&&length(c.direction)<1e-9)fail("direction must be nonzero.");
+  if(c.directionMode==="planar"&&Math.hypot(c.direction.x,c.direction.y)<1e-9)fail("planar direction must have a nonzero XY projection.");
   if(!Array.isArray(c.bursts)||c.bursts.some(b=>!Number.isInteger(b.count)||!number(b.count,1,20000)))fail("invalid bursts.");
   for(const burst of c.bursts){
     if(typeof burst.time==="number"){if(!number(burst.time,0))fail("invalid burst time.");}

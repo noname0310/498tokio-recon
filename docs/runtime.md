@@ -14,8 +14,10 @@ The contracts are defined in [types.ts](../src/runtime/types.ts) and defaults/va
 | --- | --- |
 | Camera | Orthographic or perspective projection, reference aspect fitting and camera selection |
 | SpriteRenderer / TiledSpriteRenderer | Native pixel artwork, padded atlas selection, live tint/saturation/hue and repeated coverage |
+| ColorGradient | Clamped local color ramp over tiled artwork, preserving source alpha and remaining independent of the repeat period |
 | PlaneRenderer / LineRenderer | Analytic planes, filled or hollow ellipses, and lines with camera or fixed coverage |
 | SpriteNumberRenderer | Individual atlas glyphs, continuous numeric values and repeated number layout |
+| TextRenderer | Shared webfont, editable text, local font size, tracking, line spacing, alignment and color |
 | SpriteAnimator / Flicker | Independent sprite cadence or periodic/seeded visibility |
 | Glow / DropShadow / GaussianBlur | Component effects attached to a rendered entity |
 | SpriteMotionBlur / ParticleMotionBlur | Translation/radial sampling, dilation and directional blur |
@@ -25,11 +27,35 @@ The contracts are defined in [types.ts](../src/runtime/types.ts) and defaults/va
 | Transition | Procedural masks and scene reveals selected by transition kind |
 | Vignette / ViewportFrame | Camera viewport effects that adapt to aspect ratio |
 | ViewportTransform | Scale, normalized center and opacity of the clipped camera image |
+| ViewportAnchor | Camera-child layout that preserves a reference pose and follows viewport expansion |
 | ColorGrade | Camera color transform with an animatable blend strength |
 | ScanlineJitter | Seeded horizontal screen displacement with two row samples |
 | AudioPlayer / AnimationPlayer / PlayerControls | Playback transport, sequence clock binding and screen controls |
 
 ## Rendering
+
+`ViewportFrame` stores its opening as `insetsWorld` plus `insetsViewport` fractions.
+Animating these bounds changes the opening without scaling `radiusWorld`, border
+thickness or the inset shadow. `depth: null` applies the frame to the complete
+camera image; a numeric camera-space `depth` draws the surround among scene
+surfaces, so titles closer to the camera can remain visible outside the opening.
+DOM retains SVG paths and Babylon draws a signed-distance rounded rectangle.
+The frame shader is prepared during scene loading.
+
+`TiledSpriteRenderer.blend` selects normal or additive composition. Additive tiles
+do not write depth; a separate native window mask can emit light over a building
+layer while retaining independent tint, bloom and scrolling.
+
+Tiled sprites also support `DropShadow`. Its offset, color and opacity remain
+live parameters; its mask follows the tile's alpha and wrap mode. Gaussian
+blur and shadow softness combine in variance. Babylon caches padded effect
+textures and remaps their UVs without changing the native tile period, so
+soft edges extend past transparent image boundaries. DOM uses retained SVG
+filters with the same effect order.
+
+`TextRenderer` references a `Font` asset with a `file` URL, `family` name and `ascent` in EM units. Text starts at the top of the first EM line; `fontSize` and `letterSpacing` use local world units, and `lineHeight` is an EM multiplier. Newlines are preserved and tabs become four spaces. Alignment is left, center or right. Both backends load the same WOFF2 with `FontFace`; font preparation appears in the loading log. The supplied Misaki Gothic subset contains only the characters used in the ending labels, including their fullwidth forms.
+
+DOM retains SVG text elements. Babylon rasterizes changed text to a reusable canvas and uploads a texture on a normal scene plane. Texture resolution follows projected size and device pixel ratio in discrete steps, with hysteresis and a 4096-pixel/4-megapixel limit. Color, opacity and ordinary movement do not rerasterize text. Zooming can raise the resolution; no separate glyph atlas or distance-field metadata is shipped. `npm run check:text` checks both browsers and backends, live layout edits, texture reuse and font disposal. The font has its own [license](../assets/fonts/LICENSE-MISAKI.txt).
 
 DOM uses flat retained render surfaces with CSS matrix3d transforms, native pixel dimensions and SVG filters. Entity parenting is evaluated by the shared engine; the DOM does not duplicate the entity/component hierarchy. Surface depth ranks determine composition. Synchronization updates changed attributes and styles while reusing nodes, filters, atlas slots and particle pools. Scene rendering uses no Canvas, WebGL or WebGPU. Image preparation uses browser decoding and temporary OffscreenCanvas contexts to read pixels, separate atlas cells and encode generated textures. Prepared results are cached; transforms and effects remain live.
 
@@ -38,6 +64,8 @@ Babylon uses ESM modules, meshes/materials, shaders and thin instances. The same
 Babylon uploads particle instance buffers only for visible draws; size-sorted runs retain their storage and skip the unused emitter meshes. Hidden transparent meshes do not participate in depth sorting. Sprite glow and shadow masks retain their GPU textures across atlas frame changes in a per-sprite LRU cache, limited to 32 masks or 8 MiB of RGBA data. Currently bound masks remain valid even when they exceed that budget; inactive masks are evicted first. Tint and intensity remain shader parameters, and disposing the sprite releases all retained masks.
 
 The camera expands the visible world beyond the reference aspect: a taller viewport preserves reference width, and a wider viewport preserves reference height. Reference-aspect mode adds letterboxing. Camera fitting, tiled coverage and procedural transition geometry account for dynamic viewport dimensions.
+
+`ViewportAnchor` belongs to a camera child. Its normalized `position` (positive Y up) offsets the reference transform by the extra frustum width and height; its descendants inherit the result in both renderers. For example, `{x: 0.75, y: 0.5}` keeps the ending labels centered in the right half of the viewport without changing their reference-aspect placement. Layout is evaluated on resize without modifying animation keys.
 
 `PlaneRenderer.shape: "ellipse"` supports `innerRadiusRatio` from 0 to 1. Zero (the default) fills the ellipse; a positive ratio makes a concentric hole, and 1 leaves no visible area. DOM uses a retained SVG even-odd clip over the live plane and its transition geometry. Babylon evaluates inner and outer contours analytically with screen-derivative antialiasing. Size, hole ratio and color remain animatable; no ring image is generated.
 
@@ -52,6 +80,10 @@ Integer FrameNumber, rational FrameTime and FrameRate distinguish discrete frame
 AudioPlayer wraps an Audio element and provides the animation clock. Playback uses performance.now() between media hints, resynchronizing at transport events and actual media advancement. Pause, seek, playback rate and native media controls update the animation. Without an audio clock, AnimationPlayer uses PerformanceClock. Exact frame seeks preserve the frame/rate pair.
 
 SpriteAnimator, Flicker and ParticleEmitter origins use start: {frame, rate}; frame origins are not stored as Float32 seconds. A particle birth ordinal seeds its own Mulberry32 stream, so random access and replay do not depend on rendering cadence. Local particles follow the current parent transform throughout their lifetime.
+
+`ParticleEmitter.directionMode: "planar"` spreads velocity around `direction` within the emitter's local XY plane. It keeps layered effects such as smoke at their authored depth; the default `"cone"` spreads velocity in three dimensions. `spreadDegrees` is the half-angle in either mode.
+
+Flicker can specify an exact `period: {frame, rate}` instead of a frequency. A 19.5-frame cycle at 30 fps is `{frame: 39, rate: {numerator: 60, denominator: 1}}`; keeping the measured period as integers avoids large repeating-decimal denominators during subframe playback.
 
 `TransformNoise` adds seeded local position and rotation offsets after authored tracks. It uses continuous quintic value noise at an explicit frequency, with a frame-based start, duration and animatable strength. Random access has no accumulated simulation state. A camera can inherit an orbit pivot while receiving its own local shake.
 
@@ -73,15 +105,15 @@ Tiled DOM artwork merges adjacent cells of identical RGBA into exact rectangles.
 
 PlayerControls belongs to the scene and references AnimationPlayer. Its fixed screen overlay retains the full display size when the scene is letterboxed. Buttons reuse their icons; fading, layout and menus use HTML/CSS. Hidden controls stop timeline updates. Clicking the scene reveals controls without toggling playback.
 
-`Transition.kind: "radialGrid"` uses `max(abs((p - cellCenter) / halfCellSize)) <= progress - inset + curvature * squaredDistance(p, center)`. The distance is evaluated at each boundary point, producing curved, asymmetric tile outlines. `cellSize`, `origin` and `center` use local world units; `curvature` uses inverse squared units. `inset` (0–0.25, default zero) lets center cells disappear before outer cells. Zero progress hides the plane and full progress covers it. Curvature must be nonnegative and satisfy `curvature * (cellSize.x² + cellSize.y²) < 1`, keeping each cell boundary connected. DOM solves the quadratic contour into one retained union path with shared edges; Babylon evaluates the same field in the fragment shader. Both extend across the current frustum. Run `npm run check:paper-return` for field classification, half-opacity joins, sparse source fits, reverse seeks and expanded viewports.
+`Transition.kind: "radialGrid"` uses `max(abs((p - cellCenter) / halfCellSize)) <= progress - inset + curvature * squaredDistance(p, center)`. The distance is evaluated at each boundary point, producing curved, asymmetric tile outlines. `cellSize`, `origin` and `center` use local world units; `curvature` uses inverse squared units. `inset` is a nonnegative scalar-field offset, default zero; it can delay central cells while distant cells remain visible. Rotate the entity to rotate the grid and its field together. Zero progress hides the plane and full progress covers it. Curvature must be nonnegative and satisfy `curvature * (cellSize.x² + cellSize.y²) < 1`, keeping each cell boundary connected. DOM solves the quadratic contour and cancels shared borders before stitching the retained SVG outline, avoiding antialiased pinholes at rotated tile junctions. Babylon evaluates the same field in the fragment shader. Both extend across the current frustum. Run `npm run check:paper-return` for field classification, rotated half-opacity joins, sparse source fits, reverse seeks and expanded viewports.
 
 ## Entry points
 
 createPlayer creates the complete engine and transport. Its optional onError callback is registered before image preparation begins. createRenderer creates a standalone backend. Scene compiles and validates the shared data model; Resources owns cached textures and jobs. Disposal releases renderer surfaces, resources, clocks and controls.
 
-The built index.html accepts renderer=dom or renderer=babylon, a scene URL, an exact frame address, and a controls visibility option. Babylon.js is the default for both the page and the createPlayer/createRenderer APIs. The website loads JSON, PNG and M4A files by URL; it has no bundled image map. Images resolve relative to the loaded JSON, so an external scene can provide its own assets.
+The built index.html accepts renderer=dom or renderer=babylon, a scene URL, an exact frame address, and a controls visibility option. Babylon.js is the default for both the page and the createPlayer/createRenderer APIs. The website loads JSON, PNG, WOFF2 and M4A files by URL; it has no bundled image map. Images resolve relative to the loaded JSON, so an external scene can provide its own assets.
 
-The standalone entry imports the final scene and Babylon backend, embeds PNGs and M4A using `asset/inline`, and supplies `resolveAsset(url)` to map original scene paths to embedded data. The worker uses the loader's inline mode. Its single HTML needs no server or companion files. Exported scene JSON retains its original paths; scene evaluation, resource preparation and rendering stay shared. See [build pipeline](build.md).
+The standalone entry imports the final scene and Babylon backend, embeds PNGs, WOFF2 fonts and M4A using `asset/inline`, and supplies `resolveAsset(url)` to map original scene paths to embedded data. The worker uses the loader's inline mode. Its single HTML needs no server or companion files. Exported scene JSON retains its original paths; scene evaluation, resource preparation and rendering stay shared. See [build pipeline](build.md).
 
 ## Resource preparation and progress
 
@@ -131,3 +163,7 @@ with the other camera shaders. Jitter follows camera blur and precedes vignette,
 viewport frame and color grading; player controls remain outside the effect.
 Zero amplitude or a disabled component bypasses the filter/pass. SVG resampling
 can differ slightly between browsers at fractional pixel boundaries.
+
+`ParticleEmitter.speedSizeCorrelation` blends independent speed sampling toward the birth-size quantile. A value of 1 pairs the size and speed ranges; 0 retains independent samples. Changing it preserves the seeded size, atlas phase and lifetime samples.
+
+`GaussianBlur` on a targeted fade `Transition` filters only that composed subtree, before its opacity. This keeps an outgoing shot blurred while the incoming shot stays sharp. Both backends retain the filter resources, and Babylon prepares the shader during loading.

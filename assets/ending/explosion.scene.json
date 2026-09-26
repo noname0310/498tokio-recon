@@ -1,0 +1,676 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Ending explosion / analytic transition study",
+  "referenceFrame": {"width": 640, "height": 360},
+  "presentation"  : {"referenceAspect": false, "toggleKey": "KeyA"},
+  "timeline"      : {"duration": 1.1, "frameRate": 30, "autoplay": false, "loop": true},
+  "assets"        : {
+    "background": {
+      "type"          : "Sprite",
+      "file"          : "background_tile.png",
+      "size"          : {"x": 8, "y": 144},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "sourceFrames": [6666, 6668, 6670, 6672],
+        "gridPitchPixels": 2.5,
+        "horizontalPeriodPixels": 20,
+        "lighting": "Two editable additive soft ellipses, independent of the tiled dither. This factorization does not identify unique physical lamps.",
+        "verticalExtent": "Rows concealed by the source aperture continue the nearest recovered mean and use dither observations from earlier unobstructed sky."
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "ending-explosion-preview",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"        : "playback",
+        "components": [
+          {"type": "AnimationPlayer", "sequence": "ending-explosion"},
+          { "type": "PlayerControls", "player": {"entity": "playback", "component": "AnimationPlayer"} }
+        ]
+      }
+    ]
+  },
+  "animation"     : {
+    "master"   : "ending-explosion",
+    "tracks"   : {
+      "background-dim/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [0, 30, 100, 330],
+        "value"        : [0, 0.4, 0.6, 0.6],
+        "interpolation": [5, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "impact-disc/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [20, 300],
+        "value": [1e-05, 2.978592380224418],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.06128807563156408, 1.0039781024717096, 0.00023492212426915962, 0.7953011189232985]
+      },
+      "impact-disc/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [20, 300],
+        "value": [1e-05, 2.978592380224418],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.06128807563156408, 1.0039781024717096, 0.00023492212426915962, 0.7953011189232985]
+      },
+      "impact-disc/Entity/active": {
+        "type"         : "AnimationTrackBoolean",
+        "frameNumber"  : [0, 20],
+        "value"        : [0, 1],
+        "interpolation": [0, -1, 0, -1]
+      },
+      "shockwave-a/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [12, 30],
+        "value": [1e-05, 16.16],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [1.0765636599056378, 5.7023644067498545, 1.1031101363710514, 6.180952622899892]
+      },
+      "shockwave-a/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [12, 30],
+        "value": [1e-05, 16.16],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [1.0765636599056378, 5.7023644067498545, 1.1031101363710514, 6.180952622899892]
+      },
+      "shockwave-a/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [12, 20, 30],
+        "value"        : [0, 1, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1]
+      },
+      "shockwave-b/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [20, 60],
+        "value": [1e-05, 11.0],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [2.9494248482128858, 6.405558218980558, 0.39029899597013823, 10.980927354071719]
+      },
+      "shockwave-b/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [20, 60],
+        "value": [1e-05, 11.0],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [2.9494248482128858, 6.405558218980558, 0.39029899597013823, 10.980927354071719]
+      },
+      "shockwave-b/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [20, 30, 40, 50, 60],
+        "value"        : [0, 1, 1, 1, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "shockwave-c/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [25, 60],
+        "value": [1e-05, 9.4],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.24887543376986632, 2.739931671334364, 0.39429292762173035, 8.297033290638936]
+      },
+      "shockwave-c/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [25, 60],
+        "value": [1e-05, 9.4],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.24887543376986632, 2.739931671334364, 0.39429292762173035, 8.297033290638936]
+      },
+      "shockwave-c/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [25, 30, 40, 50, 60],
+        "value"        : [0, 1, 0.75, 0.49, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "shockwave-d/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [53, 70],
+        "value": [1e-05, 13.200000000000001],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.9181318895483697, 4.6386022586139966, 0.9684335212910424, 5.082541679417578]
+      },
+      "shockwave-d/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [53, 70],
+        "value": [1e-05, 13.200000000000001],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.9181318895483697, 4.6386022586139966, 0.9684335212910424, 5.082541679417578]
+      },
+      "shockwave-d/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [53, 60, 70],
+        "value"        : [0, 0.406, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1]
+      },
+      "shockwave-e/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [61, 90],
+        "value": [1e-05, 9.6],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.7163893906496015, 5.872119679977024, 1.1588348228367598, 6.2641306951531215]
+      },
+      "shockwave-e/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [61, 90],
+        "value": [1e-05, 9.6],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.7163893906496015, 5.872119679977024, 1.1588348228367598, 6.2641306951531215]
+      },
+      "shockwave-e/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [61, 70, 80, 90],
+        "value"        : [0, 0.305, 0.189, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1, 5, -1]
+      },
+      "shockwave-f/PlaneRenderer/size.x": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [83, 100],
+        "value": [1e-05, 9.22],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.6434740241710402, 3.2432701311708825, 0.6739961347294304, 3.5444051074638]
+      },
+      "shockwave-f/PlaneRenderer/size.y": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [83, 100],
+        "value": [1e-05, 9.22],
+        "interpolation": [9, 0, 6, 2],
+        "interpolationParameters": [0.6434740241710402, 3.2432701311708825, 0.6739961347294304, 3.5444051074638]
+      },
+      "shockwave-f/PlaneRenderer/color.a": {
+        "type"         : "AnimationTrackFloat32",
+        "frameNumber"  : [83, 90, 100],
+        "value"        : [0, 0.071, 0],
+        "interpolation": [5, -1, 5, -1, 5, -1]
+      },
+      "diamond-wipe/Transition/progress": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [210, 230, 270, 300],
+        "value": [0.0, 0.2107357199836612, 0.3941370758954608, 1.0],
+        "interpolation": [10, 0, 10, 4, 10, 8, 10, 12],
+        "interpolationParameters": [
+           0.012153701864596609,  -1,                      0.012153701864596609,  -1,
+           0.008503515348760761,  -1,                      0.008503515348760761,  -1,
+           0.0017428414796044366, -1,                      0.0017428414796044366, -1,
+           0.02230657727932847,   -1,                      0.02230657727932847,   -1
+        ]
+      },
+      "diamond-wipe/Transition/radialGrid.inset": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [210, 230, 270, 300],
+        "value": [0.6, 0.4735585680098032, 0.36351775446272355, 0.0],
+        "interpolation": [10, 0, 10, 4, 10, 8, 10, 12],
+        "interpolationParameters": [
+          -0.007292221118757966, -1,                    -0.007292221118757966, -1,
+          -0.005102109209256456, -1,                    -0.005102109209256456, -1,
+          -0.001045704887762662, -1,                    -0.001045704887762662, -1,
+          -0.013383946367597082, -1,                    -0.013383946367597082, -1
+        ]
+      },
+      "diamond-wipe/Transition/radialGrid.curvature": {
+        "type": "AnimationTrackFloat32",
+        "frameNumber": [210, 230, 270, 300],
+        "value": [0.016679456435200433, 0.018312986855028256, 0.053992545144744025, 0.10809312157092422],
+        "interpolation": [10, 0, 10, 4, 10, 8, 10, 12],
+        "interpolationParameters": [
+           0.00032482605406115335, -1,                       0.00032482605406115335, -1,
+           0.0002969266208095436,  -1,                       0.0002969266208095436,  -1,
+           0.002276481198094757,   -1,                       0.002276481198094757,   -1,
+           5.052424403377858e-15,  -1,                       5.052424403377858e-15,  -1
+        ]
+      }
+    },
+    "sequences": {
+      "ending-explosion": {
+        "tickResolution": {"numerator": 300, "denominator": 1},
+        "displayRate"   : {"numerator": 30, "denominator": 1},
+        "playbackRange" : {"start": 0, "end": 330},
+        "objects"       : [
+          {
+            "id"      : "effects",
+            "kind"    : "spawnable",
+            "idScope" : "scene",
+            "template": {
+              "id"      : "ending-impact",
+              "children": [
+                {
+                  "id"      : "background",
+                  "children": [
+                    {
+                      "id"        : "pattern",
+                      "transform" : {
+                        "localPosition": {"z": 3}
+                      },
+                      "components": [
+                        {
+                          "type"      : "TiledSpriteRenderer",
+                          "asset"     : "background",
+                          "origin"    : {"x": -3.2, "y": 1.8},
+                          "wrap"      : {"x": "repeat", "y": "clamp"},
+                          "brightness": 1
+                        }
+                      ]
+                    },
+                    {
+                      "id"        : "light-1-1",
+                      "transform" : {
+                        "localPosition": {"x": -2.133929399463396, "y": -3.114072416686794, "z": 2.0              },
+                        "localRotation": {                                                  "z": 8.452584032836178}
+                      },
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 5.088981198925157, "y": 6.855697248458354},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.8930041406342366,
+                            "g": 0.6082569063722301,
+                            "b": 2.0763889294094982e-10,
+                            "a": 1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id"        : "light-2-1",
+                      "transform" : {
+                        "localPosition": {"x": 2.5115185420774924, "y": -1.5863813266541797, "z":   1.9              },
+                        "localRotation": {                                                   "z": -12.203588613884587}
+                      },
+                      "components": [
+                        {
+                          "type"        : "PlaneRenderer",
+                          "shape"       : "ellipse",
+                          "size"        : {"x": 4.834640915387522, "y": 4.7366561499334},
+                          "edgeSoftness": 1,
+                          "blend"       : "additive",
+                          "color"       : {
+                            "r": 0.00018666444445340595,
+                            "g": 0.4176738751396871,
+                            "b": 0.00769770168356098,
+                            "a": 1
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id"        : "background-dim",
+                  "transform" : {
+                    "localPosition": {"z": 1.7}
+                  },
+                  "components": [
+                    { "type": "PlaneRenderer", "coverage": "camera", "color": {"r": 0, "g": 0, "b": 0, "a": 0} }
+                  ]
+                },
+                {
+                  "id"        : "impact-disc",
+                  "transform" : {
+                    "localPosition": {"z": 0.3, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    { "type": "PlaneRenderer", "shape": "ellipse", "size": {"x": 1e-05, "y": 1e-05} }
+                  ]
+                },
+                {
+                  "id"        : "shockwave-a",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "shockwave-b",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "shockwave-c",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "shockwave-d",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "shockwave-e",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "shockwave-f",
+                  "transform" : {
+                    "localPosition": {"z": 0.2, "x": -0.0005855551293745975, "y": -0.0017920248440930209}
+                  },
+                  "components": [
+                    {
+                      "type"            : "PlaneRenderer",
+                      "shape"           : "ellipse",
+                      "innerRadiusRatio": 0.827,
+                      "size"            : {"x": 1e-05, "y": 1e-05},
+                      "color"           : {"r": 1, "g": 1, "b": 1, "a": 0}
+                    }
+                  ]
+                },
+                {
+                  "id"        : "diamond-wipe",
+                  "transform" : {
+                    "localPosition": {"x": 0.005454229775295971, "y": 0.016639429141214634, "z":  -2               },
+                    "localRotation": {                                                      "z": -45.00149478423773}
+                  },
+                  "components": [
+                    {
+                      "type"    : "PlaneRenderer",
+                      "coverage": "camera",
+                      "color"   : {"r": 0, "g": 0, "b": 0, "a": 1}
+                    },
+                    {
+                      "type"      : "Transition",
+                      "kind"      : "radialGrid",
+                      "progress"  : 0,
+                      "radialGrid": {
+                        "cellSize" : {"x": 0.6400858302550305, "y": 0.6400858302550305},
+                        "origin"   : {"x": -0.32004291512751526, "y": -0.32004291512751526},
+                        "center"   : {"x": -2.2161848680126774, "y": 2.2174696400263483},
+                        "curvature": 0,
+                        "inset"    : 0.6
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id"    : "background",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "background"}
+          },
+          {
+            "id"    : "background-dim",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "background-dim"}
+          },
+          {
+            "id"    : "impact-disc",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "impact-disc"}
+          },
+          {
+            "id"    : "shockwave-a",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "shockwave-a"}
+          },
+          {
+            "id"    : "shockwave-b",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "shockwave-b"}
+          },
+          {
+            "id"    : "shockwave-c",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "shockwave-c"}
+          },
+          {
+            "id"    : "shockwave-d",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "shockwave-d"}
+          },
+          {
+            "id"    : "shockwave-e",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "shockwave-e"}
+          },
+          {
+            "id"    : "shockwave-f",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "shockwave-f"}
+          },
+          {
+            "id"    : "diamond-wipe",
+            "kind"  : "possessable",
+            "target": {"binding": "effects", "descendant": "diamond-wipe"}
+          }
+        ],
+        "bindings"      : [
+          {
+            "id"      : "background-dim/PlaneRenderer/color.a",
+            "object"  : "background-dim",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "background-dim/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "impact-disc/PlaneRenderer/size.x",
+            "object"  : "impact-disc",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "impact-disc/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "impact-disc/PlaneRenderer/size.y",
+            "object"  : "impact-disc",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "impact-disc/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "impact-disc/Entity/active",
+            "object"  : "impact-disc",
+            "property": {"component": "Entity", "path": "active"},
+            "track"   : "impact-disc/Entity/active"
+          },
+          {
+            "id"      : "shockwave-a/PlaneRenderer/size.x",
+            "object"  : "shockwave-a",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "shockwave-a/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "shockwave-a/PlaneRenderer/size.y",
+            "object"  : "shockwave-a",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "shockwave-a/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "shockwave-a/PlaneRenderer/color.a",
+            "object"  : "shockwave-a",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "shockwave-a/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "shockwave-b/PlaneRenderer/size.x",
+            "object"  : "shockwave-b",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "shockwave-b/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "shockwave-b/PlaneRenderer/size.y",
+            "object"  : "shockwave-b",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "shockwave-b/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "shockwave-b/PlaneRenderer/color.a",
+            "object"  : "shockwave-b",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "shockwave-b/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "shockwave-c/PlaneRenderer/size.x",
+            "object"  : "shockwave-c",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "shockwave-c/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "shockwave-c/PlaneRenderer/size.y",
+            "object"  : "shockwave-c",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "shockwave-c/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "shockwave-c/PlaneRenderer/color.a",
+            "object"  : "shockwave-c",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "shockwave-c/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "shockwave-d/PlaneRenderer/size.x",
+            "object"  : "shockwave-d",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "shockwave-d/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "shockwave-d/PlaneRenderer/size.y",
+            "object"  : "shockwave-d",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "shockwave-d/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "shockwave-d/PlaneRenderer/color.a",
+            "object"  : "shockwave-d",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "shockwave-d/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "shockwave-e/PlaneRenderer/size.x",
+            "object"  : "shockwave-e",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "shockwave-e/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "shockwave-e/PlaneRenderer/size.y",
+            "object"  : "shockwave-e",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "shockwave-e/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "shockwave-e/PlaneRenderer/color.a",
+            "object"  : "shockwave-e",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "shockwave-e/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "shockwave-f/PlaneRenderer/size.x",
+            "object"  : "shockwave-f",
+            "property": {"component": "PlaneRenderer", "path": "size.x"},
+            "track"   : "shockwave-f/PlaneRenderer/size.x"
+          },
+          {
+            "id"      : "shockwave-f/PlaneRenderer/size.y",
+            "object"  : "shockwave-f",
+            "property": {"component": "PlaneRenderer", "path": "size.y"},
+            "track"   : "shockwave-f/PlaneRenderer/size.y"
+          },
+          {
+            "id"      : "shockwave-f/PlaneRenderer/color.a",
+            "object"  : "shockwave-f",
+            "property": {"component": "PlaneRenderer", "path": "color.a"},
+            "track"   : "shockwave-f/PlaneRenderer/color.a"
+          },
+          {
+            "id"      : "diamond-wipe/Transition/progress",
+            "object"  : "diamond-wipe",
+            "property": {"component": "Transition", "path": "progress"},
+            "track"   : "diamond-wipe/Transition/progress"
+          },
+          {
+            "id"      : "diamond-wipe/Transition/radialGrid.inset",
+            "object"  : "diamond-wipe",
+            "property": {"component": "Transition", "path": "radialGrid.inset"},
+            "track"   : "diamond-wipe/Transition/radialGrid.inset"
+          },
+          {
+            "id"      : "diamond-wipe/Transition/radialGrid.curvature",
+            "object"  : "diamond-wipe",
+            "property": {"component": "Transition", "path": "radialGrid.curvature"},
+            "track"   : "diamond-wipe/Transition/radialGrid.curvature"
+          }
+        ]
+      }
+    }
+  },
+  "reconstruction": {
+    "sourceFrameRange": [6377, 6410],
+    "scope": "Analytic impact geometry and transition. The ship, smoke, particles and their full ending choreography are not part of this effect study.",
+    "disc": {
+      "sourceFrames"   : [
+        6382, 6383, 6384, 6385, 6386, 6387, 6388, 6389, 6390, 6391, 6392, 6393, 6394, 6395, 6396, 6397, 6398, 6399,
+        6400, 6401, 6402
+      ],
+      "centerPixels"   : [319.94144448706254, 180.1792024844093],
+      "curveKeys"      : 2,
+      "radiusRMSPixels": 0.045480909119090376
+    },
+    "wipe": {
+      "equation": "max(abs((p-cellCenter)/halfCell)) <= progress(t) - inset(t) + curvature(t) * squaredDistance(p,center)",
+      "gridPitchPixels": 64.00858302550306,
+      "gridAngleDegrees": 45.00149478423773,
+      "fieldCenterPixels": [320.6444491252515, -135.17065724459886],
+      "curveSourceFrames": [6398, 6400, 6404, 6407],
+      "boundaryRMSPixels": 0.3827255557547984
+    },
+    "rings": {
+      "innerRadiusRatio": 0.827,
+      "correspondence": "Monotonic expanding-wave hypothesis. Cross-frame ring identity and offscreen radii are underdetermined; isolated late fronts are extrapolated."
+    }
+  }
+}

@@ -22,6 +22,7 @@ async function main() {
     const copy = path.join(dist, 'assets', file);
     assert(fs.readFileSync(copy).equals(fs.readFileSync(source)), `Static asset changed during copying: ${file}`);
     if (file.endsWith('.png')) assert(portable.includes(`data:image/png;base64,${fs.readFileSync(source).toString('base64')}`), `Missing exact standalone PNG bytes: ${file}`);
+    if (file.endsWith('.woff2')) assert(portable.includes(`data:font/woff2;base64,${fs.readFileSync(source).toString('base64')}`), `Missing exact standalone font bytes: ${file}`);
     if (!file.endsWith('.json')) continue;
     for (const asset of Object.values(JSON.parse(fs.readFileSync(copy, 'utf8')).assets || {})) {
       const target = fileURLToPath(new URL(asset.file, pathToFileURL(copy)));
@@ -75,6 +76,6 @@ async function main() {
       }
     } finally { await new Promise(resolve => server.close(resolve)); }
   }
-  console.log(`dist: ${references} valid scene asset references; exact external files and standalone inline PNG bytes; source files excluded.`);
+  console.log(`dist: ${references} valid scene asset references; exact external files and standalone inline PNG/font bytes; source files excluded.`);
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

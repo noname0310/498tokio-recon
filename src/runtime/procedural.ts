@@ -160,19 +160,35 @@ export function generateTexture(input:TextureJob):PixelImage {
   const {source,asset,resolution}=input;
   if(kind==="tile"){
     const worldWidth=source.width/asset.pixelsPerUnit,worldHeight=source.height/asset.pixelsPerUnit;
-    const width=Math.max(source.width,Math.ceil(worldWidth*resolution)),height=Math.max(source.height,Math.ceil(worldHeight*resolution));
-    const alpha=source.data.some((value,index)=>index%4===3&&value<255),channels=alpha?4:3;
+    const width=Math.max(source.width,Math.ceil(worldWidth*resolution)),bodyHeight=Math.max(source.height,Math.ceil(worldHeight*resolution));
+    const sigma=input.sigmaWorld,sigmaY=sigma.y*bodyHeight/worldHeight,mode=input.wrapY;
+    const openTop=mode==="transparent"||mode==="clampBottom"||mode==="repeatBottom",openBottom=mode==="transparent";
+    // Filter transparent boundaries before mapping the padded image back onto
+    // the unchanged tile period. One extra row keeps bilinear sampling clear
+    // beyond the finite kernel, even for a fully opaque source.
+    const reach=sigmaY>0?Math.floor(4*sigmaY+.5)+1:0;
+    const padTop=openTop?reach:0,padBottom=openBottom?reach:0;
+    // A half-infinite repeat has a unique first edge. Keep its whole transient
+    // followed by one undisturbed period and a convolution guard band. This
+    // also supports a blur kernel wider than the tile itself.
+    const repeatFrom=mode==="repeatBottom"&&reach>0?Math.ceil(reach/bodyHeight):0;
+    const height=padTop+bodyHeight+padBottom+repeatFrom*bodyHeight+(repeatFrom>0?reach:0);
+    if(width*height>16777216)throw new Error("Effect texture exceeds the configured texture budget.");
+    const alpha=padTop>0||padBottom>0||source.data.some((value,index)=>index%4===3&&value<255),channels=alpha?4:3;
     const raw=new Float64Array(width*height*channels);
     for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-      const sx=Math.min(source.width-1,Math.floor((x+.5)/width*source.width)),sy=Math.min(source.height-1,Math.floor((y+.5)/height*source.height));
+      const row=y-padTop;if(openTop&&row<0||openBottom&&row>=bodyHeight)continue;
+      const sourceRow=mode==="repeatBottom"?row%bodyHeight:clamp(row,0,bodyHeight-1);
+      const sx=Math.min(source.width-1,Math.floor((x+.5)/width*source.width)),sy=Math.min(source.height-1,Math.floor((sourceRow+.5)/bodyHeight*source.height));
       const start=(sy*source.width+sx)*4,offset=(y*width+x)*channels,a=alpha?source.data[start+3]/255:1;
       for(let c=0;c<3;c++)raw[offset+c]=source.data[start+c]*a;
       if(alpha)raw[offset+3]=a;
     }
-    const sigma=input.sigmaWorld;
-    const filtered=blur(raw,width,height,channels,[sigma.y*height/worldHeight,sigma.x*width/worldWidth],[input.repeatY?"wrap":"nearest","wrap"]);
+    const filtered=blur(raw,width,height,channels,[sigmaY,sigma.x*width/worldWidth],[mode==="repeat"||mode==="repeatBottom"&&reach===0?"wrap":"nearest","wrap"]);
     if(alpha)for(let i=0;i<filtered.length;i+=4){const a=filtered[i+3];for(let c=0;c<3;c++)filtered[i+c]=a>1e-8?filtered[i+c]/a:0;filtered[i+3]=a*255;}
-    return texture(bytes(filtered),width,height,channels);
+    const result=texture(bytes(filtered),width,height,channels);
+    if(height!==bodyHeight)result.tileMapping={scaleY:bodyHeight/height,offsetY:padTop/height,repeatFrom};
+    return result;
   }
   if(kind==="mask"){
     const c=input.component,worldWidth=source.width/asset.pixelsPerUnit,worldHeight=source.height/asset.pixelsPerUnit;

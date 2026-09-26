@@ -1,3 +1,4 @@
+import {BabylonText} from "./babylon-text.js";
 import {BabylonColorGrade} from "./babylon-color-grade.js";
 import {BabylonScanlineJitter} from "./babylon-scanline-jitter.js";
 import {BabylonNumber} from "./babylon-number.js";
@@ -159,27 +160,40 @@ class Sprite {
 
 class TiledSprite {
   private readonly nativeFrames=new Map<string,Babylon.RawTexture>();
+  private shadowDeclared:boolean;
   readonly renderer:BabylonSceneContext;readonly id:string;
   readonly textures:Map<string,Babylon.RawTexture>;readonly keys:Map<string,string>;readonly jobs:Map<string,Promise<void>>;readonly revisions:Map<string,number>;
   updateRevision=0;disposed=false;
   readonly material:Babylon.ShaderMaterial;readonly mesh:Babylon.Mesh;transparent=false;hasAlpha=false;alphaSource?:PixelImage;
   constructor(renderer:BabylonSceneContext,node:Entity){
     this.renderer=renderer;this.id=node.id;const B=renderer.B;
-    this.material=new B.ShaderMaterial(`${node.name} / TiledSpriteRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneBackground"},{attributes:["position","uv"],uniforms:["worldViewProjection","tileOrigin","tileSize","noiseOrigin","noiseSize","noiseRange","noiseEnabled","noiseChannelGain","tint","saturation","verticalWrap","directionalSigma","blurDirection","clipEnabled","clipBounds","cropSigma","glowSigma","glowGain"],samplers:["backgroundTex","haloTex","noiseTex"]});
+    this.material=new B.ShaderMaterial(`${node.name} / TiledSpriteRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneBackground"},{attributes:["position","uv"],uniforms:["worldViewProjection","tileOrigin","tileSize","backgroundMapping","haloMapping","shadowMapping","shadowColor","shadowOffset","shadowSigma","noiseOrigin","noiseSize","noiseRange","noiseEnabled","noiseChannelGain","tint","saturation","verticalWrap","directionalSigma","blurDirection","clipEnabled","clipBounds","cropSigma","glowSigma","glowGain","gradientEnabled","gradientStart","gradientEnd","gradientStartColor","gradientEndColor"],samplers:["backgroundTex","haloTex","shadowTex","noiseTex"]});
     this.material.needAlphaBlending=()=>Boolean(this.transparent);
     this.material.backFaceCulling=false;this.mesh=renderer.quad(node.name,node.id,this.material);this.textures=new Map();this.keys=new Map();this.jobs=new Map();this.revisions=new Map();
     this.material.setTexture("noiseTex",renderer.neutralTexture);
     this.material.setTexture("haloTex",renderer.neutralTexture);
+    this.material.setVector4("backgroundMapping",new B.Vector4(1,0,0,0));this.material.setVector4("haloMapping",new B.Vector4(1,0,0,0));
+    this.material.setTexture("shadowTex",renderer.neutralTexture);this.material.setVector4("shadowMapping",new B.Vector4(1,0,0,0));
+    this.shadowDeclared=node.components.some(c=>c.type==="DropShadow");this.material.setDefine("TILE_SHADOW",this.shadowDeclared);
   }
   async update(scene:Scene,view:View){
-    const r=this.renderer,c=scene.requireComponent(this.id,"TiledSpriteRenderer"),original=scene.asset(c.asset),state=scene.spriteState(this.id),asset={...original,size:state.size,atlas:undefined},blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise"),resolution=Math.max(scene.data.rendering.texturePixelsPerUnit,c.clipBounds?asset.pixelsPerUnit*8:0);
+    const r=this.renderer,c=scene.requireComponent(this.id,"TiledSpriteRenderer"),original=scene.asset(c.asset),state=scene.spriteState(this.id),asset={...original,size:state.size,atlas:undefined},blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise"),resolution=Math.max(scene.data.rendering.texturePixelsPerUnit,asset.pixelsPerUnit*(c.clipBounds?8:enabled(blur)?2:0));
     if(!scene.active.get(this.id)||!state.visible||!r.resources.isImageReady(c.asset)){this.mesh.setEnabled(false);return;}
-    const bounds=clippedBounds(scene.coverage(this.id,view),c.clipBounds),glow=scene.component(this.id,"Glow"),sigma=enabled(blur)?blur.sigmaWorld:{x:0,y:0};this.mesh.setEnabled(c.enabled&&Boolean(bounds));
-    const halo=glow?.enabled?glow.sigmaWorld:0,pad=4*Math.max(sigma.x,sigma.y,halo);
+    const bounds=clippedBounds(scene.coverage(this.id,view),c.clipBounds),glow=scene.component(this.id,"Glow"),shadow=scene.component(this.id,"DropShadow"),sigma=enabled(blur)?blur.sigmaWorld:{x:0,y:0};this.mesh.setEnabled(c.enabled&&Boolean(bounds));
+    if(this.shadowDeclared!==Boolean(shadow)){this.shadowDeclared=Boolean(shadow);this.material.setDefine("TILE_SHADOW",this.shadowDeclared);}
+    const shadowRadius=enabled(shadow)?shadow.sigmaWorld:0,shadowSigma={x:Math.hypot(sigma.x,shadowRadius),y:Math.hypot(sigma.y,shadowRadius)};
+    const halo=glow?.enabled?glow.sigmaWorld:0,pad=Math.max(4*Math.max(sigma.x,sigma.y,halo),enabled(shadow)?4*Math.max(shadowSigma.x,shadowSigma.y)+Math.max(Math.abs(shadow.offsetWorld.x),Math.abs(shadow.offsetWorld.y)):0);
     if(bounds)r.rect(this.mesh,bounds.left-pad,bounds.bottom-pad,bounds.right+pad,bounds.top+pad);
     this.material.setFloat("clipEnabled",c.clipBounds?1:0);this.material.setVector4("clipBounds",new r.B.Vector4(bounds?.left??0,bounds?.bottom??0,bounds?.right??1,bounds?.top??1));r.vec2(this.material,"cropSigma",sigma);this.material.setFloat("glowSigma",halo);this.material.setFloat("glowGain",glow?.enabled?glow.intensity:0);
     r.vec2(this.material,"tileOrigin",c.origin);r.vec2(this.material,"tileSize",{x:asset.size.x/asset.pixelsPerUnit,y:asset.size.y/asset.pixelsPerUnit});
+    r.vec2(this.material,"shadowOffset",shadow?.offsetWorld??{x:0,y:0});r.vec2(this.material,"shadowSigma",shadowSigma);
+    this.material.setVector4("shadowColor",new r.B.Vector4(shadow?.color.r??0,shadow?.color.g??0,shadow?.color.b??0,enabled(shadow)?shadow.color.a*shadow.opacity:0));
     r.tint(this.material,{r:c.color.r*c.brightness,g:c.color.g*c.brightness,b:c.color.b*c.brightness,a:c.color.a});this.material.setFloat("saturation",c.saturation);this.material.setFloat("verticalWrap",{clamp:0,clampBottom:1,transparent:2,repeat:3,repeatBottom:4}[c.wrap.y]);
+    const gradient=scene.component(this.id,"ColorGradient");this.material.setFloat("gradientEnabled",enabled(gradient)?1:0);
+    if(gradient){
+      r.vec2(this.material,"gradientStart",gradient.start);r.vec2(this.material,"gradientEnd",gradient.end);
+      for(const [name,color]of [["gradientStartColor",gradient.startColor],["gradientEndColor",gradient.endColor]] as const)this.material.setVector4(name,new r.B.Vector4(color.r,color.g,color.b,color.a));
+    }
     const directional=scene.component(this.id,"DirectionalBlur"),angle=(directional?.angleDegrees??0)*Math.PI/180;this.material.setFloat("directionalSigma",enabled(directional)?directional.sigmaWorld:0);r.vec2(this.material,"blurDirection",{x:Math.cos(angle),y:Math.sin(angle)});
     r.vec2(this.material,"noiseOrigin",noise?.origin||{x:0,y:0});r.vec2(this.material,"noiseSize",noise?.worldSize||{x:1,y:1});this.material.setFloat("noiseRange",noise?.range||0);this.material.setFloat("noiseEnabled",enabled(noise)&&noise.bands.some(b=>b.variance>0)?1:0);
     this.material.setVector3("noiseChannelGain",new r.B.Vector3(noise?.channelGain.r??1,noise?.channelGain.g??1,noise?.channelGain.b??1));
@@ -190,13 +204,20 @@ class TiledSprite {
     // opaque tile transparent. Keep depth writes so intersecting sprites and
     // laser planes are occluded per fragment, independently of their centres.
     const softCrop=!!c.clipBounds&&pad>0;
-    this.transparent=this.hasAlpha||c.color.a<1||softCrop;this.material.disableDepthWrite=this.transparent;
+    const softEdge=c.wrap.y!=="clamp"&&c.wrap.y!=="repeat"&&(sigma.y>0||halo>0||enabled(shadow)||enabled(directional)&&directional.sigmaWorld>0);
+    this.transparent=this.hasAlpha||c.color.a<1||softCrop||softEdge||c.blend==="additive";this.material.disableDepthWrite=this.transparent;
+    this.material.alphaMode=c.blend==="additive"?r.B.Engine.ALPHA_ADD:r.B.Engine.ALPHA_COMBINE;
     const repeatY=c.wrap.y==="repeat"||c.wrap.y==="repeatBottom";
-    const key=JSON.stringify([scene.source(c.asset),state.rect,asset,sigma,resolution,repeatY]);
+    const key=JSON.stringify([scene.source(c.asset),state.rect,asset,sigma,resolution,c.wrap.y]);
     const jobs:(Promise<void>|undefined)[]=[];
     const schedule=(name:string,key:string,input:TextureJob,options:TextureOptions)=>{
       if(this.keys.get(name)!==key){this.keys.set(name,key);const revision=(this.revisions.get(name)||0)+1;this.revisions.set(name,revision);
-        this.jobs.set(name,r.resources.texture(key,input).then(result=>{if(this.revisions.get(name)!==revision)return;this.textures.get(name)?.dispose();const texture=r.texture(`${this.id}/${name}`,result,options);this.textures.set(name,texture);this.material.setTexture(name+"Tex",texture);}));}
+        this.jobs.set(name,r.resources.texture(key,input).then(result=>{
+          if(this.revisions.get(name)!==revision)return;
+          this.textures.get(name)?.dispose();const mapping=result.tileMapping,texture=r.texture(`${this.id}/${name}`,result,{...options,repeatY:options.repeatY&&!mapping});
+          this.textures.set(name,texture);this.material.setTexture(name+"Tex",texture);
+          if(input.kind==="tile")this.material.setVector4(name+"Mapping",new r.B.Vector4(mapping?.scaleY??1,mapping?.offsetY??0,mapping?.repeatFrom??0,mapping?1:0));
+        }));}
       jobs.push(this.jobs.get(name));
     };
     if(sigma.x===0&&sigma.y===0){
@@ -206,17 +227,21 @@ class TiledSprite {
         let texture=this.nativeFrames.get(nativeKey);
         if(!texture){texture=r.texture(`${this.id}/frame-${state.frame}`,source,{repeatX:true,repeatY});this.nativeFrames.set(nativeKey,texture);}
         this.material.setTexture("backgroundTex",texture);
+        this.material.setVector4("backgroundMapping",new r.B.Vector4(1,0,0,0));
       }
-    }else schedule("background","tile:"+key,{kind:"tile",source,asset,sigmaWorld:sigma,resolution,repeatY},{repeatX:true,repeatY});
+    }else schedule("background","tile:"+key,{kind:"tile",source,asset,sigmaWorld:sigma,resolution,wrapY:c.wrap.y},{repeatX:true,repeatY,linear:true});
     if(halo>0&&glow?.enabled){
-      const haloSigma={x:Math.hypot(sigma.x,halo),y:Math.hypot(sigma.y,halo)},haloResolution=Math.min(resolution,asset.pixelsPerUnit*2);
-      const haloKey=JSON.stringify([scene.source(c.asset),state.rect,asset,haloSigma,haloResolution,repeatY]);
-      schedule("halo","tile-halo:"+haloKey,{kind:"tile",source,asset,sigmaWorld:haloSigma,resolution:haloResolution,repeatY},{repeatX:true,repeatY});
+      const haloSigma={x:Math.hypot(sigma.x,halo),y:Math.hypot(sigma.y,halo)},haloResolution=Math.min(resolution,Math.max(scene.data.rendering.texturePixelsPerUnit,asset.pixelsPerUnit*2));
+      const haloKey=JSON.stringify([scene.source(c.asset),state.rect,asset,haloSigma,haloResolution,c.wrap.y]);
+      schedule("halo","tile-halo:"+haloKey,{kind:"tile",source,asset,sigmaWorld:haloSigma,resolution:haloResolution,wrapY:c.wrap.y},{repeatX:true,repeatY,linear:true});
+    }
+    if(enabled(shadow)){
+      const shadowResolution=Math.min(resolution,Math.max(scene.data.rendering.texturePixelsPerUnit,asset.pixelsPerUnit*2));
+      const shadowKey=JSON.stringify([scene.source(c.asset),state.rect,asset,shadowSigma,shadowResolution,c.wrap.y]);
+      schedule("shadow","tile:"+shadowKey,{kind:"tile",source,asset,sigmaWorld:shadowSigma,resolution:shadowResolution,wrapY:c.wrap.y},{repeatX:true,repeatY,linear:true});
     }
     if(noise)schedule("noise",r.resources.noiseKey(noise),{kind:"noise",component:noise},{repeatX:true,repeatY:true});
     await Promise.all(jobs);
-    const background=this.textures.get("background");
-    if(background)background.wrapV=repeatY?r.B.Texture.WRAP_ADDRESSMODE:r.B.Texture.CLAMP_ADDRESSMODE;
   }
   dispose(){this.disposed=true;for(const type of this.revisions.keys())this.revisions.set(type,(this.revisions.get(type)||0)+1);this.mesh.dispose();this.material.dispose();this.textures.forEach(t=>t.dispose());this.nativeFrames.forEach(t=>t.dispose());this.nativeFrames.clear();}
 }
@@ -248,7 +273,7 @@ export class BabylonRenderer {
     this.canvas=document.createElement("canvas");this.canvas.id="scene";this.canvas.setAttribute("aria-label","Scene viewport");viewport.append(this.canvas);
     try{this.engine=new B.Engine(this.canvas,false,{preserveDrawingBuffer:true,stencil:true,alpha:false},false);}
     catch(error){this.canvas.remove();throw error;}
-    this.registry=new Map<ComponentType,BabylonObjectConstructor>([["SpriteNumberRenderer",BabylonNumber],["SpriteRenderer",Sprite],["TiledSpriteRenderer",TiledSprite],["CylindricalSpriteRenderer",BabylonCylinder],["ParticleEmitter",BabylonParticles],["PlaneRenderer",BabylonPlane],["LineRenderer",BabylonLine]]);this.objects=[];this.renderCount=0;this.updateRevision=0;
+    this.registry=new Map<ComponentType,BabylonObjectConstructor>([["TextRenderer",BabylonText],["SpriteNumberRenderer",BabylonNumber],["SpriteRenderer",Sprite],["TiledSpriteRenderer",TiledSprite],["CylindricalSpriteRenderer",BabylonCylinder],["ParticleEmitter",BabylonParticles],["PlaneRenderer",BabylonPlane],["LineRenderer",BabylonLine]]);this.objects=[];this.renderCount=0;this.updateRevision=0;
     this.engine.onContextRestoredObservable.add(()=>this.scene?.executeWhenReady(()=>this.render()));
   }
   async createScene(data:Scene,resources:Resources){
@@ -350,7 +375,12 @@ export class BabylonRenderer {
     transparent.forEach(({mesh},index)=>mesh.alphaIndex=index);
   }
   private cancelProgressiveDraw():void {if(this.progressiveDraw!==null)cancelAnimationFrame(this.progressiveDraw);this.progressiveDraw=null;}
-  render(){if(this.transitions)this.transitions.render(()=>this.scene.render());else this.scene.render();this.renderCount++;}
-  disposeScene(){this.scanlineJitter?.dispose();this.scanlineJitter=undefined;this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.colorGrade?.dispose();this.colorGrade=undefined;this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
+  render(){
+    // Texture/filter jobs can finish between frames. Start the screen pass
+    // with the backbuffer bound, even after an offscreen pass or a seek.
+    this.engine.restoreDefaultFramebuffer();
+    if(this.transitions)this.transitions.render(()=>this.scene.render());else this.scene.render();this.renderCount++;
+  }
+  disposeScene(){this.engine.restoreDefaultFramebuffer();this.scanlineJitter?.dispose();this.scanlineJitter=undefined;this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.colorGrade?.dispose();this.colorGrade=undefined;this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
   dispose(){this.disposeScene();this.engine.dispose();this.canvas.remove();}
 }

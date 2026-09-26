@@ -31,7 +31,7 @@ Open http://127.0.0.1:4980/ for Babylon.js (the default) or http://127.0.0.1:498
 src/
   runtime/          Shared engine, components, animation and both renderers
   player/           HTML, bootstrap and authored CSS
-assets/             Final scene JSON, PNG sprites/atlases and AAC audio (M4A)
+assets/             Final scene JSON, PNG sprites/atlases, WOFF2 fonts and AAC audio (M4A)
 tests/              Runtime regressions and small test fixtures
 scripts/            Build support, preview server, type and JSON checks
 docs/               Runtime and animation contracts
@@ -39,7 +39,7 @@ docs/               Runtime and animation contracts
 dist/               Generated website; ignored
 ```
 
-`assets/` is the editable source of truth. The website build compiles the runtime, generates HTML with its entry script through `HtmlWebpackPlugin`, and copies scene JSON, PNGs, audio and styles into `dist/`. Both backends load external images relative to the scene JSON. Only the standalone variant embeds asset data.
+`assets/` is the editable source of truth. The website build compiles the runtime, generates HTML with its entry script through `HtmlWebpackPlugin`, and copies scene JSON, PNGs, fonts, audio and styles into `dist/`. Both backends load external images relative to the scene JSON. Only the standalone variant embeds asset data.
 
 Image preparation starts for every image declared in the scene, including assets used later by spawned objects. Playback can start while preparation continues. A centered text status shows the loading stage, completed count and current filename, then disappears. Prepared images and atlas frames stay cached; procedural texture jobs share one persistent worker per loaded scene.
 
@@ -51,7 +51,7 @@ npx playwright install chromium firefox
 npm run check
 ```
 
-The build also emits **`dist/standalone/index.html`**: a Babylon.js player with the runtime, scene, PNGs, M4A audio, styles and worker code embedded. Copy this one file anywhere and open it directly, including offline. `npm run build:standalone` builds only this variant. It uses the same runtime and scene data as the website.
+The build also emits **`dist/standalone/index.html`**: a Babylon.js player with the runtime, scene, PNGs, WOFF2 fonts, M4A audio, styles and worker code embedded. Copy this one file anywhere and open it directly, including offline. `npm run build:standalone` builds only this variant. It uses the same runtime and scene data as the website.
 
 `npm run check:dist` verifies external files, standalone image bytes, case-sensitive asset paths, M4A range requests and both renderers at root and repository-prefixed URLs. `npm run check:loading` checks progressive image preparation and worker reuse; `npm run check:standalone` checks the portable HTML with external requests blocked. `npm run check:lifetimes` verifies sequence ownership and resource reuse. Other checks cover animation, clocks, scene components and rendering behavior.
 

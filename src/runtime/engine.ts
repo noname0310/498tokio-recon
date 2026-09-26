@@ -59,7 +59,7 @@ export class Engine {
     const source=new URL(scene.baseURL),sourceLabel=typeof input!=="string"?"Inline scene data":source.protocol==="data:"?"Data URL":source.protocol==="blob:"?"Blob URL":source.origin===location.origin?source.pathname:source.origin+source.pathname;
     this.loadingStatus.setContext(name,[
       ["Scene",name],["Source",sourceLabel],["Renderer",this.renderer.displayName],
-      ["Assets",`${assets.filter(asset=>asset.type==="Sprite").length} sprites · ${assets.filter(asset=>asset.type==="Audio").length} audio`],
+      ["Assets",`${assets.filter(asset=>asset.type==="Sprite").length} sprites · ${assets.filter(asset=>asset.type==="Audio").length} audio${assets.some(asset=>asset.type==="Font")?` · ${assets.filter(asset=>asset.type==="Font").length} fonts`:""}`],
       ["Timeline",`${fps} fps reference`]
     ]);
     const current=this.revision;
@@ -113,7 +113,7 @@ export class Engine {
   }
   update(notify=true){
     const updateTicket=this.updateTicket=(this.updateTicket||0)+1;
-    this.scene.updateWorld();this.calculateView();this.animationKey=this.scene.animationSignature();
+    this.scene.updateWorld();this.calculateView();this.scene.setViewport(this.view);this.animationKey=this.scene.animationSignature();
     if(notify)this.notifyState();
     this.pending=Promise.resolve(this.renderer.update(this.scene,this.view));
     const revision=this.revision;this.pending.catch(error=>{if(revision===this.revision&&updateTicket===this.updateTicket)for(const fn of this.listeners)fn(error);});return this.pending;

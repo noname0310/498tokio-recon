@@ -1,5 +1,8 @@
 /* Backend shaders operate on objects or the active camera, never a fixed frame. */
 export function installShaders(B:typeof import("./babylon-library.js").B) {
+    B.Effect.ShadersStore.sceneTextFragmentShader=`
+      precision highp float;varying vec2 textureUV;uniform sampler2D textTex;uniform vec4 tint;
+      void main(){gl_FragColor=vec4(tint.rgb,tint.a*texture2D(textTex,textureUV).a);}`;
     B.Effect.ShadersStore.sceneScanlineJitterFragmentShader=`
       precision highp float;varying vec2 vUV;uniform sampler2D textureSampler,noiseSampler;
       uniform float rowCount,noiseRows,amplitude;uniform vec3 noisePhase;
@@ -75,19 +78,27 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
       uniform vec3 noiseChannelGain;
       uniform vec4 tint;
       uniform vec4 clipBounds;uniform vec2 cropSigma;uniform float clipEnabled,glowSigma,glowGain;
+      uniform vec4 backgroundMapping,haloMapping;
+      #ifdef TILE_SHADOW
+      uniform sampler2D shadowTex;uniform vec4 shadowMapping,shadowColor;uniform vec2 shadowOffset,shadowSigma;
+      #endif
+      uniform float gradientEnabled;uniform vec2 gradientStart,gradientEnd;uniform vec4 gradientStartColor,gradientEndColor;
       float cdf(float x){float a=abs(x)*.70710678118,t=1.0/(1.0+.3275911*a);float e=1.0-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*exp(-a*a);return .5+.5*sign(x)*e;}
       float crop(vec2 p,vec2 sigma){vec2 s=max(sigma,vec2(.000001));return (cdf((clipBounds.z-p.x)/s.x)-cdf((clipBounds.x-p.x)/s.x))*(cdf((clipBounds.w-p.y)/s.y)-cdf((clipBounds.y-p.y)/s.y));}
       bool outsideTile(vec2 uv){return ((verticalWrap==1.0||verticalWrap==2.0||verticalWrap==4.0)&&uv.y<0.0)||(verticalWrap==2.0&&uv.y>=1.0);}
+      vec4 sampleTile(sampler2D tex,vec2 uv,vec4 mapping){
+        if(mapping.w<.5&&outsideTile(uv))return vec4(0.0);
+        if(verticalWrap==4.0&&uv.y>=mapping.z)uv.y=mapping.z+fract(uv.y-mapping.z);
+        return texture2D(tex,vec2(uv.x,uv.y*mapping.x+mapping.y));
+      }
       vec4 tileSample(vec2 p){
         vec2 uv=vec2(p.x-tileOrigin.x,tileOrigin.y-p.y)/tileSize;
-        if(outsideTile(uv))return vec4(0.0);
-        vec4 t=texture2D(backgroundTex,uv);return vec4(t.rgb*t.a,t.a);
+        vec4 t=sampleTile(backgroundTex,uv,backgroundMapping);return vec4(t.rgb*t.a,t.a);
       }
       void main(){
         vec2 tileUV=vec2(localPoint.x-tileOrigin.x,tileOrigin.y-localPoint.y)/tileSize;
-        if(directionalSigma<=0.0&&outsideTile(tileUV)&&!(clipEnabled>.5&&glowSigma>0.0))discard;
         vec2 noiseUV=vec2(localPoint.x-noiseOrigin.x,noiseOrigin.y-localPoint.y)/noiseSize;
-        vec4 texel=texture2D(backgroundTex,tileUV);
+        vec4 texel=sampleTile(backgroundTex,tileUV,backgroundMapping);
         if(directionalSigma>0.0){
           vec4 sum=vec4(0.0);float weights=0.0;
           for(int i=-12;i<=12;i++){float x=float(i)*0.25,w=exp(-0.5*x*x);sum+=tileSample(localPoint+blurDirection*(directionalSigma*x))*w;weights+=w;}
@@ -95,16 +106,36 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
         }
         if(glowSigma>0.0&&glowGain>0.0){
           float bodyAlpha=texel.a*(clipEnabled>.5?crop(localPoint,cropSigma):1.0);
-          vec4 halo=texture2D(haloTex,tileUV);
+          vec4 halo=sampleTile(haloTex,tileUV,haloMapping);
           vec2 combined=sqrt(cropSigma*cropSigma+vec2(glowSigma*glowSigma));
           float haloAlpha=clamp(halo.a*glowGain,0.0,1.0)*(clipEnabled>.5?crop(localPoint,combined):1.0);
           float alpha=bodyAlpha+haloAlpha*(1.0-bodyAlpha);
           texel=vec4((texel.rgb*bodyAlpha+halo.rgb*haloAlpha*(1.0-bodyAlpha))/max(alpha,.000001),alpha);
         }else if(clipEnabled>.5)texel.a*=crop(localPoint,cropSigma);
+        if(gradientEnabled>.5){
+          vec2 axis=gradientEnd-gradientStart;
+          float t=clamp(dot(localPoint-gradientStart,axis)/max(dot(axis,axis),.000000000001),0.0,1.0);
+          vec4 ramp=mix(gradientStartColor,gradientEndColor,t);
+          texel.rgb=mix(texel.rgb,ramp.rgb,ramp.a);
+        }
         float luma=dot(texel.rgb,vec3(.213,.715,.072));
         vec3 color=clamp((vec3(luma)+saturation*(texel.rgb-vec3(luma)))*tint.rgb,0.0,1.0);
         float grain=(texture2D(noiseTex,noiseUV).r*2.0-1.0)*noiseRange;
-        gl_FragColor=vec4(color*exp(grain*noiseEnabled*noiseChannelGain),texel.a*tint.a);
+        color*=exp(grain*noiseEnabled*noiseChannelGain);
+        #ifdef TILE_SHADOW
+        float shadowAlpha=0.0;
+        if(shadowColor.a>0.0){
+          vec2 uv=tileUV+vec2(-shadowOffset.x,shadowOffset.y)/tileSize;
+          shadowAlpha=sampleTile(shadowTex,uv,shadowMapping).a*shadowColor.a;
+          if(clipEnabled>.5)shadowAlpha*=crop(localPoint-shadowOffset,shadowSigma);
+        }
+        float alpha=texel.a+shadowAlpha*(1.0-texel.a);
+        if(alpha<=0.0)discard;
+        gl_FragColor=vec4((color*texel.a+shadowColor.rgb*shadowAlpha*(1.0-texel.a))/alpha,alpha*tint.a);
+        #else
+        if(texel.a<=0.0)discard;
+        gl_FragColor=vec4(color,texel.a*tint.a);
+        #endif
       }`;
     B.Effect.ShadersStore.sceneSolidFragmentShader=`precision highp float;
       varying vec2 localPoint;uniform vec4 tint;uniform vec2 gridSize,gridOrigin,gridDirection,radialCenter;uniform float gridFront,gridFeather,transitionKind,transitionProgress,dissolveSeed,radialCurvature,radialInset;uniform float pinwheelFronts[64];
@@ -246,15 +277,25 @@ export function installShaders(B:typeof import("./babylon-library.js").B) {
       uniform vec2 center;uniform vec3 shape;uniform vec4 tint;uniform float enabled,multiplyBlend;
       void main(){vec2 d=(vUV-center)*vec2(2.0,2.0*shape.z);float r2=dot(d,d);
         vec4 c=texture2D(textureSampler,vUV);float alpha=tint.a*(1.0-exp((-shape.x*r2-shape.y*r2*r2)*enabled));gl_FragColor=vec4(mix(c.rgb,mix(tint.rgb,c.rgb*tint.rgb,multiplyBlend),alpha),1.0);}`;
-    B.Effect.ShadersStore.sceneViewportFrameFragmentShader=`
-      precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;
+    const frameCoverage=`
       uniform vec2 viewportSize,shadowOffset;uniform vec4 aperture,borderColor,shadowColor;uniform float radius,deviceScale;
       float coverage(vec2 p){
         if(aperture.z<=0.0||aperture.w<=0.0)return 0.0;
         vec2 q=abs(p-aperture.xy-aperture.zw*.5)-aperture.zw*.5+radius;
         float d=length(max(q,0.0))+min(max(q.x,q.y),0.0)-radius;
         return clamp(.5-d*deviceScale,0.0,1.0);
-      }
+      }`;
+    B.Effect.ShadersStore.sceneViewportFramePlaneFragmentShader=`
+      precision highp float;varying vec2 textureUV;
+      ${frameCoverage}
+      void main(){
+        vec2 p=textureUV*viewportSize;float outer=coverage(p),inner=coverage(p-shadowOffset);
+        float a=(1.0-outer)*borderColor.a,b=outer*(1.0-inner)*shadowColor.a;
+        gl_FragColor=vec4((borderColor.rgb*a+shadowColor.rgb*b)/max(a+b,.000001),a+b);
+      }`;
+    B.Effect.ShadersStore.sceneViewportFrameFragmentShader=`
+      precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;
+      ${frameCoverage}
       void main(){
         vec2 p=vec2(vUV.x,1.0-vUV.y)*viewportSize;
         float outer=coverage(p),inner=coverage(p-shadowOffset);

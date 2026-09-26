@@ -1,0 +1,51 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Ending city \u2014 observed skyline",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 1, "frameRate": 30, "autoplay": true, "loop": false},
+  "presentation"  : {"referenceAspect": false, "toggleKey": "KeyA"},
+  "assets"        : {
+    "city": {
+      "type"          : "Sprite",
+      "file"          : "city.png",
+      "size"          : {"x": 139, "y": 64},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame": 6475,
+        "sourceFrames": [6420, 6658],
+        "gridPitchPixels": 2.5,
+        "referenceTopLeftPixels": {"x": -27.61, "y": 176.48},
+        "registeredFrames": 117,
+        "observedOpaqueCells": 4924,
+        "extendedFacadeCells": 160,
+        "extent": "Observed skyline strip; the complete source tile period is not verified.",
+        "completion": "Clipped lower-left facade cells use the measured dark row tone. No inferred glowing-layer pixels are included."
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "ending-city-preview",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 2.25, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"        : "city",
+        "transform" : {
+          "localPosition": {"x": -1.7375, "y": 0.8, "z": 0}
+        },
+        "components": [
+          {"type": "SpriteRenderer", "asset": "city"}
+        ]
+      }
+    ]
+  }
+}

@@ -10,13 +10,14 @@ export interface Key<T> {time:number;value:T;interpolation?:"linear"|"step"}
 export interface Bounds {left:number;right:number;bottom:number;top:number}
 export type ClipBounds={ [K in keyof Bounds]:number|null };
 export interface Rect {x:number;y:number;width:number;height:number}
-export interface PixelImage {width:number;height:number;channels:number;data:Uint8Array;bounds?:Bounds}
+export interface PixelImage {width:number;height:number;channels:number;data:Uint8Array;bounds?:Bounds;tileMapping?:{scaleY:number;offsetY:number;repeatFrom:number}}
 export interface SpriteAsset {
   type:"Sprite";file:string;size:Vec2;pixelsPerUnit:number;pivot:Vec2;filter:"point"|"linear";
   atlas?:{cellSize:Vec2;columns:number;rows:number;frameCount:number;padding?:number};reconstruction?:unknown;
 }
 export interface AudioAsset {type:"Audio";file:string;reconstruction?:unknown}
-export type Asset=SpriteAsset|AudioAsset;
+export interface FontAsset {type:"Font";file:string;family:string;ascent:number;reconstruction?:unknown}
+export type Asset=SpriteAsset|AudioAsset|FontAsset;
 export interface ComponentReference<K extends ComponentType> {entity:string;component:K}
 export interface AudioPlayerComponent {asset:string;volume:number;muted:boolean;loop:boolean;preservesPitch:boolean;title:string;artist:string;album:string}
 export interface AnimationPlayerComponent {sequence:string;clock:ComponentReference<"AudioPlayer">|null}
@@ -26,16 +27,26 @@ export interface Vignette {centerViewport:Vec2;quadratic:number;quartic:number;v
 /** Camera-space rounded aperture. Dimensions use world units so aspect expansion
  * extends the opening without stretching its circular corners or border width. */
 export interface ViewportFrame {
-  insetsWorld:{left:number;right:number;top:number;bottom:number};radiusWorld:number;color:Color;
+  insetsWorld:{left:number;right:number;top:number;bottom:number};
+  /** Added to world insets; animate these bounds without scaling the corners. */
+  insetsViewport:{left:number;right:number;top:number;bottom:number};
+  /** Null composites after the scene; otherwise a camera-space drawing depth. */
+  depth:number|null;radiusWorld:number;color:Color;
   innerShadow:{offsetWorld:Vec2;color:Color;opacity:number};
 }
 /** Presentation of the clipped camera image, relative to the fitted viewport. */
 export interface ViewportTransform {scale:number;centerViewport:Vec2;opacity:number}
+/** Camera child: preserve the reference pose while following a normalized
+ * viewport position when the frustum expands. Children inherit the offset. */
+export interface ViewportAnchor {position:Vec2}
 /** Row-major 3x4 affine RGB transform in sRGB; alpha is preserved. */
 export interface ColorGrade {matrix:number[];midpoint:RGB;strength:number}
 /** Camera-space horizontal jitter. Two row samples share a seeded noise strip. */
 export interface ScanlineJitter {seed:number;start:FrameStamp;frequency:number;amplitudeWorld:number;lineHeightWorld:number}
 export interface SpriteRenderer {asset:string;color:Color;hueDegrees:number;saturation:number;brightness:number;contrast:number;whiteMix:number;frame:number;sortingOrder:number;depthWrite:boolean}
+/** EM size and additional character spacing use local world units. The local
+ * origin is the top of the first line; explicit newlines preserve whitespace. */
+export interface TextRenderer {asset:string;text:string;fontSize:number;letterSpacing:number;lineHeight:number;alignment:"left"|"center"|"right";color:Color;sortingOrder:number}
 /** Descendant sprites share this local anchor for transparent depth sorting.
  * Their sortingOrder controls composition without moving their geometry. */
 export interface SortingGroup {anchor:Vec3}
@@ -45,10 +56,13 @@ export interface SpriteNumberRenderer {asset:string;value:number;rounding:"round
 export interface SpriteAnimator {start:FrameStamp;framesPerSecond:number;frames:number[];loop:boolean;hideOutside:boolean}
 /** Local-space alpha ramp on the source sprite; independent of its glow. */
 export interface OpacityGradient {start:Vec2;end:Vec2}
+/** Local-space color ramp over tiled artwork, preserving its alpha. The ramp
+ * clamps beyond its endpoints and is independent of tile repetition. */
+export interface ColorGradient {start:Vec2;end:Vec2;startColor:Color;endColor:Color}
 /** Repeating RGBA overlay in sprite-local world units, after grading and before
  * procedural grain. Compositing preserves the source sprite's alpha. */
 export interface SecondaryTexture {asset:string;worldSize:Vec2;origin:Vec2;opacity:number}
-export interface Flicker {mode:"periodic"|"random";frequency:number;dutyCycle:number;probability:number;seed:number;start:FrameStamp;phase:number}
+export interface Flicker {mode:"periodic"|"random";frequency:number;period:FrameStamp|null;dutyCycle:number;probability:number;seed:number;start:FrameStamp;phase:number}
 export interface TransformAnimator {position:Key<Vec3>[];rotation:Key<Vec3>[];scale:Key<Vec3>[]}
 /** Stateless local offsets, evaluated after authored animation. */
 export interface TransformNoise {seed:number;start:FrameStamp;duration:number;frequency:number;strength:number;positionAmplitude:Vec3;rotationAmplitude:Vec3}
@@ -56,12 +70,13 @@ export interface TransformNoise {seed:number;start:FrameStamp;duration:number;fr
 export interface CameraMotionBlur {shutterSeconds:number;focusDistance:number;maxSigmaWorld:number}
 /** Gaussian aperture in camera world units. Focus lies on a camera-parallel plane. */
 export interface DepthOfField {focusDistance:number;apertureSigma:number;maxSigmaWorld:number}
-export interface TiledSpriteRenderer {asset:string;frame:number;color:Color;saturation:number;brightness:number;coverage:"camera";clipBounds:ClipBounds|null;wrap:{x:"repeat";y:"clamp"|"clampBottom"|"transparent"|"repeat"|"repeatBottom"};origin:Vec2}
+export interface TiledSpriteRenderer {asset:string;frame:number;color:Color;blend:"normal"|"additive";saturation:number;brightness:number;coverage:"camera";clipBounds:ClipBounds|null;wrap:{x:"repeat";y:"clamp"|"clampBottom"|"transparent"|"repeat"|"repeatBottom"};origin:Vec2}
 /** Open cylinder along local +Z. U circles clockwise in XY, V runs toward -Z.
  * Lighting is local to the cylinder and never baked into the shared sprite. */
 export interface CylindricalSpriteRenderer {asset:string;color:Color;radius:number;length:Range;tileLength:number;segments:number;uvOffset:Vec2;lighting:{ambient:number;diffuse:number;direction:Vec3}}
 /** On Camera, sigma uses the reference projection plane's world units and
- * filters the composed scene, including camera-attached surfaces. */
+ * filters the composed scene, including camera-attached surfaces. On a fade
+ * Transition it filters only the target subtree, before its group opacity. */
 export interface GaussianBlur {sigmaWorld:Vec2}
 export interface SpriteMotionBlur {translationWorld:Vec2;radialAmount:number;center:Vec2;samples:number;dilationPixels:number;softnessPixels:number;alphaGain:number;clipToSprite:boolean}
 export interface DirectionalBlur {sigmaWorld:number;angleDegrees:number}
@@ -70,6 +85,8 @@ export interface PlaneRenderer {color:Color;blend:"normal"|"additive";coverage:"
 export interface GridTransitionSettings {cellSize:Vec2;origin:Vec2;direction:Vec2;feather:number}
 export interface TransitionBase {progress:number;target:{entity:string}|null}
 export interface GridTransition extends TransitionBase {kind:"grid";grid:GridTransitionSettings}
+/** inset offsets the scalar field; values above one are useful when the first
+ * visible cells enter from a distant radial front. It is not an alpha value. */
 export interface RadialGridTransitionSettings {cellSize:Vec2;origin:Vec2;center:Vec2;curvature:number;inset:number}
 export interface RadialGridTransition extends TransitionBase {kind:"radialGrid";radialGrid:RadialGridTransitionSettings}
 /** Four blade fronts in counterclockwise quadrant order. Values are widths in
@@ -95,7 +112,10 @@ export interface ParticleEmitter {
   colorMatrix:number[];
   asset:string;seed:number;maxParticles:number;start:FrameStamp;duration:number;prewarm:number;rate:number;bursts:{time:number|FrameStamp;count:number;sizeScale?:number;color?:Color;velocity?:Vec3;targetVelocity?:Vec3}[];
   cameraContinuation:{padding:number}|null;
-  space:"local"|"world";shape:{type:"point"|"box"|"ellipse"|"sphere";size:Vec3;innerRadiusRatio:number};directionMode:"cone"|"radial";direction:Vec3;spreadDegrees:number;
+  space:"local"|"world";shape:{type:"point"|"box"|"ellipse"|"sphere";size:Vec3;innerRadiusRatio:number};directionMode:"cone"|"radial"|"planar";direction:Vec3;spreadDegrees:number;
+  /** Blend the speed's random quantile toward the birth size's quantile.
+   * Zero samples independently; one pairs the size and speed range endpoints. */
+  speedSizeCorrelation:number;
   speed:Range;speedOverLife:Key<number>[];lifetime:Range;startSize:Range;rotation:Range;angularVelocity:Range;acceleration:Vec3;
   velocityRelaxation:{rate:Vec3;target:Vec3;variation:Vec3}|null;
   /** Per-second exponential expansion about the emitter origin. The sampled
@@ -104,7 +124,7 @@ export interface ParticleEmitter {
   sizeOverLife:Key<number>[];color:Color;colorPalette:{color:Color;weight:number}[];colorOverLife:Key<Color>[];billboard:"camera"|"local";blend:"alpha"|"additive";sortMode:"depth"|"sizeAscending";
   animation:{mode:"single"|"random"|"fps"|"lifetime";timeSource:"age"|"scene";frame:number;frames:number[];framesPerSecond:number;loop:boolean;randomStart:boolean};
 }
-export interface ComponentProperties {Camera:Camera;Vignette:Vignette;ViewportFrame:ViewportFrame;ViewportTransform:ViewportTransform;ColorGrade:ColorGrade;ScanlineJitter:ScanlineJitter;SpriteRenderer:SpriteRenderer;SortingGroup:SortingGroup;SpriteNumberRenderer:SpriteNumberRenderer;SpriteAnimator:SpriteAnimator;OpacityGradient:OpacityGradient;SecondaryTexture:SecondaryTexture;Flicker:Flicker;TransformAnimator:TransformAnimator;TransformNoise:TransformNoise;CameraMotionBlur:CameraMotionBlur;DepthOfField:DepthOfField;TiledSpriteRenderer:TiledSpriteRenderer;CylindricalSpriteRenderer:CylindricalSpriteRenderer;GaussianBlur:GaussianBlur;SpriteMotionBlur:SpriteMotionBlur;DirectionalBlur:DirectionalBlur;PlaneRenderer:PlaneRenderer;Transition:Transition;LineRenderer:LineRenderer;ProceduralNoise:ProceduralNoise;DropShadow:DropShadow;Glow:Glow;ParticleEmitter:ParticleEmitter;ParticleMotionBlur:ParticleMotionBlur;AudioPlayer:AudioPlayerComponent;AnimationPlayer:AnimationPlayerComponent;PlayerControls:PlayerControlsComponent}
+export interface ComponentProperties {Camera:Camera;Vignette:Vignette;ViewportFrame:ViewportFrame;ViewportTransform:ViewportTransform;ViewportAnchor:ViewportAnchor;ColorGrade:ColorGrade;ScanlineJitter:ScanlineJitter;SpriteRenderer:SpriteRenderer;TextRenderer:TextRenderer;SortingGroup:SortingGroup;SpriteNumberRenderer:SpriteNumberRenderer;SpriteAnimator:SpriteAnimator;OpacityGradient:OpacityGradient;ColorGradient:ColorGradient;SecondaryTexture:SecondaryTexture;Flicker:Flicker;TransformAnimator:TransformAnimator;TransformNoise:TransformNoise;CameraMotionBlur:CameraMotionBlur;DepthOfField:DepthOfField;TiledSpriteRenderer:TiledSpriteRenderer;CylindricalSpriteRenderer:CylindricalSpriteRenderer;GaussianBlur:GaussianBlur;SpriteMotionBlur:SpriteMotionBlur;DirectionalBlur:DirectionalBlur;PlaneRenderer:PlaneRenderer;Transition:Transition;LineRenderer:LineRenderer;ProceduralNoise:ProceduralNoise;DropShadow:DropShadow;Glow:Glow;ParticleEmitter:ParticleEmitter;ParticleMotionBlur:ParticleMotionBlur;AudioPlayer:AudioPlayerComponent;AnimationPlayer:AnimationPlayerComponent;PlayerControls:PlayerControlsComponent}
 export type ComponentType=keyof ComponentProperties;
 export type ComponentMap={[K in ComponentType]:ComponentProperties[K]&{type:K;enabled:boolean}};
 export type Component=ComponentMap[ComponentType];
@@ -122,7 +142,7 @@ export interface View {width:number;height:number;aspect:number;worldWidth:numbe
 export interface SpriteState {frame:number;visible:boolean;size:Vec2;rect:Rect}
 export interface ParticleState {id:string;birthTime:number;age:number;lifetime:number;frame:number;color:Color;matrix:Matrix;rect:Rect;blurUV:Vec2;localPosition:Vec3;position:Vec3;depth:number;projectedArea:number}
 export type MaskParameters=({type:"Glow"}&Pick<Glow,"sigmaWorld"|"threshold"|"softness">)|{type:"DropShadow";sigmaWorld:number};
-export type TextureJob={kind:"noise";component:ProceduralNoise}|{kind:"tile";source:PixelImage;asset:SpriteAsset;sigmaWorld:Vec2;resolution:number;repeatY?:boolean}|{kind:"mask";source:PixelImage;asset:SpriteAsset;component:MaskParameters;resolution:number;gain?:number};
+export type TextureJob={kind:"noise";component:ProceduralNoise}|{kind:"tile";source:PixelImage;asset:SpriteAsset;sigmaWorld:Vec2;resolution:number;wrapY:TiledSpriteRenderer["wrap"]["y"]}|{kind:"mask";source:PixelImage;asset:SpriteAsset;component:MaskParameters;resolution:number;gain?:number};
 export interface RenderObject {id:string;update(scene:import("./scene.js").Scene,view:View):Promise<void>;dispose():void}
 export interface Renderer {
   readonly kind:"dom"|"babylon";

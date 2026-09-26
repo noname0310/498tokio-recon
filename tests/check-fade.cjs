@@ -9,7 +9,7 @@ const fixture={schemaVersion:1,root:{id:'root',children:[
   {id:'green',transform:{localPosition:{x:.6,y:.2,z:.2}},components:[{type:'PlaneRenderer',size:{x:2,y:2},color:rgb(0,1,0)}]},
   {id:'translucent',transform:{localPosition:{x:2.2,y:1.2,z:.1}},components:[{type:'PlaneRenderer',size:{x:.5,y:.5},color:rgb(1,1,1,.4)}]}
  ]},
- {id:'fade',transform:{localPosition:{z:-1}},components:[{type:'Transition',kind:'fade',progress:.5,target:{entity:'incoming'}}]}
+ {id:'fade',transform:{localPosition:{z:-1}},components:[{type:'Transition',kind:'fade',progress:.5,target:{entity:'incoming'}},{type:'GaussianBlur',enabled:false,sigmaWorld:{x:.1,y:0}}]}
 ]}};
 async function main(){
  const server=makeServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
@@ -55,6 +55,14 @@ async function main(){
    checkRGB(await sample(320,160),[.125,.4375,.4],'group opacity follows the RGBA sum');
    await page.evaluate(()=>scenePlayer.setComponent('fade','Transition',{composition:'source-over'}));await settle();
    checkRGB(await sample(320,160),[.03125,.4375,.475],'ordinary blend state restored after additive capture');
+   await page.evaluate(async()=>{
+    await scenePlayer.setComponent('red','PlaneRenderer',{enabled:false});await scenePlayer.setComponent('green','PlaneRenderer',{color:{r:0,g:1,b:0,a:1}});
+    await scenePlayer.setComponent('fade','Transition',{progress:1});await scenePlayer.setComponent('fade','GaussianBlur',{enabled:true});
+   });await settle();
+   const edge=await sample(280,160);assert(edge[1]>125&&edge[1]<160&&edge[2]>85&&edge[2]<110,`${name}: subtree Gaussian edge ${edge}`);
+   checkRGB(await sample(380,160),[0,1,0],'opaque subtree interior stays opaque');
+   checkRGB(await sample(280,55),[0,.1,.8],'horizontal blur does not spread vertically');
+   await page.evaluate(()=>scenePlayer.setComponent('fade','GaussianBlur',{enabled:false}));await settle();checkRGB(await sample(280,160),[0,1,0],'sharp rendering restores after blur');
    assert.deepEqual(errors,[]);console.log(`${name}: subtree opacity, overlapping layers, partial alpha, aspect changes and rewind passed.`);
   }finally{await browser.close();}
  }}finally{await new Promise(r=>server.close(r));}

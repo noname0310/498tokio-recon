@@ -2,10 +2,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {chromium,firefox}=require('playwright'),{makeServer,root}=require('./serve.cjs'),{png,compare}=require('./pixel-check.cjs');
 const file=path.join(root,'assets/final_animation.scene.json'),data=JSON.parse(fs.readFileSync(file));
 // Independent evaluation of the continuous field, away from antialiased edges.
-function checkField(bytes,view,c,label){
+function checkField(bytes,view,c,label,inverse){
  const im=png(bytes),g=c.radialGrid,units=view.pixelsPerUnit*view.dpr;let checked=0,bad=0,first;
  for(let y=3;y<im.height-3;y++)for(let x=3;x<im.width-3;x++){
-  const px=(x+.5)/units-view.worldWidth/2,py=view.worldHeight/2-(y+.5)/units;
+  const wx=(x+.5)/units-view.worldWidth/2,wy=view.worldHeight/2-(y+.5)/units;
+  const px=inverse?inverse[0]*wx+inverse[4]*wy+inverse[12]:wx,py=inverse?inverse[1]*wx+inverse[5]*wy+inverse[13]:wy;
   const cx=g.origin.x+(Math.floor((px-g.origin.x)/g.cellSize.x)+.5)*g.cellSize.x,cy=g.origin.y+(Math.floor((py-g.origin.y)/g.cellSize.y)+.5)*g.cellSize.y;
   const field=c.progress-g.inset+g.curvature*((px-g.center.x)**2+(py-g.center.y)**2)-Math.max(2*Math.abs(px-cx)/g.cellSize.x,2*Math.abs(py-cy)/g.cellSize.y);
   const margin=2.5*(2/Math.min(g.cellSize.x,g.cellSize.y)+2*g.curvature*Math.hypot(px-g.center.x,py-g.center.y))/units;
@@ -50,6 +51,19 @@ async function main(){
     await page.setViewportSize({width:c.width,height:c.height});await page.waitForFunction(c=>scenePlayer.view.width===c.width&&scenePlayer.view.height===c.height,c);
     const state=await page.evaluate(async c=>{await scenePlayer.setComponent('wipe','Transition',{progress:c.p,radialGrid:{curvature:c.k}});await scenePlayer.whenIdle();return {view:scenePlayer.view,c:scenePlayer.scene.requireComponent('wipe','Transition')};},c);
     checkField(await shot(),state.view,state.c,`${label}/${c.width}/${c.p}`);
+   }
+   // Rotated partial/full-cell junctions used to leave isolated AA pinholes
+   // inside an otherwise fully covered area. Check the same half-opacity field
+   // at reference, fractional and expanded sizes, without artwork underneath.
+   for(const size of [{width:640,height:360},{width:641,height:359},{width:375,height:812}]){
+    await page.setViewportSize(size);await page.waitForFunction(s=>scenePlayer.view.width===s.width&&scenePlayer.view.height===s.height,size);
+    const state=await page.evaluate(async()=>{
+     const {Math3D}=await import('/runtime/player.js');
+     await scenePlayer.setTransform('wipe',{localPosition:{x:.00545423,y:.01663943},localRotation:{z:-45.001495}});
+     await scenePlayer.setComponent('wipe','Transition',{progress:.5093883,radialGrid:{cellSize:{x:.64008583,y:.64008583},origin:{x:-.320042915,y:-.320042915},center:{x:-2.21618487,y:2.21746964},curvature:.07813631,inset:.29436696}});
+     await scenePlayer.whenIdle();return {view:scenePlayer.view,c:scenePlayer.scene.requireComponent('wipe','Transition'),inverse:Math3D.inverse(scenePlayer.scene.world.get('wipe'))};
+    });
+    checkField(await shot(),state.view,state.c,`${label}/rotated-junction/${size.width}`,state.inverse);
    }
    if(renderer==='dom'){
     await page.evaluate(()=>scenePlayer.setComponent('wipe','Transition',{progress:.4}));assert(await page.evaluate(()=>window.retained===document.querySelector('.transition-grid path')));assert.equal(await page.locator('canvas').count(),0);

@@ -14,6 +14,19 @@ async function numerical(){
     for(const t of [6,2,.1,4.5,7,1,4.5])at(t);assert.equal(JSON.stringify(at(4.5)),direct);
     scene.setComponent("exhaust","ParticleEmitter",{seed:28036});assert.notEqual(JSON.stringify(at(4.5)),direct);scene.setComponent("exhaust","ParticleEmitter",{seed:28035});assert.equal(JSON.stringify(at(4.5)),direct);
     const s=new Scene(fixture(),"http://localhost/");assert.equal(s.component("effect","ParticleEmitter").space,"local");assert.deepEqual(s.particleStates("effect",.5).map(p=>p.position.x),[-.5,-.25,0]);
+    const planar=new Scene(fixture({directionMode:'planar',direction:{x:0,y:1,z:0},spreadDegrees:180,rate:0,bursts:[{time:0,count:100}],maxParticles:100,lifetime:{min:2,max:2},speed:{min:1,max:1},billboard:'local'}),'http://localhost/');
+    const flat=planar.particleStates('effect',.5);
+    for(const p of flat){assert.equal(p.localPosition.z,0,'Planar spread keeps every particle on its emitter plane');assert(Math.abs(Math.hypot(p.localPosition.x,p.localPosition.y)-.5)<1e-12);assert.equal(p.matrix[1],0,'Default planar particles never rotate');}
+    for(const axis of ['x','y'])assert(flat.some(p=>p.localPosition[axis]>.1)&&flat.some(p=>p.localPosition[axis]<-.1),'Full planar spread covers both sides');
+    planar.particleStates('effect',1.7);assert.deepEqual(planar.particleStates('effect',.5),flat);
+    assert.throws(()=>new Scene(fixture({directionMode:'planar',direction:{x:0,y:0,z:1}}),'http://localhost/'),/nonzero XY/);
+    const correlated=new Scene(fixture({rate:0,bursts:[{time:0,count:64}],maxParticles:64,lifetime:{min:2,max:2},speed:{min:2,max:20},startSize:{min:.2,max:2},speedSizeCorrelation:1}),'http://localhost/');
+    const paired=correlated.particleStates('effect',.5);
+    for(const p of paired)assert(Math.abs(-p.localPosition.x*2-p.matrix[5]*10)<1e-10,'Size and speed share their range quantile');
+    correlated.setComponent('effect','ParticleEmitter',{speedSizeCorrelation:0});const independent=correlated.particleStates('effect',.5);
+    assert.deepEqual(independent.map(p=>[p.id,p.frame,p.matrix[5]]),paired.map(p=>[p.id,p.frame,p.matrix[5]]),'Correlation never consumes extra random samples or changes sprite size');
+    assert(independent.some((p,i)=>Math.abs(p.localPosition.x-paired[i].localPosition.x)>.1));
+    assert.throws(()=>correlated.setComponent('effect','ParticleEmitter',{speedSizeCorrelation:1.1}),/speedSizeCorrelation/);
     const fittedRate=9.092915914340317,dense=new Scene(fixture({rate:fittedRate,lifetime:{min:2,max:2}}),'http://localhost/'),birth=Time.fromDecimal(5/fittedRate);
     assert.equal(dense.particleStates('effect',birth).length,6,'Fractional density emits at its sampled birth');
     assert.equal(dense.particleStates('effect',Time.subtract(birth,Time.fromRatio(1,1e9))).length,5,'One nanosecond before birth remains outside');

@@ -5,7 +5,8 @@ export interface ViewportFrameLayout {width:number;height:number;aperture:Rect;r
 /** Pixel layout shared by SVG and the shader. Camera translation/rotation cannot
  * move a screen border; only the current frustum size changes its opening. */
 export function viewportFrameLayout(c:ViewportFrame,view:View):ViewportFrameLayout {
-  const i=c.insetsWorld,u=view.pixelsPerUnit;
+  const w=c.insetsWorld,v=c.insetsViewport,u=view.pixelsPerUnit;
+  const i={left:w.left+v.left*view.worldWidth,right:w.right+v.right*view.worldWidth,top:w.top+v.top*view.worldHeight,bottom:w.bottom+v.bottom*view.worldHeight};
   const sx=Math.min(1,view.worldWidth/Math.max(i.left+i.right,Number.EPSILON));
   const sy=Math.min(1,view.worldHeight/Math.max(i.top+i.bottom,Number.EPSILON));
   const aperture={x:i.left*sx*u,y:i.top*sy*u,width:Math.max(0,view.width-(i.left+i.right)*sx*u),height:Math.max(0,view.height-(i.top+i.bottom)*sy*u)};

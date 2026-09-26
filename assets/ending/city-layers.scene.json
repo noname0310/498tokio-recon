@@ -1,0 +1,150 @@
+{
+  "schemaVersion" : 1,
+  "name"          : "Ending city \u2014 layer arrangement study",
+  "referenceFrame": {"width": 640, "height": 360},
+  "timeline"      : {"duration": 1, "frameRate": 30, "autoplay": true, "loop": false},
+  "presentation"  : {"referenceAspect": false, "toggleKey": "KeyA"},
+  "assets"        : {
+    "city": {
+      "type"          : "Sprite",
+      "file"          : "city.png",
+      "size"          : {"x": 139, "y": 64},
+      "pixelsPerUnit" : 40,
+      "pivot"         : {"x": 0, "y": 1},
+      "filter"        : "point",
+      "reconstruction": {
+        "referenceFrame": 6475,
+        "sourceFrames": [6420, 6658],
+        "gridPitchPixels": 2.5,
+        "referenceTopLeftPixels": {"x": -27.61, "y": 176.48},
+        "registeredFrames": 117,
+        "observedOpaqueCells": 4924,
+        "extendedFacadeCells": 160,
+        "extent": "Observed skyline strip; the complete source tile period is not verified.",
+        "completion": "Clipped lower-left facade cells use the measured dark row tone. No inferred glowing-layer pixels are included."
+      }
+    }
+  },
+  "root"          : {
+    "id"      : "ending-city-layer-preview",
+    "children": [
+      {
+        "id"        : "camera",
+        "transform" : {
+          "localPosition": {"z": -10}
+        },
+        "components": [
+          {"type": "Camera", "referenceVerticalSize": 3.6, "referenceAspect": 1.7777777777777777}
+        ]
+      },
+      {
+        "id"        : "background",
+        "transform" : {
+          "localPosition": {"z": 4}
+        },
+        "components": [
+          { "type": "PlaneRenderer", "coverage": "camera", "color": {"r": 0.035, "g": 0.045, "b": 0.105, "a": 1} }
+        ]
+      },
+      {
+        "id"        : "city-far",
+        "transform" : {
+          "localPosition": {"x": -3.9, "y": 0.2, "z": 3},
+          "localScale"   : {"x":  0.6, "y": 0.6        }
+        },
+        "components": [
+          {
+            "type"      : "TiledSpriteRenderer",
+            "asset"     : "city",
+            "coverage"  : "camera",
+            "wrap"      : {"x": "repeat", "y": "transparent"},
+            "brightness": 0.58,
+            "origin"    : {"x": 0, "y": 0}
+          }
+        ],
+        "children"  : [
+          {
+            "id"        : "city-far-base",
+            "transform" : {
+              "localPosition": {"z": -0.001}
+            },
+            "components": [
+              {
+                "type"      : "PlaneRenderer",
+                "coverage"  : "camera",
+                "clipBounds": {"left": null, "right": null, "bottom": null, "top": -1.5970000000000002},
+                "color"     : {"r": 0.11145098039215687, "g": 0.11372549019607842, "b": 0.20015686274509803, "a": 1}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id"        : "city-middle",
+        "transform" : {
+          "localPosition": {"x": -1.7, "y": 0.6, "z": 2},
+          "localScale"   : {"x":  1.4, "y": 1.4        }
+        },
+        "components": [
+          {
+            "type"      : "TiledSpriteRenderer",
+            "asset"     : "city",
+            "coverage"  : "camera",
+            "wrap"      : {"x": "repeat", "y": "transparent"},
+            "brightness": 0.78,
+            "origin"    : {"x": 0, "y": 0}
+          }
+        ],
+        "children"  : [
+          {
+            "id"        : "city-middle-base",
+            "transform" : {
+              "localPosition": {"z": -0.001}
+            },
+            "components": [
+              {
+                "type"      : "PlaneRenderer",
+                "coverage"  : "camera",
+                "clipBounds": {"left": null, "right": null, "bottom": null, "top": -1.5970000000000002},
+                "color"     : {"r": 0.1498823529411765, "g": 0.15294117647058825, "b": 0.2691764705882353, "a": 1}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id"        : "city-front",
+        "transform" : {
+          "localPosition": {"x": -3.2, "y": 0.92, "z": 1},
+          "localScale"   : {"x":  2.0, "y": 2.0         }
+        },
+        "components": [
+          {
+            "type"      : "TiledSpriteRenderer",
+            "asset"     : "city",
+            "coverage"  : "camera",
+            "wrap"      : {"x": "repeat", "y": "transparent"},
+            "brightness": 1.0,
+            "origin"    : {"x": 0, "y": 0}
+          }
+        ],
+        "children"  : [
+          {
+            "id"        : "city-front-base",
+            "transform" : {
+              "localPosition": {"z": -0.001}
+            },
+            "components": [
+              {
+                "type"      : "PlaneRenderer",
+                "coverage"  : "camera",
+                "clipBounds": {"left": null, "right": null, "bottom": null, "top": -1.5970000000000002},
+                "color"     : {"r": 0.19215686274509805, "g": 0.19607843137254902, "b": 0.34509803921568627, "a": 1}
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

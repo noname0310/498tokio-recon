@@ -51,7 +51,7 @@ export class LoadingStatus {
       if(!snapshot.length&&!progress.isComplete){this.context.replaceChildren();history.replaceChildren();pending.clear();this.sceneName=undefined;this.hasPlayed=false;this.started=performance.now();}
       const ids=new Set(snapshot.flatMap(stage=>[...stage.items.keys()]));
       for(const [id,entry] of pending)if(!ids.has(id)){
-        const verb=({Scene:"Loaded",Audio:"Loaded",Images:"Loaded",Textures:"Generated",Shaders:"Compiled"} as Record<string,string>)[entry.stage]??"Finished";
+        const verb=({Scene:"Loaded",Audio:"Loaded",Fonts:"Loaded",Images:"Loaded",Textures:"Generated",Shaders:"Compiled"} as Record<string,string>)[entry.stage]??"Finished";
         const row=logLine(verb,` ${entry.item}`);row.dataset.state="complete";history.append(row);pending.delete(id);
       }
       for(const stage of snapshot)for(const [id,item] of stage.items)pending.set(id,{stage:stage.name,item});
