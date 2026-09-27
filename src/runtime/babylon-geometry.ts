@@ -7,7 +7,7 @@ import {Math3D as M} from "./math.js";
 import {BabylonTransitionUniforms,transitionUniformNames} from "./babylon-transition-uniforms.js";
 export class BabylonPlane {
   private readonly transitionUniforms=new BabylonTransitionUniforms();
-  private noiseKey="";private noiseRevision=0;private noisePending:Promise<void>=Promise.resolve();private noiseTexture?:Babylon.RawTexture;
+  private noiseKey="";private noiseRevision=0;private noisePending:Promise<void>=Promise.resolve();private noiseTexture?:Babylon.Texture;
   readonly id:string;readonly material:Babylon.ShaderMaterial;readonly mesh:Babylon.Mesh;
   constructor(readonly renderer:BabylonSceneContext,node:Entity){
     this.id=node.id;const B=renderer.B;this.material=new B.ShaderMaterial(`${node.name} / PlaneRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneSolid"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint","ellipse","ellipseSize","ellipseAA","ellipseInnerRatio","ellipseSoftness","noiseOrigin","noiseSize","noiseRange","noiseEnabled","noiseChannelGain",...transitionUniformNames],samplers:["noiseTex"],defines:["#define PLANE_NOISE"],needAlphaBlending:true});this.material.backFaceCulling=false;this.material.disableDepthWrite=true;this.material.setTexture("noiseTex",renderer.neutralTexture);this.mesh=renderer.quad(node.name,node.id,this.material);

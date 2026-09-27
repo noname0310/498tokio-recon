@@ -6,7 +6,7 @@ import type * as Babylon from "@babylonjs/core/pure";
 import { B, registerBabylon } from "./babylon-library.js";
 import type { Scene } from "./scene.js";
 import type { Resources } from "./resources.js";
-import type { Entity, ComponentType, Vec3, PixelImage, View, TextureJob, MaskParameters, Bounds } from "./types.js";
+import type { Entity, ComponentType, Vec3, PixelImage, View, TextureJob, Bounds } from "./types.js";
 import {BabylonSceneContext,type BabylonObjectConstructor,type BabylonRenderObject,type TextureOptions} from "./babylon-context.js";
 
 import { Math3D as M } from "./math.js";
@@ -23,16 +23,21 @@ import {motionBounds} from "./sprite-motion-blur.js";
 import {spriteFocus} from "./depth-of-field.js";
 import {BabylonParticleFilter} from "./babylon-particle-filter.js";
 import {BabylonShaderPreparation} from "./babylon-preparation.js";
+import {tileTextureRecipes} from "./tiled-textures.js";
+import {spriteMaskRecipe} from "./sprite-textures.js";
+import {componentVariants,noiseVariants,preparationYield} from "./preparation.js";
+import {BabylonObjectPool} from "./babylon-object-pool.js";
+import {spriteRect} from "./atlas.js";
 import type {LoadingProgress} from "./loading-status.js";
 const enabled=<T extends {enabled:boolean}>(c:T|undefined):c is T=>Boolean(c?.enabled);
-interface SpriteMaskTexture {texture:Babylon.RawTexture;bounds:Bounds;bytes:number}
+interface SpriteMaskTexture {texture:Babylon.Texture;bounds:Bounds;bytes:number}
 
 class Sprite {
   private filter?:BabylonParticleFilter;
   private depthBody?:{mesh:Babylon.Mesh;material:Babylon.ShaderMaterial};
   private readonly maskTextures=new Map<string,SpriteMaskTexture>();private maskBytes=0;
   readonly renderer:BabylonSceneContext;readonly id:string;
-  readonly textures:Map<string,Babylon.RawTexture>;readonly keys:Map<string,string>;readonly jobs:Map<string,Promise<void>>;readonly revisions:Map<string,number>;
+  readonly textures:Map<string,Babylon.Texture>;readonly keys:Map<string,string>;readonly jobs:Map<string,Promise<void>>;readonly revisions:Map<string,number>;
   updateRevision=0;disposed=false;
   readonly meshes:Map<string,{mesh:Babylon.Mesh;material:Babylon.ShaderMaterial}>;
   constructor(renderer:BabylonSceneContext,node:Entity){
@@ -40,6 +45,7 @@ class Sprite {
     for(const [type,mask,additive] of [["DropShadow",true,false],["Glow",true,true],["SpriteRenderer",false,false]] as const){
       if(!node.components.some(c=>c.type===type))continue;
       const material=renderer.spriteMaterial(`${node.name} / ${type}`,mask,additive),mesh=renderer.quad(`${node.name} / ${type}`,node.id,material);
+      mesh.alwaysSelectAsActiveMesh=false;
       this.meshes.set(type,{mesh,material});
     }
   }
@@ -89,7 +95,7 @@ class Sprite {
     ((body.mesh.metadata??={}) as {depthColor?:boolean}).depthColor=writeDepth;
     if(writeDepth&&!this.depthBody){
       const material=r.spriteMaterial(`${this.id}/depth`,false,false);material.needAlphaBlending=()=>false;material.disableDepthWrite=false;material.disableColorWrite=true;material.setFloat("alphaCutoff",.5);
-      const mesh=new B.Mesh(`${this.id}/depth`,r.scene);mesh.parent=body.mesh.parent;mesh.material=material;mesh.alwaysSelectAsActiveMesh=true;r.entityOwners.set(mesh,this.id);
+      const mesh=new B.Mesh(`${this.id}/depth`,r.scene);mesh.parent=body.mesh.parent;mesh.material=material;r.entityOwners.set(mesh,this.id);
       // Identical vertices keep both passes' rasterized depth identical. A
       // separate art-sized quad self-occludes when DoF/motion expands the color
       // quad, even though both surfaces lie on the same mathematical plane.
@@ -121,15 +127,14 @@ class Sprite {
       entry.material.alphaMode=!isShadow&&c.blend==="additive"?B.Engine.ALPHA_ADD:B.Engine.ALPHA_COMBINE;
       entry.mesh.position.set(isShadow?c.offsetWorld.x:0,isShadow?c.offsetWorld.y:0,isShadow?.0002:.0001);
       r.tint(entry.material,c.color,sprite.color.a*(isShadow?c.opacity:1));entry.material.setFloat("intensity",isShadow?1:c.intensity);entry.material.setFloat("hue",isShadow?0:sprite.hueDegrees*Math.PI/180);
-      const parameters:MaskParameters=isShadow?{type:"DropShadow",sigmaWorld:c.sigmaWorld}:{type:"Glow",sigmaWorld:c.sigmaWorld,threshold:c.threshold,softness:c.softness};
-      const key=JSON.stringify([scene.source(sprite.asset),asset,state.frame,parameters,resolution]);
+      const {key,jobKey,parameters}=spriteMaskRecipe(scene.source(sprite.asset),asset,state.frame,c,resolution);
       if(this.keys.get(type)!==key){
         this.keys.set(type,key);const revision=(this.revisions.get(type)||0)+1;this.revisions.set(type,revision);
         const cached=this.maskTextures.get(key);
         if(cached){this.applyMask(type,key,cached);this.jobs.delete(type);}
         else{
           const maskSource=asset.atlas?r.resources.crop(source,rect):source;
-          this.jobs.set(type,r.resources.texture("mask:"+key,{kind:"mask",source:maskSource,asset,component:parameters,resolution}).then(result=>{
+          this.jobs.set(type,r.resources.texture(jobKey,{kind:"mask",source:maskSource,asset,component:parameters,resolution}).then(result=>{
             if(this.disposed||this.revisions.get(type)!==revision)return;
             const texture=r.texture(`${this.id}/${type}`,result,{linear:true});
             this.applyMask(type,key,{texture,bounds:result.bounds!,bytes:result.width*result.height*4});
@@ -159,10 +164,10 @@ class Sprite {
 }
 
 class TiledSprite {
-  private readonly nativeFrames=new Map<string,Babylon.RawTexture>();
+  private readonly nativeFrames=new Map<string,Babylon.Texture>();
   private shadowDeclared:boolean;
   readonly renderer:BabylonSceneContext;readonly id:string;
-  readonly textures:Map<string,Babylon.RawTexture>;readonly keys:Map<string,string>;readonly jobs:Map<string,Promise<void>>;readonly revisions:Map<string,number>;
+  readonly textures:Map<string,Babylon.Texture>;readonly keys:Map<string,string>;readonly jobs:Map<string,Promise<void>>;readonly revisions:Map<string,number>;
   updateRevision=0;disposed=false;
   readonly material:Babylon.ShaderMaterial;readonly mesh:Babylon.Mesh;transparent=false;hasAlpha=false;alphaSource?:PixelImage;
   constructor(renderer:BabylonSceneContext,node:Entity){
@@ -177,7 +182,7 @@ class TiledSprite {
     this.shadowDeclared=node.components.some(c=>c.type==="DropShadow");this.material.setDefine("TILE_SHADOW",this.shadowDeclared);
   }
   async update(scene:Scene,view:View){
-    const r=this.renderer,c=scene.requireComponent(this.id,"TiledSpriteRenderer"),original=scene.asset(c.asset),state=scene.spriteState(this.id),asset={...original,size:state.size,atlas:undefined},blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise"),resolution=Math.max(scene.data.rendering.texturePixelsPerUnit,asset.pixelsPerUnit*(c.clipBounds?8:enabled(blur)?2:0));
+    const r=this.renderer,c=scene.requireComponent(this.id,"TiledSpriteRenderer"),original=scene.asset(c.asset),state=scene.spriteState(this.id),asset={...original,size:state.size,atlas:undefined},blur=scene.component(this.id,"GaussianBlur"),noise=scene.component(this.id,"ProceduralNoise");
     if(!scene.active.get(this.id)||!state.visible||!r.resources.isImageReady(c.asset)){this.mesh.setEnabled(false);return;}
     const bounds=clippedBounds(scene.coverage(this.id,view),c.clipBounds),glow=scene.component(this.id,"Glow"),shadow=scene.component(this.id,"DropShadow"),sigma=enabled(blur)?blur.sigmaWorld:{x:0,y:0};this.mesh.setEnabled(c.enabled&&Boolean(bounds));
     if(this.shadowDeclared!==Boolean(shadow)){this.shadowDeclared=Boolean(shadow);this.material.setDefine("TILE_SHADOW",this.shadowDeclared);}
@@ -208,7 +213,6 @@ class TiledSprite {
     this.transparent=this.hasAlpha||c.color.a<1||softCrop||softEdge||c.blend==="additive";this.material.disableDepthWrite=this.transparent;
     this.material.alphaMode=c.blend==="additive"?r.B.Engine.ALPHA_ADD:r.B.Engine.ALPHA_COMBINE;
     const repeatY=c.wrap.y==="repeat"||c.wrap.y==="repeatBottom";
-    const key=JSON.stringify([scene.source(c.asset),state.rect,asset,sigma,resolution,c.wrap.y]);
     const jobs:(Promise<void>|undefined)[]=[];
     const schedule=(name:string,key:string,input:TextureJob,options:TextureOptions)=>{
       if(this.keys.get(name)!==key){this.keys.set(name,key);const revision=(this.revisions.get(name)||0)+1;this.revisions.set(name,revision);
@@ -229,17 +233,9 @@ class TiledSprite {
         this.material.setTexture("backgroundTex",texture);
         this.material.setVector4("backgroundMapping",new r.B.Vector4(1,0,0,0));
       }
-    }else schedule("background","tile:"+key,{kind:"tile",source,asset,sigmaWorld:sigma,resolution,wrapY:c.wrap.y},{repeatX:true,repeatY,linear:true});
-    if(halo>0&&glow?.enabled){
-      const haloSigma={x:Math.hypot(sigma.x,halo),y:Math.hypot(sigma.y,halo)},haloResolution=Math.min(resolution,Math.max(scene.data.rendering.texturePixelsPerUnit,asset.pixelsPerUnit*2));
-      const haloKey=JSON.stringify([scene.source(c.asset),state.rect,asset,haloSigma,haloResolution,c.wrap.y]);
-      schedule("halo","tile-halo:"+haloKey,{kind:"tile",source,asset,sigmaWorld:haloSigma,resolution:haloResolution,wrapY:c.wrap.y},{repeatX:true,repeatY,linear:true});
     }
-    if(enabled(shadow)){
-      const shadowResolution=Math.min(resolution,Math.max(scene.data.rendering.texturePixelsPerUnit,asset.pixelsPerUnit*2));
-      const shadowKey=JSON.stringify([scene.source(c.asset),state.rect,asset,shadowSigma,shadowResolution,c.wrap.y]);
-      schedule("shadow","tile:"+shadowKey,{kind:"tile",source,asset,sigmaWorld:shadowSigma,resolution:shadowResolution,wrapY:c.wrap.y},{repeatX:true,repeatY,linear:true});
-    }
+    for(const recipe of tileTextureRecipes(scene.source(c.asset),asset,state.rect,c,scene.data.rendering.texturePixelsPerUnit,blur,glow,shadow))
+      schedule(recipe.slot,recipe.key,{kind:"tile",source,asset,sigmaWorld:recipe.sigmaWorld,resolution:recipe.resolution,wrapY:c.wrap.y},{repeatX:true,repeatY,linear:true});
     if(noise)schedule("noise",r.resources.noiseKey(noise),{kind:"noise",component:noise},{repeatX:true,repeatY:true});
     await Promise.all(jobs);
   }
@@ -251,12 +247,14 @@ export class BabylonRenderer {
   get displayName():string{return `Babylon.js · WebGL${this.engine.webGLVersion}`;}
   private context?:BabylonSceneContext;
   private preparation?:BabylonShaderPreparation;
+  private objectPool?:BabylonObjectPool;
   private transitions?:BabylonTransitions;
   private frame?:BabylonViewportFrame;
   private colorGrade?:BabylonColorGrade;
   private cameraBlur?:BabylonCameraBlur;
   private scanlineJitter?:BabylonScanlineJitter;
   private progressiveDraw:number|null=null;
+  private readonly initializedObjects=new Set<string>();
   readonly viewport:HTMLElement;readonly B= B;readonly canvas:HTMLCanvasElement;readonly engine:Babylon.Engine;
   readonly registry:Map<ComponentType,BabylonObjectConstructor>;
   objects:BabylonRenderObject[];renderCount:number;updateRevision:number;
@@ -278,27 +276,129 @@ export class BabylonRenderer {
   }
   async createScene(data:Scene,resources:Resources){
     this.context=new BabylonSceneContext(this.engine,data,resources,()=>this.render());
+    this.objectPool=new BabylonObjectPool(this.context);
     this.transitions=new BabylonTransitions(this.context);this.frame=new BabylonViewportFrame(this.context);this.colorGrade=new BabylonColorGrade(this.context);this.cameraBlur=new BabylonCameraBlur(this.context);
     this.scanlineJitter=new BabylonScanlineJitter(this.context);
     this.reconcile(data);
   }
   async prepare(progress:LoadingProgress):Promise<void>{
+    const context=this.context!,data=context.data,resources=context.resources,seen=new Set<string>(),yieldWork=preparationYield();
+    const current=()=>context===this.context&&!resources.disposed;
+    // Enumerate declarations, including inactive nested spawnables. Do not seek
+    // the live timeline to discover a scene's immutable Gaussian/glow textures.
+    for(const node of data.declaredEntities()){
+      await yieldWork();if(!current())return;
+      for(const noise of noiseVariants(data,node)){
+        const key="gpu:"+resources.noiseKey(noise);if(seen.has(key))continue;seen.add(key);
+        const finish=progress.begin("Textures",`${node.name} / noise upload`);
+        try{
+          const pixels=await resources.noise(noise);if(!current())return;
+          context.texture(`${node.id}/noise`,pixels,{repeatX:true,repeatY:true}).dispose();
+        }finally{finish();}
+        await yieldWork();if(!current())return;
+      }
+      for(const c of node.components){
+        if(c.type==="ParticleEmitter"||c.type==="SpriteNumberRenderer"||c.type==="CylindricalSpriteRenderer"||c.type==="SecondaryTexture"){
+          const pixels=await resources.image(data,c.asset);if(!current())return;
+          const repeat=c.type==="CylindricalSpriteRenderer"||c.type==="SecondaryTexture";
+          context.texture(`${node.id}/source`,pixels,{repeatX:repeat,repeatY:repeat,linear:c.type!=="SpriteNumberRenderer"&&data.asset(c.asset).filter==="linear"}).dispose();
+        }else if(c.type==="ScanlineJitter")context.texture(`${node.id}/scanline`,resources.scanline(c.seed),{repeatY:true}).dispose();
+      }
+      const sprite=node.components.find(c=>c.type==="SpriteRenderer");
+      if(sprite){
+        const asset=data.asset(sprite.asset),source=await resources.image(data,sprite.asset);if(!current())return;
+        context.texture(`${node.id}/source`,source,{linear:asset.filter==="linear"}).dispose();
+        const effects=[...componentVariants(data,node,"Glow",["sigmaWorld","threshold","softness"]),...componentVariants(data,node,"DropShadow",["sigmaWorld"])];
+        for(const effect of effects)for(let frame=0;frame<(asset.atlas?.frameCount??1);frame++){
+          const recipe=spriteMaskRecipe(data.source(sprite.asset),asset,frame,effect,data.data.rendering.texturePixelsPerUnit);
+          if(seen.has(recipe.jobKey))continue;seen.add(recipe.jobKey);
+          const finish=progress.begin("Textures",`${node.name} / ${effect.type} ${frame+1}`);
+          try{
+            const pixels=asset.atlas?await resources.framePixels(data,sprite.asset,frame):source;if(!current())return;
+            const result=await resources.prepareTexture(recipe.jobKey,{kind:"mask",source:pixels,asset,component:recipe.parameters,resolution:data.data.rendering.texturePixelsPerUnit});if(!current())return;
+            context.texture(`${node.id}/${effect.type}`,result,{linear:true}).dispose();
+          }catch(error){if(!current())return;throw error;}finally{finish();}
+          await yieldWork();if(!current())return;
+        }
+      }
+      if(node.components.some(c=>c.type==="TextRenderer")){
+        const finish=progress.begin("Textures",`${node.name} / text`);
+        try{await BabylonText.prepare(context,node,this.viewport);}finally{finish();}if(!current())return;
+      }
+      const c=node.components.find(c=>c.type==="TiledSpriteRenderer");if(!c)continue;
+      const original=data.asset(c.asset),asset={...original,size:original.atlas?.cellSize??original.size,atlas:undefined};
+      const blur=node.components.find(c=>c.type==="GaussianBlur"),glow=node.components.find(c=>c.type==="Glow"),shadow=node.components.find(c=>c.type==="DropShadow");
+      for(let frame=0;frame<(original.atlas?.frameCount??1);frame++){
+        const source=await resources.framePixels(data,c.asset,frame);if(!current())return;
+        context.texture(`${node.id}/frame-${frame}`,source,{repeatX:true,repeatY:c.wrap.y==="repeat"||c.wrap.y==="repeatBottom"}).dispose();
+        for(const recipe of tileTextureRecipes(data.source(c.asset),asset,spriteRect(original,frame),c,data.data.rendering.texturePixelsPerUnit,blur,glow,shadow)){
+        if(seen.has(recipe.key))continue;seen.add(recipe.key);
+        const finish=progress.begin("Textures",`${node.name} / ${recipe.slot}`);
+        try{
+          const result=await resources.prepareTexture(recipe.key,{kind:"tile",source,asset,sigmaWorld:recipe.sigmaWorld,resolution:recipe.resolution,wrapY:c.wrap.y});
+          if(context!==this.context||resources.disposed)return;
+          context.texture(`${node.name} / ${recipe.slot}`,result,{repeatX:true,repeatY:(c.wrap.y==="repeat"||c.wrap.y==="repeatBottom")&&!result.tileMapping,linear:true}).dispose();
+        }catch(error){if(context!==this.context||resources.disposed)return;throw error;}finally{finish();}
+        if(context!==this.context||resources.disposed)return;
+        }
+        await yieldWork();if(!current())return;
+      }
+    }
     this.preparation?.dispose();
     this.preparation=new BabylonShaderPreparation(this.context!);
     await this.preparation.run(this.registry,progress);
+    if(!current())return;
+    const finishCapture=progress.begin("Textures","Viewport fade capture");
+    try{this.transitions!.prepare();}finally{finishCapture();}
+    const pool=this.objectPool!;
+    for(const node of data.declaredEntities()){
+      await yieldWork();if(!current())return;
+      if(!this.initializedObjects.has(node.id)&&!pool.has(node.id)&&node.components.some(c=>this.registry.has(c.type))){
+        const finish=progress.begin("Objects",node.name);
+        try{pool.prepare(node,this.registry);}finally{finish();}
+      }
+      const emitter=node.components.find(c=>c.type==="ParticleEmitter"),sprite=node.components.find(c=>c.type==="SpriteRenderer"),art=emitter??sprite;if(!art)continue;
+      const asset=data.asset(art.asset),pixels=await resources.image(data,art.asset);if(!current())return;
+      const type=emitter?"ParticleMotionBlur":"SpriteMotionBlur",motions=componentVariants(data,node,type,["enabled","dilationPixels","softnessPixels"]);
+      const glows=emitter?componentVariants(data,node,"Glow",["enabled","sigmaWorld","threshold","softness"]):[];
+      for(const motion of motions.length?motions:[undefined]){
+        const radius=motion?.enabled?motion.dilationPixels:0,softness=motion?.enabled?motion.softnessPixels:0;
+        for(const glow of [undefined,...glows]){
+          if(glow&&!glow.enabled||!glow&&radius===0&&softness===0)continue;
+          const sigma=glow?Math.hypot(glow.sigmaWorld*asset.pixelsPerUnit,softness):softness,key=BabylonParticleFilter.recipe(asset,radius,sigma,glow);
+          if(context.preparedFilters.has(key))continue;
+          const finish=progress.begin("Textures",`${node.name} / particle ${glow?"glow":"filter"}`);
+          try{await BabylonParticleFilter.prepare(context,asset,context.texture(`${node.id}/prepared-source`,pixels,{linear:asset.filter==="linear"}),radius,sigma,glow);}finally{finish();}
+          await yieldWork();if(!current())return;
+        }
+      }
+    }
   }
   private reconcile(data:Scene):void {
-    this.objects=this.objects.filter(object=>{if(data.nodes.has(object.id))return true;object.dispose();return false;});
-    for(const [id,object] of this.nodes)if(!data.nodes.has(id)){object.dispose(true);this.nodes.delete(id);}
+    const released=new Map<string,BabylonRenderObject[]>();
+    this.objects=this.objects.filter(object=>{
+      if(data.nodes.has(object.id))return true;
+      if(data.sequence?.templates.has(object.id)){const group=released.get(object.id)??[];group.push(object);released.set(object.id,group);}else object.dispose();return false;
+    });
+    for(const [id,objects]of released)this.objectPool!.release(id,objects);
+    for(const [id,object] of this.nodes)if(!data.nodes.has(id)){object.dispose(true);this.nodes.delete(id);this.initializedObjects.delete(id);}
     const B=this.B,ensure=(node:Entity):Babylon.TransformNode|Babylon.TargetCamera=>{
       const existing=this.nodes.get(node.id);if(existing)return existing;
       const parent=data.parents.get(node.id);
       const object=data.component(node.id,"Camera")?new B.TargetCamera(node.name,B.Vector3.Zero(),this.scene):new B.TransformNode(node.name,this.scene);
       object.id=node.id;object.parent=parent?ensure(parent):null;this.nodes.set(node.id,object);
-      for(const [type,Handler] of this.registry)if(data.component(node.id,type))this.objects.push(new Handler(this.context!,node));
       return object;
     };
-    for(const node of data.nodes.values())ensure(node);
+    for(const node of data.nodes.values()){
+      ensure(node);
+      // Only active entities join the live render graph. Future resources are
+      // prepared off-list; edits or early playback retain the on-demand fallback.
+      if(!data.active.get(node.id)||this.initializedObjects.has(node.id))continue;
+      this.initializedObjects.add(node.id);
+      const prepared=this.objectPool!.acquire(node.id);
+      if(prepared)this.objects.push(...prepared);
+      else for(const [type,Handler]of this.registry)if(data.component(node.id,type))this.objects.push(new Handler(this.context!,node));
+    }
   }
   async update(data:Scene,view:View){
     this.cancelProgressiveDraw();
@@ -381,6 +481,6 @@ export class BabylonRenderer {
     this.engine.restoreDefaultFramebuffer();
     if(this.transitions)this.transitions.render(()=>this.scene.render());else this.scene.render();this.renderCount++;
   }
-  disposeScene(){this.engine.restoreDefaultFramebuffer();this.scanlineJitter?.dispose();this.scanlineJitter=undefined;this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.transitions?.dispose();this.frame?.dispose();this.colorGrade?.dispose();this.colorGrade=undefined;this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
+  disposeScene(){this.engine.restoreDefaultFramebuffer();this.scanlineJitter?.dispose();this.scanlineJitter=undefined;this.updateRevision++;this.cancelProgressiveDraw();this.preparation?.dispose();this.preparation=undefined;this.objects.forEach(o=>o.dispose());this.objects=[];this.objectPool?.dispose();this.objectPool=undefined;this.initializedObjects.clear();this.transitions?.dispose();this.frame?.dispose();this.colorGrade?.dispose();this.colorGrade=undefined;this.cameraBlur?.dispose();this.transitions=undefined;this.frame=undefined;this.cameraBlur=undefined;this.vignette?.dispose();this.vignette=null;this.attachedCamera=null;this.vignettePlane?.dispose();this.vignettePlane=null;this.vignetteMaterial?.dispose();this.vignetteMaterial=null;this.context?.dispose();this.context=undefined;}
   dispose(){this.disposeScene();this.engine.dispose();this.canvas.remove();}
 }

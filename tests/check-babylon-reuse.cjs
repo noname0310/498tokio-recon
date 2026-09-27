@@ -51,6 +51,17 @@ async function main(){
     {id:'stream',transform:{localPosition:{x:1}},components:[{type:'ParticleEmitter',asset:'art',rate:0,bursts:[{time:0,count:3},{time:1,count:2}],speed:{min:0,max:0},lifetime:{min:10,max:10},startSize:{min:.2,max:.4},sortMode:'sizeAscending'},{type:'Glow',sigmaWorld:.02}]}
    ]}};
    await page.evaluate(async data=>{await scenePlayer.loadScene(data);await scenePlayer.whenIdle();},fixture);
+   const shared=await page.evaluate(async()=>{
+    const p=scenePlayer,r=p.renderer,o=r.objects.find(o=>o.id==='sprite'),pixels=await p.resources.image(p.scene,'art');
+    const gl=r.engine._gl,upload=gl.texImage2D;let uploads=0;gl.texImage2D=function(...args){uploads++;return upload.apply(this,args);};
+    try{
+     const first=o.renderer.texture('First owner',pixels),second=o.renderer.texture('Second owner',pixels);
+     const shared=first.getInternalTexture()===second.getInternalTexture(),independent=first!==second;
+     first.wrapU=r.B.Texture.WRAP_ADDRESSMODE;const sampling=second.wrapU===r.B.Texture.CLAMP_ADDRESSMODE;
+     first.dispose();const alive=second.isReady();second.dispose();
+     return {shared,independent,sampling,alive,uploads};
+    }finally{gl.texImage2D=upload;}
+   });assert.deepEqual(shared,{shared:true,independent:true,sampling:true,alive:true,uploads:0},'Texture owners reuse one GPU allocation while disposing independently');
    const sorted=await shot();
    const modes=await page.evaluate(async()=>{
     const p=scenePlayer,o=p.renderer.objects.find(o=>o.id==='stream'),prototype=p.renderer.B.Mesh.prototype,original=prototype.thinInstanceBufferUpdated;let hiddenUploads=0;

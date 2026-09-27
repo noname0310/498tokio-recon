@@ -1,4 +1,5 @@
 import type * as Babylon from "@babylonjs/core/pure";
+import {B} from "./babylon-library.js";
 import type { BabylonSceneContext } from "./babylon-context.js";
 import type { Scene } from "./scene.js";
 import type { Entity, Vec3, View, ParticleState, RenderObject } from "./types.js";
@@ -69,6 +70,7 @@ interface ParticleDraw {mesh:Babylon.Mesh;glow:boolean;uploadedMatrices?:Float32
 /** Bind storage only for a draw that will run. Newly bound arrays already upload. */
 function uploadInstances(entry:ParticleDraw,matrices:Float32Array,colors:Float32Array,rects:Float32Array,blurs:Float32Array,count:number):void {
   const mesh=entry.mesh;
+  if(!mesh.subMeshes.length)new B.SubMesh(0,0,mesh.getTotalVertices(),0,mesh.getTotalIndices(),mesh);
   if(entry.uploadedMatrices!==matrices){
     mesh.thinInstanceSetBuffer("matrix",matrices,16,false);mesh.thinInstanceSetBuffer("particleColor",colors,4,false);
     mesh.thinInstanceSetBuffer("particleRect",rects,4,false);mesh.thinInstanceSetBuffer("particleBlur",blurs,2,false);
@@ -85,7 +87,7 @@ function uploadInstances(entry:ParticleDraw,matrices:Float32Array,colors:Float32
 
 export class BabylonParticles {
   readonly renderer:BabylonSceneContext;readonly id:string;readonly entries:(ParticleDraw&{material:Babylon.ShaderMaterial})[];
-  capacity:number;count:number;matrices!:Float32Array;colors!:Float32Array;rects!:Float32Array;blurs!:Float32Array;revision=0;sourceKey?:string;texture?:Babylon.RawTexture;disposed=false;
+  capacity:number;count:number;matrices!:Float32Array;colors!:Float32Array;rects!:Float32Array;blurs!:Float32Array;revision=0;sourceKey?:string;texture?:Babylon.Texture;disposed=false;
   filter?:BabylonParticleFilter;
   glowFilter?:BabylonParticleFilter;
   states:ParticleState[]=[];sortBySize=false;sortOrigin:Vec3={x:0,y:0,z:0};
@@ -100,7 +102,10 @@ export class BabylonParticles {
       material.setTexture("spriteTex",renderer.neutralTexture);
       material.setTexture("filteredTex",renderer.neutralTexture);
       material.setTexture("glowTex",renderer.neutralTexture);
-      const mesh=renderer.quad(name,null,material,this.id);renderer.rect(mesh,-.5,-.5,.5,.5);mesh.isVisible=false;
+      const mesh=renderer.quad(name,null,material,this.id);renderer.rect(mesh,-.5,-.5,.5,.5);mesh.isVisible=false;mesh.setEnabled(false);
+      // Scene readiness checks disabled meshes too. Bind a submesh only when
+      // instance attributes exist, so an empty emitter requests no plain variant.
+      mesh.releaseSubMeshes();
       this.entries.push({mesh,material,glow});
     }
   }
@@ -113,10 +118,18 @@ export class BabylonParticles {
     this.allocate(1);
     for(const entry of this.entries)uploadInstances(entry,this.matrices,this.colors,this.rects,this.blurs,1);
   }
+  prepareResources(node:Entity):void {
+    const emitter=node.components.find(c=>c.type==="ParticleEmitter")!;
+    this.allocate(emitter.maxParticles);
+    for(const entry of this.entries){
+      uploadInstances(entry,this.matrices,this.colors,this.rects,this.blurs,1);
+      entry.mesh.thinInstanceCount=0;entry.mesh.releaseSubMeshes();
+    }
+  }
   async update(scene:Scene,view:View){
     const r=this.renderer,B=r.B,c=scene.requireComponent(this.id,"ParticleEmitter"),asset=scene.asset(c.asset),glow=scene.component(this.id,"Glow"),cell=asset.atlas?.cellSize||asset.size;
     const revision=++this.revision;
-    if(!scene.active.get(this.id)||!c.enabled||!r.resources.isImageReady(c.asset)){this.states=[];this.count=0;for(const entry of this.entries)entry.mesh.isVisible=false;return;}
+    if(!scene.active.get(this.id)||!c.enabled||!r.resources.isImageReady(c.asset)){this.states=[];this.count=0;for(const entry of this.entries){entry.mesh.isVisible=false;entry.mesh.setEnabled(false);}return;}
     const source=await r.resources.image(scene,c.asset);
     if(this.disposed||revision!==this.revision)return;
     const key=JSON.stringify([scene.source(c.asset),asset.filter]);
@@ -135,6 +148,7 @@ export class BabylonParticles {
       for(let row=0;row<3;row++){const i=row*4;material.setVector4(`colorRow${row}`,new B.Vector4(c.colorMatrix[i],c.colorMatrix[i+1],c.colorMatrix[i+2],c.colorMatrix[i+3]));}
       mesh.metadata={sortWorldPosition:Object.fromEntries((["x","y","z"] as const).map((k,i)=>[k,(sortAnchor||center)[k]+(isGlow?camera[8+i]*.0001:0)]))};
       mesh.isVisible=!this.sortBySize&&this.count>0&&(!isGlow||Boolean(glow?.enabled));
+      mesh.setEnabled(mesh.isVisible);
       if(mesh.isVisible)uploadInstances(entry,this.matrices,this.colors,this.rects,this.blurs,this.count);
       material.alphaMode=(isGlow?glow?.blend==="additive":c.blend==="additive")?B.Engine.ALPHA_ADD:B.Engine.ALPHA_COMBINE;
       r.vec2(material,"textureSize",asset.size);
@@ -151,6 +165,7 @@ export class BabylonParticles {
     }
   }
   resetRuns():void {this.runCount=0;for(const run of this.runs)run.hide();}
+  deactivate():void {this.revision++;this.states=[];this.count=0;this.resetRuns();}
   drawRun(first:number,count:number,order:number,scene:Scene):void {
     const index=this.runCount++,run=this.runs[index]??(this.runs[index]=new ParticleDrawRun(this,index));
     run.update(first,count,order,Boolean(scene.component(this.id,"Glow")?.enabled));
@@ -165,7 +180,7 @@ class ParticleDrawRun {
   private capacity=0;private matrices=new Float32Array(0);private colors=new Float32Array(0);private rects=new Float32Array(0);private blurs=new Float32Array(0);
   constructor(private readonly owner:BabylonParticles,index:number){
     this.entries=owner.entries.map(({material,glow})=>{
-      const mesh=owner.renderer.quad(`${owner.id}/size-order/${index}/${glow?"glow":"body"}`,null,material,owner.id);owner.renderer.rect(mesh,-.5,-.5,.5,.5);mesh.isVisible=false;return {mesh,glow};
+      const mesh=owner.renderer.quad(`${owner.id}/size-order/${index}/${glow?"glow":"body"}`,null,material,owner.id);owner.renderer.rect(mesh,-.5,-.5,.5,.5);mesh.isVisible=false;mesh.setEnabled(false);mesh.releaseSubMeshes();return {mesh,glow};
     });
   }
   update(first:number,count:number,order:number,glowEnabled:boolean):void {
@@ -177,10 +192,11 @@ class ParticleDrawRun {
     for(const entry of this.entries){
       const {mesh,glow}=entry;
       mesh.metadata={sortWorldPosition:this.owner.sortOrigin,sortOrder:order*2+(glow?0:1)};mesh.isVisible=!glow||glowEnabled;
+      mesh.setEnabled(mesh.isVisible);
       if(mesh.isVisible)uploadInstances(entry,this.matrices,this.colors,this.rects,this.blurs,count);
     }
   }
-  hide():void {for(const {mesh} of this.entries)mesh.isVisible=false;}
+  hide():void {for(const {mesh} of this.entries){mesh.isVisible=false;mesh.setEnabled(false);}}
   dispose():void {for(const {mesh} of this.entries)mesh.dispose();}
 }
 

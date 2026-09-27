@@ -6,11 +6,13 @@ import {TextureProcessor,type TextureWorkerFactory} from "./texture-processor.js
 import type {LoadingProgress} from "./loading-status.js";
 import {scanlineNoise} from "./scanline-jitter.js";
 import {FontResources} from "./text.js";
+import {noiseVariants} from "./preparation.js";
 
 export class Resources {
   readonly fonts=new FontResources();
   readonly images=new Map<string,Promise<PixelImage>>();
   readonly jobs=new Map<string,Promise<PixelImage>>();
+  private readonly preparedTextures=new Set<string>();
   readonly atlasFrames=new Map<string,Promise<readonly HTMLImageElement[]>>();
   private readonly atlasPixels=new Map<string,Promise<PixelImage>>();
   readonly decodedImages=new Map<string,Promise<HTMLImageElement>>();
@@ -53,8 +55,11 @@ export class Resources {
     })]).then(async()=>{
       if(this.disposed)return;
       const noises=new Map<string,{name:string;component:ProceduralNoise}>();
-      for(const node of scene.declaredEntities())for(const c of node.components)if(c.type==="ProceduralNoise"){
-        const key=this.noiseKey(c);if(!noises.has(key))noises.set(key,{name:node.name,component:c});
+      for(const node of scene.declaredEntities()){
+        for(const component of noiseVariants(scene,node)){
+          const key=this.noiseKey(component);this.preparedTextures.add(key);
+          if(!noises.has(key))noises.set(key,{name:node.name,component});
+        }
       }
       await Promise.all([...noises.values()].map(async({name,component})=>{
         const finish=this.progress?.begin("Textures",`${name} / noise`);
@@ -145,9 +150,11 @@ export class Resources {
     const promise=this.processor.run(input);
     this.jobs.set(key,promise);
     // Bound retained caches when parameters are animated or edited repeatedly.
-    if(this.jobs.size>128)this.jobs.delete(this.jobs.keys().next().value!);
+    if(this.jobs.size>128+this.preparedTextures.size)for(const oldest of this.jobs.keys())if(!this.preparedTextures.has(oldest)){this.jobs.delete(oldest);break;}
     promise.catch(()=>{if(this.jobs.get(key)===promise)this.jobs.delete(key);});return promise;
   }
+  /** Declared static filters survive transient animated jobs and scene spawns. */
+  prepareTexture(key:string,input:TextureJob):Promise<PixelImage>{this.preparedTextures.add(key);return this.texture(key,input);}
   noiseKey(c:ProceduralNoise){return "noise:"+JSON.stringify([c.seed,c.textureSize,c.range,c.bands]);}
   noise(component:ProceduralNoise){return this.texture(this.noiseKey(component),{kind:"noise",component});}
   /** Resources owns these decoded URLs for the whole scene, across despawns. */
@@ -189,5 +196,5 @@ export class Resources {
     }
     return pending;
   }
-  dispose(){this.disposed=true;this.fonts.dispose();this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.images.clear();this.atlasFrames.clear();this.atlasPixels.clear();this.decodedImages.clear();this.filterImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
+  dispose(){this.disposed=true;this.fonts.dispose();this.processor.dispose();for(const url of this.urls)URL.revokeObjectURL(url);this.urls.clear();this.jobs.clear();this.preparedTextures.clear();this.images.clear();this.atlasFrames.clear();this.atlasPixels.clear();this.decodedImages.clear();this.filterImages.clear();this.noiseImages.clear();this.scanlines.clear();this.scanlineImages.clear();this.prepared.clear();}
 }

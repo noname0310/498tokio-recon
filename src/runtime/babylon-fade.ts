@@ -58,6 +58,6 @@ export class BabylonFade {
     finally{for(const reset of restore)reset();r.engine.setAlphaMode(B.Engine.ALPHA_DISABLE,true);}
     this.material.setFloat("opacity",opacity);this.mesh.setEnabled(true);
   }
-  release():void {this.mesh.setEnabled(false);if(this.texture){this.material.setTexture("image",this.renderer.neutralTexture);for(let i=0;i<2;i++)if(this.attached[i])this.texture.removePostProcess(this.passes[i]!);this.attached.fill(false);this.texture.dispose();this.texture=undefined;}}
-  dispose():void {this.release();for(const pass of this.passes)pass?.dispose();this.mesh.dispose();this.material.dispose();}
+  release():void {this.mesh.setEnabled(false);if(this.texture)this.texture.renderList=[];}
+  dispose():void {this.release();this.texture?.dispose();this.texture=undefined;for(const pass of this.passes)pass?.dispose();this.mesh.dispose();this.material.dispose();}
 }

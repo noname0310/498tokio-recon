@@ -44,6 +44,7 @@ export class SequenceRuntime {
   readonly tracks=new Map<string,AnimationTrack<number|boolean>>();
   readonly master:SequenceInstance;
   readonly templates=new Map<string,Entity>();
+  readonly templateParents=new Map<string,string>();
   readonly instanceCount:number;
   private order=0;
   private instances=0;
@@ -123,11 +124,48 @@ export class SequenceRuntime {
     };
     this.master=compile(data.master,encodeURIComponent(data.master),[]);this.instanceCount=this.instances;
     // Spawn parenting must remain acyclic, including sibling/descendant references.
-    const parents=new Map<string,string>();const visit=(i:SequenceInstance)=>{for(const {spec} of i.spawns){parents.set(spec.id,spec.parent);const children=(n:Entity)=>{for(const c of n.children){parents.set(c.id,n.id);children(c);}};children(spec.node);}i.sections.forEach(s=>visit(s.instance));};visit(this.master);
+    const parents=this.templateParents;const visit=(i:SequenceInstance)=>{for(const {spec} of i.spawns){parents.set(spec.id,spec.parent);const children=(n:Entity)=>{for(const c of n.children){parents.set(c.id,n.id);children(c);}};children(spec.node);}i.sections.forEach(s=>visit(s.instance));};visit(this.master);
     for(const id of parents.keys()){const seen=new Set<string>();let current:string|undefined=id;while(current&&parents.has(current)){if(seen.has(current))throw new Error("Cyclic spawn parenting.");seen.add(current);current=parents.get(current);}}
   }
   get tickResolution():FrameRate{return this.master.rate;}
   get displayRate():FrameRate{return this.master.definition.displayRate;}
+  /** Finite recipe values, including step tracks, constants and bounded integer
+   * tracks. Continuous curves intentionally remain runtime work. No frame scan. */
+  propertyValues(entity:string,property:PropertyPath,initial:number|boolean,limit=256):(number|boolean)[]|undefined {
+    let values=new Set<number|boolean>([initial]);
+    const bindings:{binding:CompiledBinding;rate:FrameRate;priority:number}[]=[];
+    const visit=(instance:SequenceInstance,bias:number)=>{
+      for(const binding of instance.bindings){
+        const d=binding.definition;
+        if(d.enabled===false||binding.entity!==entity||d.property.component!==property.component||d.property.path!==property.path)continue;
+        bindings.push({binding,rate:instance.rate,priority:bias+(d.priority??0)});
+      }
+      for(const section of instance.sections)if(section.definition.enabled!==false)visit(section.instance,bias+section.bias);
+    };
+    visit(this.master,0);bindings.sort((a,b)=>a.priority-b.priority||a.binding.order-b.binding.order);
+    for(const {binding,rate}of bindings){
+        const d=binding.definition,t=binding.track;
+        let samples:(number|boolean)[];
+        const bounds=t.valueBounds(rate);
+        if(t.type==="AnimationTrackInt32"&&bounds&&bounds.max-bounds.min<limit)samples=Array.from({length:bounds.max-bounds.min+1},(_,i)=>bounds.min+i);
+        else {
+          for(let i=0;i<t.value.length-1;i++){
+            const out=(t.interpolation[i*2]>>>2)&3,incoming=t.interpolation[(i+1)*2]&3;
+            if(out!==0&&incoming!==0&&!(out===1&&incoming===1&&t.value[i]===t.value[i+1])&&bounds?.min!==bounds?.max)return undefined;
+          }
+          samples=[...t.value].map(value=>t.type==="AnimationTrackBoolean"?Boolean(value):value);
+          if(t.defaultValue!==undefined)samples.push(t.defaultValue);
+        }
+        const next=new Set(values),weight=d.weight??1;
+        for(const base of values)for(const value of samples){
+          let result:number|boolean=typeof value==="boolean"?value:d.blend==="additive"?Number(base)+value*weight:Number(base)*(1-weight)+value*weight;
+          if(t.type==="AnimationTrackInt32")result=Math.max(Frame.min,Math.min(Frame.max,Math.round(Number(result))));
+          next.add(result);if(next.size>limit)return undefined;
+        }
+        values=next;
+    }
+    return [...values];
+  }
   /** Bound a numeric property over every reachable binding, without frame sampling. */
   propertyBounds(entity:string,property:PropertyPath,initial:number):{min:number;max:number} {
     let min=initial,max=initial,addMin=0,addMax=0;

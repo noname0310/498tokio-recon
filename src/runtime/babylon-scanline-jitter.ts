@@ -1,4 +1,4 @@
-import type {TargetCamera,PostProcess,RawTexture} from "@babylonjs/core/pure";
+import type {TargetCamera,PostProcess,Texture} from "@babylonjs/core/pure";
 import type {BabylonSceneContext} from "./babylon-context.js";
 import type {Scene} from "./scene.js";
 import type {View} from "./types.js";
@@ -10,7 +10,7 @@ export function createScanlineJitterEffect(r:BabylonSceneContext):PostProcess {
 }
 export class BabylonScanlineJitter {
   private effect?:PostProcess;private camera?:TargetCamera;private attached=false;private index=0;
-  private readonly textures=new Map<number,RawTexture>();private noise?:RawTexture;
+  private readonly textures=new Map<number,Texture>();private noise?:Texture;
   private phase={first:0,second:0,mix:0};private rows=0;private amplitude=0;
   constructor(private readonly renderer:BabylonSceneContext){}
   update(scene:Scene,view:View,camera:TargetCamera):void {

@@ -6,7 +6,7 @@ import {cylinderGeometryKey,cylinderStrips} from "./cylinder.js";
 import {Math3D as M} from "./math.js";
 export class BabylonCylinder {
   readonly id:string;readonly mesh:Babylon.Mesh;readonly material:Babylon.ShaderMaterial;
-  private geometryKey="";private sourceKey="";private texture?:Babylon.RawTexture;private revision=0;
+  private geometryKey="";private sourceKey="";private texture?:Babylon.Texture;private revision=0;
   constructor(readonly renderer:BabylonSceneContext,node:Entity){
     this.id=node.id;const B=renderer.B;
     this.material=new B.ShaderMaterial(`${node.name} / CylindricalSpriteRenderer`,renderer.scene,{vertex:"sceneCylinder",fragment:"sceneCylinder"},{attributes:["position","uv","normal"],uniforms:["worldViewProjection","uvOffset","tint","lightDirection","ambient","diffuse"],samplers:["spriteTex"],needAlphaBlending:true});

@@ -134,6 +134,15 @@ function hierarchyChecks(){
   const blends=fixture();blends.animation.tracks.constant=float([0],[2]);blends.animation.sequences.main.sequences=[];
   blends.animation.sequences.main.bindings=[bind("replace","constant","a","Transform","localPosition.x",{range:{start:0,end:24000},completionMode:"keep"}),bind("add","constant","a","Transform","localPosition.x",{blend:"additive",weight:.5,priority:10})];
   const blended=new Scene(blends,base);blended.time=2;blended.updateWorld();assert.equal(blended.transformAt("actor").localPosition.x,3);blended.time=8;blended.updateWorld();assert.equal(blended.transformAt("actor").localPosition.x,7);
+  const property={component:"Transform",path:"localPosition.x"};
+  assert(blended.sequence.propertyValues("actor",property,7).includes(3),'Preparation includes the blended runtime value');
+  blends.animation.sequences.main.bindings.reverse();
+  assert(new Scene(blends,base).sequence.propertyValues("actor",property,7).includes(3),'Finite recipes follow binding priority, not declaration order');
+  assert.equal(new Scene(fixture(),base).sequence.propertyValues("actor",property,7),undefined,'A continuous nested curve is not sampled or baked');
+  const stepped=fixture();stepped.animation.tracks.move={...float([0,10,20],[.1,.2,.3]),interpolation:[0,-1,0,-1,0,-1]};
+  const stepValues=new Scene(stepped,base).sequence.propertyValues("actor",property,7);
+  for(const value of [.1,.2,.3])assert(stepValues.includes(Math.fround(value)),'Recipe keys use the evaluated Float32 values');
+  assert.equal(new Scene(stepped,base).sequence.propertyValues("actor",property,7,2),undefined,'Excessive finite combinations retain a runtime fallback');
   const intBlend=fixture();intBlend.animation.sequences.main.sequences=[];intBlend.animation.sequences.main.bindings=[bind("atlas-blend","frame","a","SpriteRenderer","frame",{weight:.5})];
   const rounded=new Scene(intBlend,base);rounded.time=1;rounded.updateWorld();assert.equal(rounded.component("actor","SpriteRenderer").frame,2);
   intBlend.animation.tracks.frame=integer([0],[8]);assert.throws(()=>new Scene(intBlend,base),/outside atlas/);

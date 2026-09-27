@@ -6,7 +6,7 @@ import {numberLayout} from "./sprite-number.js";
 
 export class BabylonNumber {
   readonly id:string;readonly mesh:Babylon.Mesh;readonly material:Babylon.ShaderMaterial;
-  private texture?:Babylon.RawTexture;private source="";private revision=0;
+  private texture?:Babylon.Texture;private source="";private revision=0;
   constructor(readonly renderer:BabylonSceneContext,node:Entity){
     this.id=node.id;const B=renderer.B;
     this.material=new B.ShaderMaterial(`${node.name} / SpriteNumberRenderer`,renderer.scene,{vertex:"sceneEntity",fragment:"sceneNumber"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint","units","cell","atlasSize","columns","padding","glyphCount","glyphFrames","glyphStarts","textLeft","period","repeated","sigma","gain"],samplers:["glyphTex"],needAlphaBlending:true});

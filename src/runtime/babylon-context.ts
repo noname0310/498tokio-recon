@@ -3,9 +3,10 @@ import {B} from "./babylon-library.js";
 import type {Scene} from "./scene.js";
 import type {Resources} from "./resources.js";
 import type {Color,Entity,PixelImage,RenderObject,Vec2} from "./types.js";
+import type {BabylonParticleFilter} from "./babylon-particle-filter.js";
 
 export interface TextureOptions {linear?:boolean;repeatX?:boolean;repeatY?:boolean}
-export interface BabylonRenderObject extends RenderObject {prepareShaders?():void}
+export interface BabylonRenderObject extends RenderObject {prepareShaders?():void;prepareResources?(node:Entity):void;deactivate?():void}
 export type BabylonObjectConstructor=new(context:BabylonSceneContext,node:Entity)=>BabylonRenderObject;
 
 /** Material/mesh factories shared by live rendering and isolated preparation.
@@ -15,15 +16,40 @@ export class BabylonSceneContext {
   readonly scene:Babylon.Scene;
   readonly nodes=new Map<string,Babylon.TransformNode|Babylon.TargetCamera>();
   readonly entityOwners=new WeakMap<Babylon.AbstractMesh,string>();
-  readonly neutralTexture:Babylon.RawTexture;
+  readonly neutralTexture:Babylon.Texture;
+  readonly preparedFilters=new Map<string,BabylonParticleFilter>();
+  readonly textImages=new Map<string,PixelImage>();
+  private readonly textureCache=new Map<PixelImage,Map<number,Babylon.RawTexture>>();
+  private readonly textureOrder=new Map<Babylon.RawTexture,{image:PixelImage;mode:number;bytes:number}>();
+  private textureBytes=0;
   constructor(readonly engine:Babylon.Engine,readonly data:Scene,readonly resources:Resources,readonly render:()=>void){
     this.scene=new B.Scene(engine);this.scene.clearColor=new B.Color4(0,0,0,1);
     this.neutralTexture=this.texture("neutral",{width:1,height:1,channels:4,data:new Uint8Array([128,128,128,255])});
   }
-  texture(name:string,asset:PixelImage,{linear=false,repeatX=false,repeatY=false}:TextureOptions={}){
-    const B=this.B,rgba=new Uint8Array(asset.width*asset.height*4);
-    for(let i=0;i<asset.width*asset.height;i++){const a=i*asset.channels,b=i*4;rgba[b]=asset.data[a];rgba[b+1]=asset.data[a+(asset.channels===1?0:1)];rgba[b+2]=asset.data[a+(asset.channels===1?0:2)];rgba[b+3]=asset.channels===4?asset.data[a+3]:255;}
-    const t=B.RawTexture.CreateRGBATexture(rgba,asset.width,asset.height,this.scene,false,false,linear?B.Texture.BILINEAR_SAMPLINGMODE:B.Texture.NEAREST_SAMPLINGMODE);t.name=name;t.gammaSpace=false;t.wrapU=repeatX?B.Texture.WRAP_ADDRESSMODE:B.Texture.CLAMP_ADDRESSMODE;t.wrapV=repeatY?B.Texture.WRAP_ADDRESSMODE:B.Texture.CLAMP_ADDRESSMODE;return t;
+  texture(name:string,asset:PixelImage,{linear=false,repeatX=false,repeatY=false}:TextureOptions={}):Babylon.Texture {
+    const B=this.B,samplingMode=linear?B.Texture.BILINEAR_SAMPLINGMODE:B.Texture.NEAREST_SAMPLINGMODE,mode=Number(linear)|Number(repeatX)<<1|Number(repeatY)<<2;
+    let variants=this.textureCache.get(asset);if(!variants){variants=new Map();this.textureCache.set(asset,variants);}
+    let source=variants.get(mode);
+    if(!source){
+      const rgba=asset.channels===4?asset.data:new Uint8Array(asset.width*asset.height*4);
+      // Worker results and decoded source pixels are immutable. Upload RGBA
+      // directly instead of copying every cloud texel during a scene spawn.
+      if(asset.channels!==4)for(let i=0;i<asset.width*asset.height;i++){const a=i*asset.channels,b=i*4;rgba[b]=asset.data[a];rgba[b+1]=asset.data[a+(asset.channels===1?0:1)];rgba[b+2]=asset.data[a+(asset.channels===1?0:2)];rgba[b+3]=255;}
+      source=B.RawTexture.CreateRGBATexture(rgba,asset.width,asset.height,this.scene,false,false,samplingMode);source.name=name;source.gammaSpace=false;
+      const entry={image:asset,mode,bytes:asset.width*asset.height*4};variants.set(mode,source);this.textureOrder.set(source,entry);this.textureBytes+=entry.bytes;
+    }else{const entry=this.textureOrder.get(source)!;this.textureOrder.delete(source);this.textureOrder.set(source,entry);}
+    // Each caller owns a lightweight Texture wrapper; disposing a sprite never
+    // invalidates another sprite's sampler or the cached GPU allocation.
+    const internalTexture=source.getInternalTexture()!;internalTexture.incrementReferences();
+    const t=new B.Texture(null,this.scene,{internalTexture,noMipmap:true,invertY:false,samplingMode,gammaSpace:false});t.name=name;
+    t.wrapU=repeatX?B.Texture.WRAP_ADDRESSMODE:B.Texture.CLAMP_ADDRESSMODE;t.wrapV=repeatY?B.Texture.WRAP_ADDRESSMODE:B.Texture.CLAMP_ADDRESSMODE;
+    for(const [old,entry]of this.textureOrder){
+      if(this.textureBytes<=64*1024*1024)break;
+      this.textureOrder.delete(old);this.textureBytes-=entry.bytes;
+      const variants=this.textureCache.get(entry.image)!;variants.delete(entry.mode);if(!variants.size)this.textureCache.delete(entry.image);
+      old.dispose();
+    }
+    return t;
   }
   spriteMaterial(name:string,mask:boolean,additive:boolean){
     const B=this.B,m=new B.ShaderMaterial(name,this.scene,{vertex:"sceneEntity",fragment:"sceneSprite"},{attributes:["position","uv"],uniforms:["worldViewProjection","tint","maskOnly","intensity","hue","saturation","brightness","contrast","whiteMix","motionArt","motionEnabled","motionAmount","motionCount","motionCenter","motionOffset","motionGain","filterPadding","filterFrame","filterCell","filterGrid","uvRect","uvBounds","noiseOrigin","noiseSize","noiseRange","noiseEnabled","noiseChannelGain","opacityGradientEnabled","opacityGradientStart","opacityGradientEnd","secondaryOrigin","secondarySize","secondaryOpacity","alphaCutoff","focusEnabled","focusDistance","focusEye","focusLensX","focusLensY","focusDepth","focusLimit"],samplers:["spriteTex","noiseTex","filteredTex","secondaryTex"],needAlphaBlending:true});
@@ -51,5 +77,5 @@ export class BabylonSceneContext {
     const material=new B.ShaderMaterial("Camera / depth vignette",this.scene,{vertex:"sceneEntity",fragment:"sceneVignettePlane"},{attributes:["position","uv"],uniforms:["worldViewProjection","halfSize","center","shape","tint","multiplyBlend"],needAlphaBlending:true});
     material.backFaceCulling=false;material.disableDepthWrite=true;return material;
   }
-  dispose():void {this.scene.dispose();this.nodes.clear();}
+  dispose():void {for(const filter of this.preparedFilters.values())filter.dispose();this.preparedFilters.clear();this.textImages.clear();this.scene.dispose();this.nodes.clear();this.textureCache.clear();this.textureOrder.clear();this.textureBytes=0;}
 }

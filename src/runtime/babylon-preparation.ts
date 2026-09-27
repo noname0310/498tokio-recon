@@ -9,6 +9,7 @@ import {createTransitionMask} from "./babylon-transitions.js";
 import {BabylonFade,createFadeBlurEffect} from "./babylon-fade.js";
 import type {ComponentType} from "./types.js";
 import type {LoadingProgress} from "./loading-status.js";
+import {preparationYield} from "./preparation.js";
 
 interface ShaderJob {name:string;run:()=>Promise<void>}
 
@@ -43,8 +44,9 @@ export class BabylonShaderPreparation {
     const wrapper=(key:string,make:()=>Babylon.EffectWrapper)=>{
       if(!jobs.has(key))jobs.set(key,{name:key,run:async()=>{const effect=make();this.effects.push(effect);await this.waitForEffect(effect.effect);}});
     };
-    const features=new Set<string>();
+    const features=new Set<string>(),yieldWork=preparationYield();
     for(const node of r.data.declaredEntities()){
+      await yieldWork();if(this.abort.signal.aborted)return;
       for(const [type,Handler] of registry)if(node.components.some(c=>c.type===type)){
         const before=r.scene.meshes.length,object=new Handler(r,node);object.prepareShaders?.();
         let unique=false;

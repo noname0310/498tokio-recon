@@ -82,7 +82,11 @@ export class Engine {
       this.preparation=Promise.all([Promise.all([images,rendererReady]).then(async()=>{
         if(current===this.revision&&ticket===this.loadTicket&&!this.disposed)await this.renderer.prepare?.(this.loadingProgress);
       }),...audioReady]).then(()=>{
-        if(current===this.revision&&ticket===this.loadTicket&&!this.disposed)this.loadingProgress.complete();
+        if(current===this.revision&&ticket===this.loadTicket&&!this.disposed){
+          // Commit prepared resources through one normal update, including a
+          // paused player whose first progressive draw preceded preparation.
+          this.requestResourceUpdate();this.loadingProgress.complete();
+        }
       });
       void this.preparation.catch(error=>{if(current===this.revision&&ticket===this.loadTicket&&!this.disposed)this.reportError(error);});
       await Promise.all([rendererReady,...audioReady]);if(current!==this.revision||ticket!==this.loadTicket||this.disposed)return;

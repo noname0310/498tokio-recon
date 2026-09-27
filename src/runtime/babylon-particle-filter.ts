@@ -54,28 +54,42 @@ export function createSoftnessEffect(r:BabylonSceneContext,id:string):Babylon.Ef
 /** Small GPU working textures shared by all instances of an emitter. Only
  * artwork, dilation or softness edits rerender them; motion and gain do not. */
 export class BabylonParticleFilter {
-  texture?:Babylon.RenderTargetTexture;
+  private ownedTexture?:Babylon.RenderTargetTexture;
+  private shared?:BabylonParticleFilter;
+  private preparedSource?:Babylon.Texture;
+  get texture():Babylon.RenderTargetTexture|undefined{return this.shared?.texture??this.ownedTexture;}
   renderCount=0;
-  private readonly pass:Babylon.EffectRenderer;
+  private pass?:Babylon.EffectRenderer;
   private effect?:Babylon.EffectWrapper;
   private blur?:Babylon.EffectWrapper;
   private scratch?:Babylon.RenderTargetTexture;
   private reach=-1;private key="";private revision=0;private disposed=false;
   private pending:Promise<void>=Promise.resolve();
-  private last?:{asset:SpriteAsset;source:Babylon.RawTexture;radius:number;softness:number;mask?:Pick<Glow,"threshold"|"softness">};
+  private last?:{asset:SpriteAsset;source:Babylon.Texture;radius:number;softness:number;mask?:Pick<Glow,"threshold"|"softness">};
   private readonly restored:Babylon.Observer<Babylon.AbstractEngine>;
   constructor(private readonly renderer:BabylonSceneContext,private readonly id:string){
-    this.pass=new renderer.B.EffectRenderer(renderer.engine);
     this.restored=renderer.engine.onContextRestoredObservable.add(()=>{
       this.key="";const input=this.last;
       if(input)void this.update(input.asset,input.source,input.radius,input.softness,input.mask).then(()=>{if(!this.disposed)renderer.render();});
     });
   }
-  update(asset:SpriteAsset,source:Babylon.RawTexture,radius:number,softness:number,mask?:Pick<Glow,"threshold"|"softness">):Promise<void>{
+  static recipe(asset:SpriteAsset,radius:number,softness:number,mask?:Pick<Glow,"threshold"|"softness">):string {
+    return JSON.stringify([asset.file,asset.size,asset.atlas,asset.filter,radius,softness,mask?.threshold,mask?.softness]);
+  }
+  static async prepare(r:BabylonSceneContext,asset:SpriteAsset,source:Babylon.Texture,radius:number,softness:number,mask?:Pick<Glow,"threshold"|"softness">):Promise<void>{
+    const key=this.recipe(asset,radius,softness,mask),cached=r.preparedFilters.get(key);
+    if(cached){source.dispose();return cached.pending;}
+    const filter=new BabylonParticleFilter(r,`Prepared / ${asset.file}`);filter.preparedSource=source;r.preparedFilters.set(key,filter);
+    await filter.update(asset,source,radius,softness,mask);
+  }
+  update(asset:SpriteAsset,source:Babylon.Texture,radius:number,softness:number,mask?:Pick<Glow,"threshold"|"softness">):Promise<void>{
     this.last={asset,source,radius,softness,mask};
-    const key=JSON.stringify([source.uniqueId,asset.size,asset.atlas,radius,softness,mask?.threshold,mask?.softness]);
+    const recipe=BabylonParticleFilter.recipe(asset,radius,softness,mask),cached=this.renderer.preparedFilters.get(recipe);
+    const key=cached?recipe:JSON.stringify([source.getInternalTexture()?.uniqueId,recipe]);
     if(key===this.key)return this.pending;
     this.key=key;const revision=++this.revision;
+    this.shared=cached!==this?cached:undefined;
+    if(this.shared)return this.pending=this.shared.pending;
     this.pending=this.pending.then(async()=>{
       if(this.disposed||revision!==this.revision)return;
       const r=this.renderer,B=r.B,cell=asset.atlas?.cellSize||asset.size,padding=Math.ceil(radius+4*softness)+1;
@@ -83,11 +97,11 @@ export class BabylonParticleFilter {
       // Eight samples per native pixel retain fractional outline edits while
       // keeping this pass independent of viewport resolution and particle count.
       const width=(cell.x+2*padding)*columns*particleFilterResolution,height=(cell.y+2*padding)*rows*particleFilterResolution;
-      const size=this.texture?.getSize();
+      const size=this.ownedTexture?.getSize();
       if(!size||size.width!==width||size.height!==height){
-        this.texture?.dispose();this.scratch?.dispose();this.scratch=undefined;
-        this.texture=new B.RenderTargetTexture(`${this.id}/particle-filter`,{width,height},r.scene,{generateMipMaps:false,generateDepthBuffer:false,samplingMode:B.Texture.BILINEAR_SAMPLINGMODE,gammaSpace:false});
-        this.texture.wrapU=this.texture.wrapV=B.Texture.CLAMP_ADDRESSMODE;
+        this.ownedTexture?.dispose();this.scratch?.dispose();this.scratch=undefined;
+        this.ownedTexture=new B.RenderTargetTexture(`${this.id}/particle-filter`,{width,height},r.scene,{generateMipMaps:false,generateDepthBuffer:false,samplingMode:B.Texture.BILINEAR_SAMPLINGMODE,gammaSpace:false});
+        this.ownedTexture.wrapU=this.ownedTexture.wrapV=B.Texture.CLAMP_ADDRESSMODE;
       }
       const reach=Math.ceil(radius);
       if(this.reach!==reach){
@@ -109,12 +123,13 @@ export class BabylonParticleFilter {
       });
       const alpha=r.engine.getAlphaMode();r.engine.setAlphaMode(B.Engine.ALPHA_DISABLE);
       try{
-        this.pass.render(wrapper,this.texture);
+        this.pass??=new B.EffectRenderer(r.engine);
+        this.pass.render(wrapper,this.ownedTexture);
         if(softness>0){
-          const blur=this.blur!;blur.onApplyObservable.clear();blur.onApplyObservable.add(()=>{blur.effect.setTexture("sourceTex",this.texture!);blur.effect.setFloat2("sigma",softness*particleFilterResolution/width,0);});
+          const blur=this.blur!;blur.onApplyObservable.clear();blur.onApplyObservable.add(()=>{blur.effect.setTexture("sourceTex",this.ownedTexture!);blur.effect.setFloat2("sigma",softness*particleFilterResolution/width,0);});
           this.pass.render(blur,this.scratch);
           blur.onApplyObservable.clear();blur.onApplyObservable.add(()=>{blur.effect.setTexture("sourceTex",this.scratch!);blur.effect.setFloat2("sigma",0,softness*particleFilterResolution/height);});
-          this.pass.render(blur,this.texture);
+          this.pass.render(blur,this.ownedTexture);
         }
         this.renderCount++;
       }finally{r.engine.setAlphaMode(alpha);}
@@ -123,6 +138,6 @@ export class BabylonParticleFilter {
   }
   dispose():void {
     this.disposed=true;this.revision++;this.renderer.engine.onContextRestoredObservable.remove(this.restored);
-    this.texture?.dispose();this.scratch?.dispose();this.effect?.dispose();this.blur?.dispose();this.pass.dispose();
+    this.ownedTexture?.dispose();this.scratch?.dispose();this.effect?.dispose();this.blur?.dispose();this.pass?.dispose();this.preparedSource?.dispose();
   }
 }

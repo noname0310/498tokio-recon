@@ -3,13 +3,15 @@ const {chromium,firefox}=require('playwright'),{makeServer}=require('./serve.cjs
 const seq=(end,extra={})=>({tickResolution:{numerator:30,denominator:1},displayRate:{numerator:30,denominator:1},playbackRange:{start:0,end},...extra});
 const noise={type:'ProceduralNoise',seed:419,textureSize:{x:16,y:16},bands:[{sigmaTexels:{x:1,y:1},variance:.02}]};
 const fixture={schemaVersion:1,assets:{art:{type:'Sprite',file:'/tests/fixtures/rect_sprite.png',size:{x:2,y:3},pixelsPerUnit:4}},root:{id:'unrelated-root',children:[
-  {id:'view',transform:{localPosition:{z:-10}},components:[{type:'Camera',referenceVerticalSize:3.6}]}
+  {id:'view',transform:{localPosition:{z:-10}},components:[{type:'Camera',referenceVerticalSize:3.6}]},
+  {id:'deferred',active:false,components:[{type:'SpriteRenderer',asset:'art'}]}
 ]},animation:{master:'master',tracks:{radius:{type:'AnimationTrackFloat32',frameNumber:[0,30],value:[0,0],interpolation:[8,0,2,2],interpolationParameters:[.2,-1,-.2,-1]}},sequences:{
   master:seq(180,{sequences:[{id:'outer',sequence:'middle',range:{start:30,end:150}}]}),
   middle:seq(120,{sequences:[{id:'inner',sequence:'detail',range:{start:30,end:60}},{id:'again',sequence:'detail',range:{start:75,end:105}}]}),
   detail:seq(30,{objects:[{id:'spawn',kind:'spawnable',template:{id:'effect',components:[{type:'ParticleEmitter',asset:'art'},{type:'ParticleMotionBlur',softnessPixels:.1},{type:'Glow'}],children:[
     {id:'sprite',components:[{type:'SpriteRenderer',asset:'art'},noise]},
-    {id:'plane',components:[{type:'PlaneRenderer'},noise]}
+    {id:'plane',components:[{type:'PlaneRenderer'},noise]},
+    {id:'tile',components:[{type:'TiledSpriteRenderer',asset:'art',wrap:{y:'transparent'}},{type:'GaussianBlur',sigmaWorld:{x:.02,y:.04}},{type:'Glow',sigmaWorld:.03},{type:'DropShadow',sigmaWorld:.01}]}
   ]}}],bindings:[{id:'curve',object:'spawn',track:'radius',property:{component:'ParticleMotionBlur',path:'dilationPixels'}}]})
 }}};
 
@@ -39,10 +41,19 @@ async function main(){
      // A browser GPU-context recovery must rebuild every program. Count only
      // normal playback compilation, independent of driver/context resets.
      gl.createProgram=(...args)=>{if(!e._contextWasLost)programs++;return create(...args);};
+     const texture=p.resources.texture,tileJobs=[],coldJobs=[],drawText=CanvasRenderingContext2D.prototype.fillText,drawFilter=p.renderer.B.EffectRenderer.prototype.render,createRGBA=p.renderer.B.RawTexture.CreateRGBATexture;let textDraws=0,filterDraws=0,textureUploads=0;
+     p.renderer.B.RawTexture.CreateRGBATexture=function(...args){textureUploads++;return createRGBA.apply(this,args);};
+     CanvasRenderingContext2D.prototype.fillText=function(...args){textDraws++;return drawText.apply(this,args);};
+     p.renderer.B.EffectRenderer.prototype.render=function(...args){if(args[1]?.name?.includes('particle-filter'))filterDraws++;return drawFilter.apply(this,args);};
+     p.resources.texture=function(key,input){if(!this.jobs.has(key)){coldJobs.push({kind:input.kind,key});if(input.kind==='tile')tileJobs.push(key);}return texture.call(this,key,input);};
+     for(const frame of [4503,4530,4550,5526,5532,5539,4503,4530,5532])await p.seekFrame(frame,{numerator:30,denominator:1});
+     for(const frame of [548,2101,3202,4235,4383,6416,0,2101,6416])await p.seekFrame(frame,{numerator:30,denominator:1});
+     p.resources.texture=texture;CanvasRenderingContext2D.prototype.fillText=drawText;p.renderer.B.EffectRenderer.prototype.render=drawFilter;p.renderer.B.RawTexture.CreateRGBATexture=createRGBA;
+     if(coldJobs.length||textDraws||filterDraws||textureUploads)throw Error(JSON.stringify({coldJobs,textDraws,filterDraws,textureUploads}));
      for(const frame of [15,173,480,547,548,600,800,851,1100,1145,1158,1220,1355,1670,1730,1900,2100,2180,2181,2189,2196,2214,2224,2236,2245,2611,2633,2646,3504,3708,3777,3940,3995,4088,4091,4194,4245,4422,4535,4536,4665,4793,4800,4867,4940])await p.seekFrame(frame,{numerator:30,denominator:1});
-     gl.createProgram=create;return {programs,newEffects:Object.keys(e._compiledEffects).filter(k=>!before.has(k))};
+     gl.createProgram=create;return {programs,tileJobs,newEffects:Object.keys(e._compiledEffects).filter(k=>!before.has(k))};
     });
-    assert.deepEqual(tour,{programs:0,newEffects:[]},'Playback must reuse the prepared GPU programs');
+    assert.deepEqual(tour,{programs:0,tileJobs:[],newEffects:[]},'Playback must reuse prepared programs and transition filter textures');
    }
    await page.route('**/dynamic.scene.json',route=>route.fulfill({json:fixture}));
    if(renderer==='babylon')await page.evaluate(()=>{
@@ -58,24 +69,40 @@ async function main(){
     await page.evaluate(()=>scenePlayer.play());await page.waitForFunction(()=>scenePlayer.time>.12);await page.evaluate(()=>{scenePlayer.pause();window.releaseCompile();window.restoreCompile();});
    }
    await page.evaluate(()=>scenePlayer.whenIdle());
+   if(renderer==='babylon'){
+    const retained=await page.evaluate(async()=>{
+     const p=scenePlayer,find=()=>p.renderer.objects.find(o=>o.id==='deferred');
+     const deferred=!find();await p.setActive('deferred',true);await p.whenIdle();const first=find();
+     await p.setActive('deferred',false);await p.setActive('deferred',true);await p.whenIdle();
+     return {deferred,created:Boolean(first),reused:find()===first};
+   });assert.deepEqual(retained,{deferred:true,created:true,reused:true},'Future objects remain outside the live graph and reuse their prepared render surfaces');
+   }
    const dynamic=await page.evaluate(async()=>{
     const p=scenePlayer,declared=[...p.scene.declaredEntities()],noiseNode=declared.find(n=>n.components.some(c=>c.type==='ProceduralNoise'));
     const noise=noiseNode.components.find(c=>c.type==='ProceduralNoise'),one=await p.resources.noiseURL(noise),two=await p.resources.noiseURL(structuredClone(noise));
     const count=window.encodes,engine=p.renderer.kind==='babylon'?p.renderer.engine:null,keys=engine?new Set(Object.keys(engine._compiledEffects)):null;
+    const texture=p.resources.texture,tileJobs=[];
+    if(engine){
+     // Transient runtime filters cannot evict filters prepared for later spawns.
+     const input={kind:'noise',component:{...noise,textureSize:{x:2,y:2},bands:[]}};
+     for(let i=0;i<130;i++)await p.resources.texture('transient-preparation-test:'+i,input);
+     p.resources.texture=function(key,input){if(input.kind==='tile'&&!this.jobs.has(key))tileJobs.push(key);return texture.call(this,key,input);};
+    }
     const overshoot=p.scene.sequence.tracks.get('radius').valueBounds({numerator:30,denominator:1});
     for(const frame of [60,65,75,85,90,106,120,134,139,0])await p.seekFrame(frame,{numerator:30,denominator:1});
-    return {same:one===two,encodes:window.encodes-count,newEffects:engine?Object.keys(engine._compiledEffects).filter(k=>!keys.has(k)):[],overshoot,stageOrder:window.stageOrder};
+    p.resources.texture=texture;
+    return {same:one===two,encodes:window.encodes-count,tileJobs,newEffects:engine?Object.keys(engine._compiledEffects).filter(k=>!keys.has(k)):[],overshoot,stageOrder:window.stageOrder};
    });
-   assert.equal(dynamic.same,true);assert.equal(dynamic.encodes,0);assert.deepEqual(dynamic.newEffects,[]);
+   assert.equal(dynamic.same,true);assert.equal(dynamic.encodes,0);assert.deepEqual(dynamic.newEffects,[]);assert.deepEqual(dynamic.tileJobs,[]);
    assert(dynamic.overshoot.max>=2,'Curve bounds include overshoot, not only endpoint values');
-   assert.deepEqual(dynamic.stageOrder,renderer==='babylon'?['Scene','Images','Textures','Shaders']:['Scene','Images','Textures']);
+   assert.deepEqual(dynamic.stageOrder,renderer==='babylon'?['Scene','Images','Textures','Shaders','Objects']:['Scene','Images','Textures']);
    if(renderer==='babylon'){
     const cancellation=await page.evaluate(async data=>{
      const p=scenePlayer,prototype=p.renderer.B.ShaderMaterial.prototype,compile=prototype.forceCompilationAsync;let entered;
      const started=new Promise(resolve=>entered=resolve),gate=new Promise(resolve=>window.releaseOldCompile=resolve);
      prototype.forceCompilationAsync=async function(...args){await compile.apply(this,args);entered();await gate;};
      await p.loadScene(data);await started;const old=p.whenIdle();prototype.forceCompilationAsync=compile;
-     const replacement=structuredClone(data);delete replacement.animation;replacement.assets={};await p.loadScene(replacement);await old;window.releaseOldCompile();await p.whenIdle();
+     const replacement=structuredClone(data);delete replacement.animation;replacement.assets={};replacement.root.children=replacement.root.children.filter(n=>n.id==='view');await p.loadScene(replacement);await old;window.releaseOldCompile();await p.whenIdle();
      const scenes=p.renderer.engine.scenes.length;p.dispose();return {scenes,removed:!document.querySelector('.runtime-loading-status')};
     },fixture);
     assert.deepEqual(cancellation,{scenes:2,removed:true});
